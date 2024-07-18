@@ -1,0 +1,22 @@
+# logs:
+# docker logs --follow appdaemon
+# docker logs --tail 20 appdaemon
+
+appdaemon:
+  latitude: 52.252640449615
+  longitude: 0.026033911856051
+  elevation: 20
+  threads: 10
+  time_zone: Europe/London
+  thread_duration_warning_threshold: 120 # 0 doesn't work - https://appdaemon.readthedocs.io/en/latest/CONFIGURE.html
+  plugins:
+    HASS:
+      type: hass
+      ha_url: http://homeassistant.local:8123
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI1N2E3NTUyYjAxNjg0NTVhYjY5NzQ1OGVkZGQ2NmVjZiIsImlhdCI6MTcxMjAxNTU4NywiZXhwIjoyMDI3Mzc1NTg3fQ.RH4PhkdSZGuzI59a7XYgjLn_uALJKXyy5rVjsVCN-Nw
+      cert_verify: True
+http:
+  url: http://homeassistant.local:5050
+api:
+admin:
+hadashboard:

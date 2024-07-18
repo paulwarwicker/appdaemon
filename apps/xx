@@ -1,0 +1,45 @@
+2024-07-15 04:02:18.258549 INFO automation:     entity=vacuum.s7_max_ultra attribute=state old=unavailable new=docked state=docked
+2024-07-15 04:53:00.241140 WARNING automation: ------------------------------------------------------------
+2024-07-15 04:53:00.241994 WARNING automation: Unexpected error during exec_schedule() for App: automation
+2024-07-15 04:53:00.242493 WARNING automation: Args: {'name': 'automation', 'id': '6149c3181a4245f7bcecca325e32b40e', 'callback': <bound method Automation.lumie_phase3 of <automation.Automation object at 0x7fa84990d0>>, 'timestamp': datetime.datetime(2024, 7, 15, 3, 53, 0, 239002, tzinfo=<UTC>), 'interval': 0, 'basetime': datetime.datetime(2024, 7, 15, 3, 53, 0, 239002, tzinfo=<UTC>), 'basetime_interval': 86399, 'repeat': False, 'offset': 0, 'type': None, 'pin_app': True, 'pin_thread': 1200, 'kwargs': {'pin': False, 'pin_thread': 1200}}
+2024-07-15 04:53:00.243057 WARNING automation: ------------------------------------------------------------
+2024-07-15 04:53:00.247030 WARNING automation: Traceback (most recent call last):
+  File "/usr/lib/python3.11/site-packages/appdaemon/scheduler.py", line 332, in exec_schedule
+    await self.AD.threading.dispatch_worker(
+  File "/usr/lib/python3.11/site-packages/appdaemon/threading.py", line 853, in dispatch_worker
+    self.select_q(myargs)
+  File "/usr/lib/python3.11/site-packages/appdaemon/threading.py", line 284, in select_q
+    raise ValueError("invalid thread id: {} in app {}".format(thread, args["name"]))
+ValueError: invalid thread id: 1200 in app automation
+
+2024-07-15 04:53:00.247441 WARNING automation: ------------------------------------------------------------
+2024-07-15 04:53:00.247748 WARNING automation: Scheduler entry has been deleted
+2024-07-15 04:53:00.248069 WARNING automation: ------------------------------------------------------------
+2024-07-15 04:58:00.046703 INFO automation:     alarm_type=early debug=False play=True
+2024-07-15 04:58:00.052046 INFO automation:     media_content_id=x-sonos-spotify:spotify%3atrack%3a5VFk26TzgwqX18dFhRmbSM?sid=9&flags=8224&sn=1
+2024-07-15 05:00:00.768846 WARNING automation:  Skip previously entered DD last_date=2024-07-10 summary=Sky Subscription - 00620003818247
+2024-07-15 05:00:00.775383 WARNING automation:  Skip previously entered DD last_date=2024-07-07 summary=South Cambs District Council - 01      1010103114
+2024-07-15 05:00:00.779709 WARNING automation:  Skip previously entered DD last_date=2024-07-07 summary=Practice Plan - PH31674001
+2024-07-15 05:00:00.784094 WARNING automation:  Skip previously entered DD last_date=2024-07-07 summary=Practice Plan - PW31674011
+2024-07-15 05:00:00.788462 WARNING automation:  Skip previously entered DD last_date=2024-07-07 summary=PayPal - 4L5J2222QN8PG
+2024-07-15 05:00:00.792787 WARNING automation:  Skip previously entered DD last_date=2024-07-09 summary=Tesco Bank - 5186528970907924
+2024-07-15 05:00:00.797092 WARNING automation:  Skip previously entered DD last_date=2024-07-10 summary=Virgin Media - 735916501001
+2024-07-15 05:00:00.801367 WARNING automation:  Skip previously entered DD last_date=2024-07-08 summary=Octopus Energy - A-BB7BB525-001
+2024-07-15 05:00:00.806271 WARNING automation:  Skip previously entered DD last_date=2024-06-28 summary=GoCardless - NEILMARSHHEA-MVZ2Q
+2024-07-15 05:00:00.811124 WARNING automation:  Skip previously entered DD last_date=2024-06-30 summary=Allwyn Entertainment - A00308/4679
+2024-07-15 05:00:00.815378 WARNING automation:  Skip previously entered DD last_date=2024-06-20 summary=Creation - Y9484673/R086501
+2024-07-15 05:00:01.274700 WARNING automation:  Skip previously entered SO next_date=2024-07-25 summary=Paul Warwicker - SO ST to NWIDE
+2024-07-15 05:04:33.788175 INFO automation:     turn off bannister - upstairs
+2024-07-15 05:04:41.920390 INFO automation:     motion detected but outside time window
+2024-07-15 05:06:09.174841 INFO automation:     motion detected but outside time window
+2024-07-15 05:11:09.176960 INFO automation:     turn off bannister - downstairs
+2024-07-15 05:12:06.873321 INFO automation:     entity=device_tracker.maxine_iphone attribute=state old=not_home new=Village name=Village location=proximity.village
+2024-07-15 05:12:06.886046 INFO automation:     entity_id=proximity.village state=arrive name=Max is in the village
+2024-07-15 05:50:16.724110 INFO automation:     entity=device_tracker.maxine_iphone attribute=state old=not_home new=Village name=Village location=proximity.village
+2024-07-15 05:50:16.735092 INFO automation:     entity_id=proximity.village state=arrive name=Max is in the village
+2024-07-15 05:50:16.741138 WARNING automation:  announcement disabled - Max is in the village
+2024-07-15 05:51:12.068456 INFO automation:     motion detected but outside time window
+2024-07-15 05:51:31.068213 INFO automation:     motion detected but outside time window
+2024-07-15 05:52:29.450281 INFO automation:     start kitchen floor timer for 300s
+2024-07-15 05:53:21.404302 INFO automation:     start kitchen floor timer for 300s
+20

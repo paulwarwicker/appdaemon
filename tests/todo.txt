@@ -1,0 +1,192 @@
+    def initialize(self):
+    def pre_init(self):
+    def post_init(self):
+    def dummy(self):
+    def set_all_state(self, kwargs={}):
+    def set_console_log_level(self, entity='input_boolean.debug', attribute='state', old='off', new='on', kwargs={}):
+    def set_debug_flag(self, entity, attribute, old, new, kwargs={}):
+    def set_testing_flag(self, entity, attribute, old, new, kwargs={}):
+    def set_verbose_flag(self, entity, attribute, old, new, kwargs={}):
+    def int_set_log_level(self, level):
+    def reset_test1(self, entity, attribute, old, new, kwargs={}):
+    def reset_test2(self, entity, attribute, old, new, kwargs={}):
+    def reset_test3(self, entity, attribute, old, new, kwargs={}):
+    def reset_alarms(self, entity='', attribute='', old='', new='', kwargs={}):
+    def register_test(self, callback, entity_id='input_boolean.test_1', **kwargs):
+    def deregister_test(self, entity_id, **kwargs):
+    def register_test_1(self, callback, entity_id='input_boolean.test_1', **kwargs):
+    def register_test_2(self, callback, entity_id='input_boolean.test_2', **kwargs):
+    def register_test_3(self, callback, entity_id='input_boolean.test_3', **kwargs):
+    def deregister_test_1(self, **kwargs):
+    def deregister_test_2(self, **kwargs):
+    def deregister_test_3(self, **kwargs):
+    def test_test(self, entity, attribute, old, new, kwargs):
+    def test(self, kwargs={}):
+    def test_kwargs(self, **kwargs):
+    def reset(self, kwargs={}):
+    def log_function_name(self, start=True):
+    def delay(self, s):
+    def notification_test(self, entity, attribute, old, new, kwargs={}):
+    def int_notification_test(self, kwargs={}):
+    def notification(self, message, log=False, title=''):
+    def announce_test(self, entity, attribute, old, new, kwargs={}):
+    def announce(self, entity_id, delay, volume, message):  # announce to a single device
+    def int_announce(self, entity_id, volume, delay, message, setvol=True):
+    def broadcast(self, volume, message):  # broadcast to multiple devices
+    def is_dusk(self):
+    def is_predusk(self):
+    def is_bank_holiday(self, dt=datetime.now()):
+    def is_weekday(self):
+    def is_sunday(self):
+    def is_after_9pm(self):
+    def announceable(self):
+    def is_mock_run(self):
+    def is_summer(self):
+    def is_garage_door_closed(self):
+    def dow(self):
+    # def no_rain_test(self, entity, attribute, old, new, kwargs={}):
+    def no_rain(self):
+    def rain(self):
+    def turn_on_if_off(self, entity_id, brightness=64):
+    def rearm_kitchen_alarm(self, kwargs={}):
+    def reset_downstairs_motion_flag(self):
+    def any_light_on_full(self, entity_ids):
+    def light_entities(self, name, count=1):
+    def cancel_timer2(self, timer, message=None):
+    def get_debug(self):
+    def get_verbose(self):
+    def get_testing(self):
+    def get_alarm_debug(self):
+    def get_sun_elevation(self):
+    def set_debug(self, torf):
+    def log_test(self, kwargs={}):
+    def max_travel_time_to_home(self, kwargs={}):
+    def max_location_announce(self, entity_id, state, kwargs={}):
+    def max_location_detect(self, entity, attribute, old, new, kwargs={}):
+    def max_village_announce_test(self, entity, attribute, old, new, kwargs={}):
+    def force_debug(self, callback, entity='', attribute='', old='', new='', kwargs={}):
+    def max_home_test(self, entity, attribute, old, new, kwargs={}):
+    def max_home(self, entity='', attribute='', old='', new='', kwargs={}):
+    def paul_home_test(self, entity, attribute, old, new, kwargs={}):
+    def paul_home(self, entity='', attribute='', old='', new='', kwargs={}):
+    def scene_test(self, entity, attribute, old, new, kwargs={}):
+    def activate_scene(self, entity, attribute, old, new, kwargs={}):
+    # def tap_test(self, entity, attribute, old, new, kwargs={}):
+    def water_garden_for(self, entity, attribute, old, new, kwargs={}):
+    def water_garden_for_action(self, event, data, kwargs={}):
+    def water_garden_for_n_minutes(self, kwargs={}):
+    def water_garden_stop(self, entity, attribute, old, new, kwargs={}):
+    def water_garden_daily(self, kwargs={}):
+    def tap_on(self, **kwargs):
+    def tap_off(self, kwargs={}):
+    def check_garden_tap(self, kwargs={}):
+    def check_garage_door(self, kwargs={}):
+    def garage_door(self, entity, attribute, old, new, kwargs={}):
+    def get_entity_id(self):
+    def garage_door_announce(self, **kwargs):
+    def garage_door_open(self, entity='', attribute='', old='', new='', kwargs={}):
+    def garage_door_close(self, entity='', attribute='', old='', new='', kwargs={}):
+    def garage_door_announce_opening(self, entity='', attribute='', old='', new='', kwargs={}):
+    def garage_door_announce_closing(self, entity='', attribute='', old='', new='', kwargs={}):
+    def garage_door_announce_open(self, entity='', attribute='', old='', new='', kwargs={}):
+    def garage_door_announce_closed(self, entity='', attribute='', old='', new='', kwargs={}):
+    def garage_door_debug(self, entity, attribute, old, new, kwargs={}):
+    def garage_door_lights(self, **kwargs):
+    def garage_door_lights_off(self):
+    def bins_test(self, entity, attribute, old, new, kwargs={}):
+    def bins_announce(self, announce_type, force=False):
+    def bins_preannounce(self, kwargs={}):
+    def bins_announce1(self, kwargs={}):
+    def bins_announce2(self, kwargs={}):
+    def vouchers_test(self, entity, attribute, old, new, kwargs={}):
+    def vouchers_announce(self, kwargs={}):
+    def sonos_unjoin1(self, kwargs={}):
+    def sonos_unjoin2(self, kwargs={}):
+    def sonos_unjoin_all_test(self, entity, attribute, old, new, kwargs={}):
+    def sonos_unjoin_all(self, kwargs={}):
+    def sonos_configure(self, speakers, volume, unjoin, delay, join, check_downstairs_motion):
+    def sonos_configure1_test(self, entity, attribute, old, new, kwargs={}):
+    def sonos_configure1(self, kwargs={}):
+    def sonos_configure1a(self, kwargs={}):
+    def sonos_configure2_test(self, entity, attribute, old, new, kwargs={}):
+    def sonos_configure2a(self, kwargs={}):
+    def lights_off(self, event, data, kwargs={}):
+    def stairs_on(self, kwargs={}):
+    def radiator_test(self, entity, attribute, old, new, kwargs={}):
+    def radiator_on(self, kwargs={}):
+    def living_room_lights_off(self, kwargs={}):
+    def bedtime_test(self, entity, attribute, old, new, kwargs={}):
+    def bedtime(self, kwargs={}):
+    def outside_lights_off(self, kwargs={}):
+    def wardrobe_on(self, kwargs={}):
+    def wardrobe_off(self, kwargs={}):
+    def hallway_on(self, kwargs={}):
+    def hallway_off(self, kwargs={}):
+    def upstairs_motion_test(self, entity, attribute, old, new, kwargs={}):
+    def upstairs_motion(self, entity, attribute, old, new, kwargs={}):
+    def downstairs_motion_test(self, entity, attribute, old, new, kwargs={}):
+    def downstairs_motion(self, entity, attribute, old, new, kwargs={}):
+    def cancel_alarm_if_set(self, entity_id, end_time, start_time='05:00:00'):
+    def kitchen_motion_test(self, entity, attribute, old, new, kwargs={}):
+    def kitchen_motion(self, entity, attribute, old, new, kwargs={}):
+    def cancel_kitchen_timers(self):
+    def kitchen_floor_on(self):
+    def utility_motion_test(self, entity, attribute, old, new, kwargs={}):
+    def utility_motion(self, entity, attribute, old, new, kwargs={}):
+    def utility_off(self, kwargs={}):
+    def cancel_utility_timers(self, **kwargs):
+    def stairs_motion(self, **kwargs):
+    def bannister_on(self, kwargs={}):
+    def bannister_off(self, kwargs={}):
+    def downstairs_off(self, kwargs={}):
+    def kitchen_floor_off(self, kwargs={}):
+    def kitchen_off(self, kwargs={}):
+    def kitchen_all_off(self, kwargs={}):
+    def front_door_ding_test(self, entity, attribute, old, new, kwargs={}):
+    def front_door_ding(self, entity, attribute, old, new, kwargs={}):
+    def int_front_door_ding(self, entity, attribute, old, new, kwargs={}):
+    def tapo_siren_on(self, kwargs={}):
+    def tapo_siren_off(self, kwargs={}):
+    def front_door_announce(self, kwargs={}):
+    def ding_front_door_light(self, kwargs={}):
+    def ding_hallway_light(self, kwargs={}):
+    def front_door_battery_test(self, entity, attribute, old, new, kwargs={}):
+    def front_door_battery(self, kwargs={}):
+    # def front_door_light_on_test(self, entity, attribute, old, new, kwargs={}):
+    def front_door_light_on(self, kwargs={}):
+    def int_front_door_light_on(self, kwargs={}):
+    def front_door_light_off(self, kwargs={}):
+    def frost_warning_test(self, entity, attribute, old, new, kwargs={}):
+    def frost_warning(self, kwargs={}):
+    def update_available_test(self, entity, attribute, old, new, kwargs={}):
+    def update_available(self, entity, attribute, old, new, kwargs={}):
+    def early_alarm_test(self, entity, attribute, old, new, kwargs={}):
+    def set_early_alarm(self, entity, attribute, old, new, kwargs={}):
+    def set_normal_alarm(self, entity, attribute, old, new, kwargs={}):
+    def set_failsafe_alarm(self, entity, attribute, old, new, kwargs={}):
+    def set_alarms(self):
+    def set_alarm(self, **kwargs):
+    def alarm(self, kwargs={}):
+    def select_alarm(self, **kwargs):
+    def play_normal_alarm(self, dow=None):
+    def int_alarm(self, kwargs={}):
+    def lumie_alarm_test(self, entity, attribute, old, new, kwargs={}):
+    def lumie_alarm(self, kwargs={}):
+    def lumie_phase1(self, kwargs={}):
+    def lumie_phase2(self, kwargs={}):
+    def lumie_phase3(self, kwargs={}):
+    def set_utility_motion_test(self, entity, attribute, old, new, kwargs={}):
+    def set_kitchen_motion_test(self, entity, attribute, old, new, kwargs={}):
+    def set_bins_test(self, entity, attribute, old, new, kwargs={}):
+    def set_frost_warning_test(self, entity, attribute, old, new, kwargs={}):
+    def set_notification_test(self, entity, attribute, old, new, kwargs={}):
+    def set_announcement_test(self, entity, attribute, old, new, kwargs={}):
+    def set_max_home_test(self, entity, attribute, old, new, kwargs={}):
+    def set_front_door_ding_test(self, entity, attribute, old, new, kwargs={}):
+    def set_front_door_light_on_test(self, entity, attribute, old, new, kwargs={}):
+    def set_test_test(self, entity, attribute, old, new, kwargs={}):
+    def set_early_alarm_test(self, entity, attribute, old, new, kwargs={}):
+    def test_early_alarm_test(self, entity, attribute, old, new, kwargs={}):
+    def template(self, entity_id, state, name, kwargs={}):
+    def status(self, entity, attribute, old, new, kwargs={}):
+    def cancel_alarm(self, entity, attribute, old, new, kwargs={}):
