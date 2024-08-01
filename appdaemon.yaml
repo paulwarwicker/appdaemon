@@ -6,7 +6,7 @@ appdaemon:
   latitude: 52.252640449615
   longitude: 0.026033911856051
   elevation: 20
-  threads: 10
+  total_threads: 10
   time_zone: Europe/London
   thread_duration_warning_threshold: 120 # 0 doesn't work - https://appdaemon.readthedocs.io/en/latest/CONFIGURE.html
   plugins:

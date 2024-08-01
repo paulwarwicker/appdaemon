@@ -1,3 +1,37 @@
+utils:
+  module: utils
+  class: Utils
+
+announcer:
+  module: announcer
+  class: Announcer
+  dependencies:
+    - utils
+
 automation:
   module: automation
   class: Automation
+  dependencies:
+    - utils
+    - announcer
+
+alarms:
+  module: alarms
+  class: Alarms
+  dependencies:
+    - utils
+    - announcer
+
+starling:
+  module: starling
+  class: Starling
+  dependencies:
+    - utils
+    - announcer
+
+somos:
+  module: sonos
+  class: Sonos
+  dependencies:
+    - utils
+    - announcer
