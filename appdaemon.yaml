@@ -20,3 +20,7 @@ http:
 api:
 admin:
 hadashboard:
+# logs:
+#   last_update_check:
+#     name: lastUpdateCheckLog
+#     filename: /config/logs/last_update_check.log

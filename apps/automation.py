@@ -10,31 +10,21 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-# Server got itself in trouble
-# 2024-07-21 20:06:40.697167 WARNING HASS: Error calling Home Assistant service default/media_player/volume_mute
-# 2024-07-21 20:06:40.699485 WARNING HASS: Code: 500, error: 500 Internal Server Error
-
 import inspect
-import time
-import json
-import re
 import math
+import time
 import traceback
-import requests  # pylint: disable=E0401
 from datetime import datetime, timedelta
+from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+import appdaemon.plugins.hass.hassapi as hass  # pylint: disable=E0401 disable=E0611
 
 # from typing import Dict
 # from pprint import pprint
 
-import yaml
-
-import arrow  # pylint: disable=E0401
-import appdaemon.plugins.hass.hassapi as hass  # pylint: disable=E0401 disable=E0611
-import appdaemon.adbase as ad  # pylint: disable=E0401,E0611
-from ics import Calendar  # pylint: disable=E0401
 
 class Automation(hass.Hass):
     """This is the documentation for Automation"""
+
     override = False
     kitchen_timer = None
     kitchen_long_timer = None
@@ -85,12 +75,20 @@ class Automation(hass.Hass):
     testing = False
     broadcast_entity_id = ['media_player.kitchen', 'media_player.bathroom', 'media_player.dining_room']
     other_entity_id = ['media_player.study', 'media_player.bedroom_2']
+    lib = None
 
 # -------------------------------------------------------------------------------------------------
 
     def initialize(self):
         """."""
+
         self.log('-'*72)
+
+        self.lib = AutomationLib(self)
+
+        self.register_service('automation/set_downstairs_motion_flag', self.set_downstairs_motion_flag)
+        self.register_service('automation/log_function_name', self._log_function_name)
+        self.register_service('automation/max_home', self._max_home)
 
         self.debug = True if self.get_state('input_boolean.default_debug_state') == 'on' else False
         self.verbose = True if self.get_state('input_boolean.default_verbose_state') == 'on' else False
@@ -170,27 +168,27 @@ class Automation(hass.Hass):
         self.listen_state(self.reset_test2, 'input_boolean.test_2', new='on')
         self.log('\treset* registered')
 
-        self.listen_state(self.set_utility_motion_test, 'input_boolean.test_utility_motion', new='on', action='set')
-        self.listen_state(self.set_utility_motion_test, 'input_boolean.test_utility_motion', new='off', action='cancel')
-        self.listen_state(self.set_bins_test, 'input_boolean.test_bins_announce', new='on', action='set')
-        self.listen_state(self.set_bins_test, 'input_boolean.test_bins_announce', new='off', action='cancel')
-        self.listen_state(self.set_frost_warning_test, 'input_boolean.test_frost_warning', new='on', action='set')
-        self.listen_state(self.set_frost_warning_test, 'input_boolean.test_frost_warning', new='off', action='cancel')
-        self.listen_state(self.set_notification_test, 'input_boolean.test_notification', new='on', action='set')
-        self.listen_state(self.set_notification_test, 'input_boolean.test_notification', new='off', action='cancel')
-        self.listen_state(self.set_announcement_test, 'input_boolean.test_announcement', new='on', action='set')
-        self.listen_state(self.set_announcement_test, 'input_boolean.test_announcement', new='off', action='cancel')
-        self.listen_state(self.set_max_home_test, 'input_boolean.test_max_home', new='on', action='set')
-        self.listen_state(self.set_max_home_test, 'input_boolean.test_max_home', new='off', action='cancel')
-        self.listen_state(self.set_front_door_ding_test, 'input_boolean.test_front_door_ding', new='on', action='set')
-        self.listen_state(self.set_front_door_ding_test, 'input_boolean.test_front_door_ding', new='off', action='cancel')
-        self.listen_state(self.set_front_door_light_on_test, 'input_boolean.test_front_door_light_on', new='on', action='set')
-        self.listen_state(self.set_front_door_light_on_test, 'input_boolean.test_front_door_light_on', new='off', action='cancel')
-        self.listen_state(self.set_test_test, 'input_boolean.test_test', new='on', action='set')
-        self.listen_state(self.set_test_test, 'input_boolean.test_test', new='off', action='cancel')
-        self.listen_state(self.set_tap_timestamp, 'switch.garden_tap', new='on', action='set')
-        self.listen_state(self.set_tap_timestamp, 'switch.garden_tap', new='off', action='cancel')
-        self.log('\tset* (for input_booleans) registered')
+        # self.listen_state(self.set_utility_motion_test, 'input_boolean.test_utility_motion', new='on', action='set')
+        # self.listen_state(self.set_utility_motion_test, 'input_boolean.test_utility_motion', new='off', action='cancel')
+        # self.listen_state(self.set_bins_test, 'input_boolean.test_bins_announce', new='on', action='set')
+        # self.listen_state(self.set_bins_test, 'input_boolean.test_bins_announce', new='off', action='cancel')
+        # self.listen_state(self.set_frost_warning_test, 'input_boolean.test_frost_warning', new='on', action='set')
+        # self.listen_state(self.set_frost_warning_test, 'input_boolean.test_frost_warning', new='off', action='cancel')
+        # self.listen_state(self.set_notification_test, 'input_boolean.test_notification', new='on', action='set')
+        # self.listen_state(self.set_notification_test, 'input_boolean.test_notification', new='off', action='cancel')
+        # self.listen_state(self.set_announcement_test, 'input_boolean.test_announcement', new='on', action='set')
+        # self.listen_state(self.set_announcement_test, 'input_boolean.test_announcement', new='off', action='cancel')
+        # self.listen_state(self.set_max_home_test, 'input_boolean.test_max_home', new='on', action='set')
+        # self.listen_state(self.set_max_home_test, 'input_boolean.test_max_home', new='off', action='cancel')
+        # self.listen_state(self.set_front_door_ding_test, 'input_boolean.test_front_door_ding', new='on', action='set')
+        # self.listen_state(self.set_front_door_ding_test, 'input_boolean.test_front_door_ding', new='off', action='cancel')
+        # self.listen_state(self.set_front_door_light_on_test, 'input_boolean.test_front_door_light_on', new='on', action='set')
+        # self.listen_state(self.set_front_door_light_on_test, 'input_boolean.test_front_door_light_on', new='off', action='cancel')
+        # self.listen_state(self.set_test_test, 'input_boolean.test_test', new='on', action='set')
+        # self.listen_state(self.set_test_test, 'input_boolean.test_test', new='off', action='cancel')
+        # self.listen_state(self.set_tap_timestamp, 'switch.garden_tap', new='on', action='set')
+        # self.listen_state(self.set_tap_timestamp, 'switch.garden_tap', new='off', action='cancel')
+        # self.log('\tset* (for input_booleans) registered')
 
         self.listen_state(self.fire_status_event, 'input_boolean.status', new='on')
         self.listen_state(self.set_debug_flag, 'input_boolean.debug')
@@ -205,18 +203,6 @@ class Automation(hass.Hass):
         self.run_daily(self.set_all_state, '00:00:10') # re-set - possibly dodgy as won't be confirmed before max retires
 
         self.run_daily(self.downstairs_off, '02:00:00')
-
-        # set for 07:00
-        # self.run_daily(self.sonos_configure1a, '06:59:55') # kitchen, bedroom, bedroom2
-        self.run_daily(self.sonos_configure2b, '06:59:55')
-        # set for 07:45
-        # bedroom, bedroom2, bathroom
-        self.run_daily(self.sonos_configure2b, '07:44:55')
-        # set for 09:00
-        self.run_daily(self.sonos_configure2a, '08:59:55')
-        # set for 10:00
-        self.run_daily(self.sonos_configure2a, '09:59:55')
-        self.log('\tsonos_configure* registered')
 
         self.run_daily(self.frost_warning, "sunset + 00:00:00")
         self.run_daily(self.frost_warning, "sunset + 01:00:00")
@@ -236,12 +222,6 @@ class Automation(hass.Hass):
 
         self.run_daily(self.front_door_battery, "19:29:00")
         self.log('\tfront_door_battery registered')
-
-        self.run_daily(self.bins_preannounce, '19:30:00')
-        self.run_daily(self.bins_announce1, '17:30:00')
-        self.run_daily(self.bins_announce2, '19:30:00')
-        self.run_daily(self.vouchers_announce, '17:29:00')
-        self.log('\t*announce* registered')
 
         self.run_daily(self.water_garden_daily, '19:30:00')  # , 'minutes': 10)
         self.log('\twater_garden_* registered')
@@ -274,7 +254,11 @@ class Automation(hass.Hass):
         # self.run_in_thread(self.backup, 0)
         self._set_console_log_level()
         # print(self.get_callback_entries())
-        self.announce(entity_id='media_player.study', message='Automation initialised')
+
+        # self.announce(entity_id='media_player.study', message=f'{self.name.capitalize()} initialised')
+        self.call_service('announcer/initialised', name=self.name.capitalize())
+
+        self.dummy()
 
 # -------------------------------------------------------------------------------------------------
 
@@ -326,7 +310,7 @@ class Automation(hass.Hass):
 
     def _set_console_log_level(self):
 
-        level = "DEBUG" if self.get_debug() else "INFO"
+        level = "DEBUG" if self.get_state('input_boolean.debug') == 'on' else "INFO"
 
         if self.log_level != level:
             self.log(f'\tchanging log level to {level}', level='INFO')
@@ -461,16 +445,6 @@ class Automation(hass.Hass):
 
 # ---------------------------------------------------------------------------------------------------------
 
-    def test_kwargs(self, **kwargs):
-        self.log_function_name()
-        self.log(kwargs['test'])
-        self.log(kwargs['alarm_type'])
-        self.log(kwargs['foo'])
-        self.log(kwargs['__thread_id'])
-        self.log_function_name(False)
-
-# ---------------------------------------------------------------------------------------------------------
-
     def reset(self, kwargs={}):
 
         # self.log_function_name()
@@ -490,25 +464,9 @@ class Automation(hass.Hass):
 
 # ---------------------------------------------------------------------------------------------------------
 
-    def log_function_name(self, start=True):
-
-        name = inspect.currentframe().f_back.f_code.co_name
-
-        if self.verbose or self.debug:
-            self.log(('\t>>> begin' if start else '\t<<< end') + f' {name}', level='INFO')
-
-# -------------------------------------------------------------------------------------------------
-
-    def delay(self, s):
-
-        if not self.is_mock_run():
-            time.sleep(s)
-
-# -------------------------------------------------------------------------------------------------
-
     def notification(self, message, log=False, title=''):
 
-        if log or self.get_debug():
+        if log or self.get_state('input_boolean.debug') == 'on':
             self.log(f'\tmessage="{message}" title="{title}"')
 
         # self.run_sequence(
@@ -540,135 +498,11 @@ class Automation(hass.Hass):
 
         self.call_service("announcer/broadcast", broadcast_entity_id=self.broadcast_entity_id, other_entity_id=self.other_entity_id, volume=volume, message=message, snapshot=False)
 
-        # broadcast = ['media_player.kitchen', 'media_player.bathroom', 'media_player.dining_room']
-        # other = ['media_player.study', 'media_player.bedroom_2']
-        # # other = ['media_player.living_room', 'media_player.study', 'media_player.bedroom_2']
-
-        # self.call_service('sonos/snapshot', entity_id='all')
-        # self.call_service('media_player/join', entity_id=broadcast[0], group_members=broadcast[1:])
-
-        # for e in broadcast:
-        #     self.call_service('media_player/volume_set', entity_id=e, volume_level=volume)
-
-        # for e in other:
-        #     self.call_service('media_player/volume_mute', entity_id=e, is_volume_muted=True)
-
-        # self.int_announce(entity_id=broadcast[0], delay=3, volume=volume, message=message, setvol=True)
-        # self.call_service('sonos/restore', entity_id='all')
-
-        # for e in broadcast + other:
-        #     self.call_service('media_player/volume_mute', entity_id=e, is_volume_muted=False)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_dusk(self):
-        elev = self.get_sun_elevation()
-        dusk = elev < -3
-        t = 'is' if dusk else 'is not'
-        self.log_debug(f'\t{t} dusk')
-        return dusk
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_predusk(self):
-        elev = self.get_sun_elevation()
-        predusk = elev < 1
-        t = 'is' if predusk else 'is not'
-        self.log_debug(f'\t{t} predusk')
-        return predusk
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_bank_holiday(self, dt=datetime.now()):
-        self.log_debug(f'\tdt={dt}')
-
-        url = 'https://www.gov.uk/bank-holidays.json'
-        today = f'{dt:%Y-%m-%d}'
-
-        is_bank_holiday = False
-
-        resp = requests.get(url=url)
-        # https://requests.readthedocs.io/en/master/user/quickstart/#json-response-content
-        data = resp.json()
-
-        events = data["england-and-wales"]["events"]
-
-        for event in events:
-            date_str = event["date"]
-            dt = datetime.strptime(date_str, '%Y-%m-%d')
-
-            if f'{dt.date():%Y-%m-%d}' == today:
-                is_bank_holiday = True
-
-        t = 'is not' if not is_bank_holiday else 'is'
-        self.log_debug(f'\t{t} bank holiday')
-        return is_bank_holiday
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_weekday(self):
-        dow = self.dow()
-        weekday = 1 <= dow <= 5
-        state = 'on' if weekday is True else 'off'
-        self.set_state('input_boolean.is_weekday', state=state)
-        return weekday
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_sunday(self):
-        return self.dow() == 7
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_after(self, hour):
-        dt = datetime.now()
-        return dt.hour >= hour
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_playing(self, entity_id=None):
-
-        if entity_id is None:
-            entity_id, volume = self.get_entity_id()
-
-        state = self.get_state(entity_id=entity_id, attribute="state")
-        return state == 'playing'
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_mock_run(self):
-        return self.get_state('input_boolean.mock_run') == 'on'
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_summer(self):
-        (isoy, isow, isod) = arrow.now().isocalendar()
-        return 17 <= isow <= 37  # end of april to mid-september
-
 # ---------------------------------------------------------------------------------------------------------
 
     def is_garage_door_closed(self):
         state = self.get_state(self.garage_entity_id)
         return state == 'closed'
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def dow(self):
-        return arrow.now().isoweekday()
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def no_rain(self):
-        result = True if self.rain() < 1.0 else False
-        self.log_debug('\tno rain')
-        return result
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def rain(self):
-        result = float(self.get_state(entity_id='sensor.icambr4_precipitation_today'))
-        self.log_debug(f'\tmmrain={result}')
-        return result
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -733,73 +567,6 @@ class Automation(hass.Hass):
 
 # ---------------------------------------------------------------------------------------------------------
 
-    def log_debug(self, message):
-
-        if self.debug:
-            self.log(f'\t{message}', level='DEBUG')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def log_verbose(self, message):
-
-        if self.verbose or self.debug:
-            self.log(f'\t{message}', level='INFO')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def get_debug(self):
-
-        self.debug = self.get_state('input_boolean.debug') == 'on'
-        return self.debug
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def get_verbose(self):
-
-        self.verbose = self.get_state('input_boolean.verbose') == 'on'
-        return self.verbose
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def get_testing(self):
-
-        self.testing = self.get_state('input_boolean.testing') == 'on'
-        return self.testing
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def get_alarm_debug(self):
-
-        return self.get_state("input_boolean.alarm_debug") == "on"
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def get_sun_elevation(self):
-
-        elev = self.get_state('sun.sun', attribute='elevation')
-        self.log(f'\telev={elev:2.2f}', level='DEBUG')
-        return elev
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def set_debug(self, torf):
-
-        old_state = self.get_state("input_boolean.debug")
-        new_state = 'on' if torf else 'off'
-        self.set_state("input_boolean.debug", state=new_state)
-
-        return old_state == 'on'
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def log_test(self, kwargs={}):
-
-        # INFO comes last to ensure we have a final successful log entry
-        for level in ['CRITICAL', 'ERROR', 'WARNING', 'DEBUG', 'NOTSET', 'INFO']:
-            self.log(f'\ttesting {level}', level=level)
-
-# ---------------------------------------------------------------------------------------------------------
-
     def max_travel_time_to_home(self, kwargs={}):
 
         minutes = int(self.get_state('sensor.google_travel_time'))
@@ -814,14 +581,12 @@ class Automation(hass.Hass):
         diff = (datetime.now() - self.travel_announce_ts).seconds
 
         announce = self.now_is_between('10:00:00', '00:30:00') and (10 <= minutes <= 15) and (diff >= 4 * 60) and direction in ('towards', 'unknown', None)
-        # announce = True if (self.get_testing() and minutes > 10) else announce
 
         message = f'Max is {minutes} minutes away'
 
         if announce or self.is_mock_run():
             if self.is_playing('media_player.study'):
                 self.desktop_notification(message)
-                # self.travel_announce_ts = datetime.now()
             else:
                 self.log(f'\tmessage={message} ts={self.travel_announce_ts.ctime()} ({self.travel_announce_ts.timestamp():6.3f})', level='DEBUG')
                 self.announce(entity_id='media_player.study', message=message)
@@ -849,7 +614,7 @@ class Automation(hass.Hass):
     def max_location_announce(self, entity_id, state, kwargs={}):
 
         announce = True
-        delay = 0 if self.is_mock_run() else 10
+        delay = 0 if self.get_state('input_boolean.mock_run') == 'on' else 10
         village = entity_id == 'proximity.village'
         direction = self.get_state("proximity.home", attribute="dir_of_travel")
         self.log(f'\tdirection={direction}', level='DEBUG')
@@ -980,13 +745,15 @@ class Automation(hass.Hass):
             seconds = 60*minutes
             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
             self.run_in(self.tap_off, seconds)
+            # self.announce(message='The garden tap is now on', entity_id=['media_player.kitchen','media_player.study'])
 
 # ---------------------------------------------------------------------------------------------------------
 
     def tap_off(self, kwargs={}):
 
         self.call_service('switch/turn_off', entity_id='switch.garden_tap')
-        self.announce(message='The garden tap is now off')
+        # self.announce(message='The garden tap is now off')
+        self.announce(message='The garden tap is now off', entity_id=['media_player.kitchen','media_player.study'])
         self.tap_ts = None
         self.set_state('input_boolean.water_garden_1', state='off')
         self.set_state('input_boolean.water_garden_15', state='off')
@@ -1005,7 +772,7 @@ class Automation(hass.Hass):
             diff1,diff2 = divmod(seconds, 60)
             self.log(f'\t\t{diff1} {diff2}')
             if diff1 > 0 and ((diff1 + 1) % 10) == 0:
-                self.announce(message=f'The garden tap has been on for {n} minutes')
+                self.announce(message=f'The garden tap has been on for {n} minutes', entity_id=['media_player.kitchen','media_player.study'])
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -1060,19 +827,6 @@ class Automation(hass.Hass):
                 self.log(f'\tstart garage_door_light timer for {seconds:d}s', level='DEBUG')
                 self.run_in(self.garage_door_lights_off, seconds)
         self.garage_door_announce(state=new)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def get_entity_id(self):
-
-        if self.get_testing():
-            entity_id = 'media_player.study'
-            volume = 0.2
-        else:
-            entity_id = 'media_player.kitchen'
-            volume = 0.5
-
-        return (entity_id, volume)
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -1186,234 +940,6 @@ class Automation(hass.Hass):
 
 # ---------------------------------------------------------------------------------------------------------
 
-    def bins_announce(self, announce_type, force=False):
-
-        # https://www.scambs.gov.uk/recycling-and-bins/find-your-household-bin-collection-day#id=100091416947
-        # baseurl = 'https://refusecalendarapi.azurewebsites.net/calendar/ical/'
-        baseurl = 'https://servicelayer3c.azure-api.net/wastecalendar/calendar/ical/'
-        url = baseurl+'100091416947'  # was '100091416948'
-        bins = []
-        dow = arrow.now().floor('day').shift(hours=6).shift(days=2)  # 6am day after tomorrow
-
-        if announce_type == 'preannounce':
-            dow = arrow.now().floor('day').shift(hours=6).shift(days=2)  # 6am day after tomorrow
-        else:
-            dow = arrow.now().floor('day').shift(hours=6).shift(days=1)  # 6am tomorrow
-
-        loop = True
-        pattern = r'^Rate limit is exceeded. Try again in (\d+) seconds.$'
-
-        while loop:
-            r = requests.get(url)
-            t = r.text
-            if t[0] == '{':
-                y = json.loads(t)
-                a = re.search(pattern, y['message'])
-                s = a.groups(1)[0]
-                self.delay(int(s))
-            else:
-                loop = False
-
-        c = Calendar(t)
-
-        for e in iter(c.timeline.overlapping(dow, dow)):
-            bins.append(e.name.split()[0].lower())
-
-        if force:
-            bins = ['orange']
-
-        if len(bins) > 0:
-            if len(bins) > 1:
-                bins.insert(1, 'and')
-                bins.append('bins')
-            else:
-                bins.append('bin')
-
-            if announce_type == 'preannounce':
-                phrase = ' '.join(['It', 'is', 'the', ' '.join(bins), 'this', 'week'])
-            elif announce_type == 'announce1':
-                phrase = ' '.join(['Can', 'you', 'put', 'the', ' '.join(bins), 'out', 'please'])
-            elif announce_type == 'announce2':
-                phrase = ' '.join(['Have', 'you', 'put', 'the', ' '.join(bins), 'out'])
-
-            self.announce(message=phrase)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def bins_preannounce(self, kwargs={}):
-
-        if self.get_testing():
-            self.bins_announce('preannounce', True)
-        else:
-            self.bins_announce('preannounce')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def bins_announce1(self, kwargs={}):
-
-        self.bins_announce('announce1')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def bins_announce2(self, kwargs={}):
-
-        self.bins_announce('announce2')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def vouchers_announce(self, kwargs={}):
-
-        dow = arrow.now().isoweekday()
-
-        with open('/homeassistant/data.yaml', 'r', encoding="utf-8") as stream:
-            try:
-                data = yaml.safe_load(stream)
-            except yaml.YAMLError as e:
-                print(e)
-
-        vouchers = data['vouchers']
-        force = vouchers['force']
-        value = vouchers['value']
-        expiry = vouchers['expiry']
-
-        mock_run = self.is_mock_run()
-
-        if mock_run:
-            value = 1
-            expiry = 'whenever'
-
-        if dow == 2 or force or mock_run:
-            if value > 0:
-                phrase = ' '.join([str(value), 'pounds', 'of', 'vouchers', 'expiring', 'end', 'of', expiry])
-                self.log(f'\tphrase={phrase}')
-                self.announce(message=phrase)
-            else:
-                self.log('\tno expiring vouchers', level='WARNING')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def sonos_unjoin1(self, kwargs={}):
-
-        if arrow.now().isoweekday() >= 6:
-            self.log('\tis weekend', level='DEBUG')
-        else:
-            speakers = ['media_player.bathroom', 'media_player.study', 'media_player.bedroom', 'media_player.bedroom_2']
-            self.call_service('media_player/unjoin', entity_id=speakers)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def sonos_unjoin2(self, kwargs={}):
-
-        speakers = ['media_player.bathroom', 'media_player.study', 'media_player.bedroom', 'media_player.bedroom_2']
-        self.call_service('media_player/unjoin', entity_id=speakers)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def sonos_unjoin_all(self, kwargs={}):
-
-        speakers = [
-            'media_player.kitchen', 'media_player.bathroom', 'media_player.bedroom', 'media_player.bedroom_2', 'media_player.study', 'media_player.dining_room'
-        ]
-        volume = {
-            'media_player.kitchen': 0.0,
-            'media_player.bathroom': 0.0,
-            'media_player.bedroom': 0.0,
-            'media_player.bedroom_2': 0.0,
-            'media_player.study': 0.0,
-            'media_player.dining_room': 0.0
-        }
-
-        self.sonos_configure(speakers, volume, True, 0, False, False)
-        self.downstairs_motion_flag = False
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def sonos_configure(self, speakers, volume, unjoin, delay, join, check_downstairs_motion):
-
-        if unjoin:
-            self.log(f"\tunjoin {speakers}", level='DEBUG')
-            self.call_service('media_player/unjoin', entity_id=speakers)
-
-        if join:
-            self.log(f"\tjoin {speakers}", level='DEBUG')
-            self.call_service('media_player/join', entity_id=speakers[0], group_members=speakers[1:])
-
-        # assume bank holiday and mute
-        for speaker in speakers:
-            self.call_service('media_player/volume_mute', entity_id=speaker, is_volume_muted=True)
-
-        if not self.is_mock_run():
-            self.delay(delay)
-
-        is_not_bank_holiday = not self.is_bank_holiday()
-        no_downstairs_motion = True
-        if check_downstairs_motion:
-            no_downstairs_motion = not self.downstairs_motion_flag
-        self.log_debug(f"\tis_not_bank_holiday={is_not_bank_holiday} no_downstairs_motion={no_downstairs_motion}")
-
-        if is_not_bank_holiday and no_downstairs_motion:
-            for speaker in speakers:
-                self.log_debug(f'\tsetting speaker volume to {volume[speaker]} for {speaker}')
-                self.call_service('media_player/volume_set', entity_id=speaker, volume_level=volume[speaker])
-                self.call_service('media_player/volume_mute', entity_id=speaker, is_volume_muted=False)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def sonos_configure1(self, kwargs={}):
-
-        speakers = ['media_player.kitchen', 'media_player.bedroom', 'media_player.bedroom_2']
-        volume = {'media_player.kitchen': 0.05, 'media_player.bedroom': 0.05, 'media_player.bedroom_2': 0.3}
-
-        sonos = self.get_state(entity_id='input_boolean.sonos')
-        state = self.get_state(entity_id='input_boolean.test_1')
-
-        if sonos == 'off':
-            self.sonos_configure(speakers, volume, True, 0, True, True)
-        else:
-            self.log(f'\t{state}', level='DEBUG')
-            if state == 'on':
-                self.sonos_configure(speakers, volume, True, 0, True, True)
-            else:
-                self.call_service('media_player/unjoin', entity_id=speakers)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def sonos_configure1a(self, kwargs={}):
-
-        speakers = [
-            'media_player.kitchen', 'media_player.bedroom', 'media_player.bedroom_2'
-        ]
-        volume = {
-            'media_player.kitchen': 0.05, 'media_player.bedroom': 0.05, 'media_player.bedroom_2': 0.3
-        }
-
-        self.sonos_configure(speakers, volume, True, 7, True, True)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def sonos_configure2a(self, kwargs={}):
-
-        speakers = [
-            'media_player.bedroom', 'media_player.bathroom', 'media_player.bedroom_2', ]
-        volume = {
-            'media_player.bedroom': 0.01, 'media_player.bathroom': 0.3, 'media_player.bedroom_2': 0.3
-        }
-
-        # don't bother to check downstairs_motion_flag but mute for bank holiday - checked in sonos_configure
-        self.sonos_configure(speakers, volume, True, 7, True, False)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def sonos_configure2b(self, kwargs={}):
-
-        speakers = ['media_player.bedroom']
-        volume = { 'media_player.bedroom': 0.01 }
-
-        # don't bother to check downstairs_motion_flag but mute for bank holiday - checked in sonos_configure
-        self.sonos_configure(speakers, volume, True, 7, True, False)
-
-# ---------------------------------------------------------------------------------------------------------
-
     def lights_off(self, event, data, kwargs={}):
 
         self.call_service('light/turn_off', entity_id=['light.hallway_1', 'light.hallway_2', 'light.front_door_1', 'light.garage_1', 'light.garage_2']) # not light.standard_lamp_1 !!
@@ -1467,7 +993,7 @@ class Automation(hass.Hass):
         if 'dow' in kwargs:
             dow = kwargs['dow']
         else:
-            dow = arrow.now().isoweekday()
+            dow = self.dow()
 
         turn_on = (not (dow == 3 or dow >= 6)) and self.sun_down()
 
@@ -1749,7 +1275,7 @@ class Automation(hass.Hass):
 
     def front_door_announce(self, kwargs={}):
 
-        message = 'Someone is at the front door' if not self.get_testing() else 'just testing'
+        message = 'Someone is at the front door' if not self.get_state('input_boolean.testing') == 'on' else 'just testing'
         self.broadcast(volume=0.5, message=message)
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1838,7 +1364,7 @@ class Automation(hass.Hass):
 
     def frost_warning(self, kwargs={}):
 
-        testing = self.get_testing()
+        testing = self.get_state('input_boolean.testing') == 'on'
         stemp = self.get_state(entity_id='sensor.openweathermap_forecast_temperature_low')
 
         if stemp is None or stemp == 'unavailable':
@@ -1859,8 +1385,8 @@ class Automation(hass.Hass):
 
     def update_available(self, entity, attribute, old, new, kwargs={}):
 
-        self.log_function_name()
-        self.log_function_name(False)
+        self.utils.log_function_name()
+        self.utils.log_function_name(False)
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -2072,3 +1598,163 @@ class Automation(hass.Hass):
             self.vacuum_announce_ts = datetime.now()
 
 # ---------------------------------------------------------------------------------
+
+    async def set_downstairs_motion_flag(self, namespace, domain, service, data):
+
+        self.downstairs_motion_flag = data['state']
+
+# ---------------------------------------------------------------------------------
+
+    async def _log_function_name(self, namespace, domain, service, data):
+
+        type = data.get('start', True)
+        self.log(f'\ttype={type}')
+        self.log_function_name() # FIXME
+
+# ---------------------------------------------------------------------------------
+
+    async def _max_home(self, namespace, domain, service, data):
+
+        self.max_home('', '', '', '', {})
+
+# ---------------------------------------------------------------------------------
+
+    def get_entity_id(self):
+
+        if self.hass.get_state('input_boolean.testing') == 'on':
+            entity_id = 'media_player.study'
+            volume = 0.2
+        else:
+            entity_id = 'media_player.kitchen'
+            volume = 0.5
+
+        return (entity_id, volume)
+
+# -------------------------------------------------------------------------------------------------
+
+    def no_rain(self):
+
+        result = True if self.rain() < 1.0 else False
+        if result:
+            self.log_debug('\tno rain')
+
+        return result
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def rain(self):
+
+        result = float(self.get_state(entity_id='sensor.icambr4_precipitation_today'))
+        self.log_debug(f'\tmmrain={result}')
+
+        return result
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def delay(self, s):
+
+        if not self.is_mock_run():
+            time.sleep(s)
+
+# -------------------------------------------------------------------------------------------------
+
+    def is_mock_run(self):
+
+        return self.get_state('input_boolean.mock_run') == 'on'
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def is_dusk(self):
+
+        elev = self.get_sun_elevation()
+        dusk = elev < -3
+        t = 'is' if dusk else 'is not'
+        self.log_debug(f'\t{t} dusk')
+
+        return dusk
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def is_predusk(self):
+
+        elev = self.get_sun_elevation()
+        predusk = elev < 1
+        t = 'is' if predusk else 'is not'
+        self.log_debug(f'\t{t} predusk')
+
+        return predusk
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def get_sun_elevation(self):
+
+        elev = self.get_state('sun.sun', attribute='elevation')
+        self.log(f'\telev={elev:2.2f}', level='DEBUG')
+
+        return elev
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def get_debug(self):
+
+        self.debug = self.hass.get_state('input_boolean.debug') == 'on'
+
+        return self.debug
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def get_verbose(self):
+
+        self.verbose = self.get_state('input_boolean.verbose') == 'on'
+
+        return self.verbose
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def get_testing(self):
+
+        self.testing = self.get_state('input_boolean.testing') == 'on'
+
+        return self.testing
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def get_alarm_debug(self):
+
+        return self.get_state("input_boolean.alarm_debug") == "on"
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def set_debug(self, torf):
+
+        old_state = self.get_state("input_boolean.debug")
+        new_state = 'on' if torf else 'off'
+        self.hass.set_state("input_boolean.debug", state=new_state)
+
+        return old_state == 'on'
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def log_debug(self, message):
+
+        self.log(f'\t{message}', level='DEBUG')
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def log_function_name(self, start=True):
+
+        name = inspect.currentframe().f_back.f_code.co_name
+        # print(inspect.currentframe())
+
+        if self.verbose or self.debug:
+            self.log(('\t>>> begin' if start else '\t<<< end') + f' {name}', level='INFO')
+
+# -------------------------------------------------------------------------------------------------
+
+    def log_test(self, kwargs={}):
+
+        # INFO comes last to ensure we have a final successful log entry
+        for level in ['CRITICAL', 'ERROR', 'WARNING', 'DEBUG', 'NOTSET', 'INFO']:
+            self.log(f'\ttesting {level}', level=level)
+
+# ---------------------------------------------------------------------------------------------------------

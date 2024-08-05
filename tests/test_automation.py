@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
-# https://nickwhyte.com/appdaemon-testing
-# https://github.com/nickw444/appdaemon-testing
-# https://pypi.org/project/pytest-freezer/
-# https://github.com/pytest-dev/pytest-freezer
 
 import datetime
-import arrow
 
 from appdaemon_testing.pytest import automation_fixture
 from appdaemon_testing.pytest import mock
@@ -26,13 +21,8 @@ STUDY_VOLUME = 0.3
     },
 )
 
-# @automation_fixture(
-#     AutomationPaulHome,
-#     args={
-#                 # hass_driver.set_state('device_tracker.paulw_iphone', {'new': 'home', 'old': 'not_home'}, attribute_name='state')
-#     },
-# )
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 def automation() -> Automation:
     pass
 

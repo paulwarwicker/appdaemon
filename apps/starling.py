@@ -10,39 +10,29 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-# Server got itself in trouble
-# 2024-07-21 20:06:40.697167 WARNING HASS: Error calling Home Assistant service default/media_player/volume_mute
-# 2024-07-21 20:06:40.699485 WARNING HASS: Code: 500, error: 500 Internal Server Error
-
-# import asyncio
-# import adbase
-
-import inspect
+from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from datetime import datetime, timedelta
-# import pytz
-# from requests import get, put
 import requests  # pylint: disable=E0401
-# import requests.adapters
-# from requests import requests, adapters
-import urllib3
+import urllib3  # pylint: disable=E0401 disable=E0611
 
 BASE_URL = "https://api.starlingbank.com/api/v2"
 BASE_URL_SANDBOX = "https://api-sandbox.starlingbank.com/api/v2"
 # SPENDING_CATEGORIES = ['BIKE', 'BILLS_AND_SERVICES', 'BUCKET_LIST', 'CAR', 'CASH', 'CELEBRATION', 'CHARITY', 'CHILDREN', 'CLOTHES', 'COFFEE', 'DEBT_REPAYMENT', 'DIY', 'DRINKS', 'EATING_OUT', 'EDUCATION', 'EMERGENCY', 'ENTERTAINMENT', 'ESSENTIAL_SPEND', 'EXPENSES', 'FAMILY', 'FITNESS', 'FUEL', 'GAMBLING', 'GAMING', 'GARDEN', 'GENERAL', 'GIFTS', 'GROCERIES', 'HOBBY', 'HOLIDAYS', 'HOME', 'IMPULSE_BUY', 'INCOME', 'INSURANCE', 'INVESTMENTS', 'LIFESTYLE', 'MAINTENANCE_AND_REPAIRS', 'MEDICAL', 'MORTGAGE', 'NON_ESSENTIAL_SPEND', 'PAYMENTS', 'PERSONAL_CARE', 'PERSONAL_TRANSFERS', 'PETS', 'PROJECTS', 'RELATIONSHIPS', 'RENT', 'SAVING', 'SHOPPING', 'SUBSCRIPTIONS', 'TAKEAWAY', 'TAXI', 'TRANSPORT', 'TREATS', 'WEDDING', 'WELLBEING', 'NONE', 'REVENUE', 'OTHER_INCOME', 'CLIENT_REFUNDS', 'INVENTORY', 'STAFF', 'TRAVEL', 'WORKPLACE', 'REPAIRS_AND_MAINTENANCE', 'ADMIN', 'MARKETING', 'BUSINESS_ENTERTAINMENT', 'INTEREST_PAYMENTS', 'BANK_CHARGES', 'OTHER', 'FOOD_AND_DRINK', 'EQUIPMENT', 'PROFESSIONAL_SERVICES', 'PHONE_AND_INTERNET', 'VEHICLES', 'DIRECTORS_WAGES', 'VAT', 'CORPORATION_TAX', 'SELF_ASSESSMENT_TAX', 'INVESTMENT_CAPITAL', 'TRANSFERS', 'LOAN_PRINCIPAL', 'PERSONAL', 'DIVIDENDS']
 
-
 import appdaemon.plugins.hass.hassapi as hass  # pylint: disable=E0401 disable=E0611
-import appdaemon.adbase as ad  # pylint: disable=E0401,E0611
 
 class Starling(hass.Hass):
     """This is the documentation for Automation"""
 
     starling = None
+    lib = None
 
 # -------------------------------------------------------------------------------------------------
 
     def initialize(self):
         """."""
+
+        self.lib = AutomationLib(self)
 
         self.log('-'*72)
 
@@ -59,7 +49,8 @@ class Starling(hass.Hass):
 
         self.fire_event('refresh_calendar_events')
         self.run_in_thread(self.add_starling_calendar_events, 0)
-        self.call_service("announcer/announce", entity_id='media_player.study', message='Starling initialised')
+
+        self.call_service('announcer/initialised', name=self.name.capitalize())
 
 # -------------------------------------------------------------------------------------------------
 
@@ -78,7 +69,7 @@ class Starling(hass.Hass):
 
     def add_starling_calendar_events(self, kwargs={}):
 
-        # self.log_function_name()
+        # self.lib.log_function_name()
         helper = self.starling
         account = helper.account()
         account_uid = account.account_uid
@@ -141,7 +132,7 @@ class Starling(hass.Hass):
             if add:
                 self.add_starling_so_calendar_event(so)
 
-        # self.log_function_name(False)
+        # self.lib.log_function_name(False)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -274,8 +265,8 @@ class Starling(hass.Hass):
 
     def _check_feed(self):
 
-        self.log_function_name()
-        self.log_function_name(False)
+        self.lib.log_function_name()
+        self.lib.log_function_name(False)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -317,29 +308,21 @@ class Starling(hass.Hass):
 
 # -------------------------------------------------------------------------------------------------
 
-    def log_function_name(self, start=True):
-
-        name = inspect.currentframe().f_back.f_code.co_name
-
-        self.log(('\t>>> begin' if start else '\t<<< end') + f' {name}', level='INFO')
-
-# -------------------------------------------------------------------------------------------------
-
     def delete_calendar_events(self, event, data, kwargs={}):
 
-        self.log_function_name()
+        self.lib.log_function_name()
         state = self.get_state('sensor.starling_events', attribute='scheduled_events')
         for el in state["calendar.starling"]["events"]:
             print(el)
-        self.log_function_name(False)
+        self.lib.log_function_name(False)
 
 # ---------------------------------------------------------------------------------------------------------
 
     def add_calendar_events(self, event, data, kwargs={}):
 
-        self.log_function_name()
+        self.lib.log_function_name()
         self.add_starling_calendar_events()
-        self.log_function_name(False)
+        self.lib.log_function_name(False)
 
 # ---------------------------------------------------------------------------------------------------------
 

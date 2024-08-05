@@ -10,7 +10,6 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-import inspect
 import threading
 import time
 
@@ -19,8 +18,8 @@ from queue import Queue
 import arrow  # pylint: disable=E0401
 
 import appdaemon.plugins.hass.hassapi as hass  # pylint: disable=E0401 disable=E0611 disable=W0212 disable=W0621
-import appdaemon.adbase as ad  # pylint: disable=E0401,E0611
-from utils import Utils as utils
+# import appdaemon.adbase as ad  # pylint: disable=E0401,E0611
+from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 
 class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
     """This is the documentation for Announcer"""
@@ -29,7 +28,8 @@ class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
     queue = None
     cache = True
     START = 8
-    END = 20
+    END = 21
+    lib = None
 
 
 # -------------------------------------------------------------------------------------------------
@@ -39,6 +39,7 @@ class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
 
         self.log('-'*72)
 
+        self.lib = AutomationLib(self) # .get_ad_api()
         self.queue = Queue(maxsize = 0)
 
         self.listen_event(self.status_event, 'status')
@@ -48,6 +49,13 @@ class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
         self.register_service('announcer/broadcast', self.broadcast)
         self.register_service('announcer/notification', self.notification)
         self.register_service('announcer/desktop_notification', self.desktop_notification)
+        self.register_service('announcer/initialised', self.initialised)
+
+        self.run_daily(self.bins_preannounce, '19:30:00')
+        self.run_daily(self.bins_announce1, '17:30:00')
+        self.run_daily(self.bins_announce2, '19:30:00')
+        self.run_daily(self.vouchers_announce, '17:29:00')
+        self.log('\t*announce* registered')
 
         # self._lock = threading.RLock()
 
@@ -57,12 +65,9 @@ class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
         t.daemon = True
         t.start()
 
-        # dow = utils.dow(self)
-        # print(f'dow={dow}')
-
         self.log('\tregistration end')
 
-        self._announce('media_player.study', 'Announcer initialised', False)
+        self._announce('media_player.study', f'{self.name.capitalize()} initialised', False)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -123,6 +128,13 @@ class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
 
 # ---------------------------------------------------------------------------------------------------------
 
+    async def initialised(self, namespace, domain, service, data):
+
+        name = data.get('name', 'unknown')
+        self._announce('media_player.study', f'{name} initialised', False)
+
+# ---------------------------------------------------------------------------------------------------------
+
     def _announceable(self):
 
         if self.get_state('input_boolean.force_announcement') == 'on':
@@ -131,7 +143,7 @@ class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
         if self.get_state('input_boolean.mute_announcement') == 'on':
             return False
 
-        dow = self._dow()
+        dow = self.lib.dow()
 
         announceable1 = self.now_is_between(f'{self.START:02d}:00:00', f'{self.END:02d}:30:00')
         announceable2 = (dow in (2,4) and self.now_is_between('09:27:00', '09:58:00')) or (dow in (1,5) and self.now_is_between('16:27:00', '16:58:00'))
@@ -163,7 +175,7 @@ class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
                 ]
             )
 
-            time.sleep(len(message) * 0.15)
+            time.sleep(len(message) * 0.25)
 
             self._desktop_notification(message)
 
@@ -221,33 +233,6 @@ class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
 
 # -------------------------------------------------------------------------------------------------
 
-    def _get_entity_id(self):
-
-        if self.get_state('input_boolean.testing') == 'on':
-            entity_id = 'media_player.study'
-            volume = 0.2
-        else:
-            entity_id = 'media_player.kitchen'
-            volume = 0.5
-
-        return (entity_id, volume)
-
-# -------------------------------------------------------------------------------------------------
-
-    def _log_function_name(self, start=True):
-
-        name = inspect.currentframe().f_back.f_code.co_name
-
-        self.log(('\t>>> begin' if start else '\t<<< end') + f' {name}', level='INFO')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def _dow(self):
-
-        return arrow.now().isoweekday()
-
-# ---------------------------------------------------------------------------------------------------------
-
     def _set_entity_id_volume(self, entity_id):
 
         if entity_id is not None:
@@ -256,7 +241,7 @@ class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
             elif self.now_is_between('21:30:00', '08:00:00'):
                 volume = 0.1
         else:
-            entity_id, volume = self._get_entity_id()
+            entity_id, volume = self.lib.get_entity_id()
 
         return entity_id, volume
 
@@ -297,15 +282,109 @@ class Announcer(hass.Hass): # pylint: disable=W0212 disable=W0621
 
 # ---------------------------------------------------------------------------------
 
-    # def hack1(self):
+    def bins_announce(self, announce_type, force=False):
 
-    #     return self.get_state('input_boolean.force_announcement') == 'on'
+        # https://www.scambs.gov.uk/recycling-and-bins/find-your-household-bin-collection-day#id=100091416947
+        # baseurl = 'https://refusecalendarapi.azurewebsites.net/calendar/ical/'
+        baseurl = 'https://servicelayer3c.azure-api.net/wastecalendar/calendar/ical/'
+        url = baseurl+'100091416947'  # was '100091416948'
+        bins = []
+        dow = arrow.now().floor('day').shift(hours=6).shift(days=2)  # 6am day after tomorrow
 
-    # def hack2(self):
+        if announce_type == 'preannounce':
+            dow = arrow.now().floor('day').shift(hours=6).shift(days=2)  # 6am day after tomorrow
+        else:
+            dow = arrow.now().floor('day').shift(hours=6).shift(days=1)  # 6am tomorrow
 
-    #     return self.get_state('input_datetime.early_alarm_time')
+        loop = True
+        pattern = r'^Rate limit is exceeded. Try again in (\d+) seconds.$'
 
-    # def hack3(self):
+        while loop:
+            r = requests.get(url)
+            t = r.text
+            if t[0] == '{':
+                y = json.loads(t)
+                a = re.search(pattern, y['message'])
+                s = a.groups(1)[0]
+                self.lib.delay(int(s))
+            else:
+                loop = False
 
-    #     return self.get_state('input_datetime.early_alarm_time', attribute='hour')
+        c = Calendar(t)
+
+        for e in iter(c.timeline.overlapping(dow, dow)):
+            bins.append(e.name.split()[0].lower())
+
+        if force:
+            bins = ['orange']
+
+        if len(bins) > 0:
+            if len(bins) > 1:
+                bins.insert(1, 'and')
+                bins.append('bins')
+            else:
+                bins.append('bin')
+
+            if announce_type == 'preannounce':
+                phrase = ' '.join(['It', 'is', 'the', ' '.join(bins), 'this', 'week'])
+            elif announce_type == 'announce1':
+                phrase = ' '.join(['Can', 'you', 'put', 'the', ' '.join(bins), 'out', 'please'])
+            elif announce_type == 'announce2':
+                phrase = ' '.join(['Have', 'you', 'put', 'the', ' '.join(bins), 'out'])
+
+            self.announce(message=phrase)
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def bins_preannounce(self, kwargs={}):
+
+        if self.get_testing():
+            self.bins_announce('preannounce', True)
+        else:
+            self.bins_announce('preannounce')
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def bins_announce1(self, kwargs={}):
+
+        self.bins_announce('announce1')
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def bins_announce2(self, kwargs={}):
+
+        self.bins_announce('announce2')
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def vouchers_announce(self, kwargs={}):
+
+        dow = arrow.now().isoweekday()
+
+        with open('/homeassistant/data.yaml', 'r', encoding="utf-8") as stream:
+            try:
+                data = yaml.safe_load(stream)
+            except yaml.YAMLError as e:
+                print(e)
+
+        vouchers = data['vouchers']
+        force = vouchers['force']
+        value = vouchers['value']
+        expiry = vouchers['expiry']
+
+        mock_run = self.lib.is_mock_run()
+
+        if mock_run:
+            value = 1
+            expiry = 'whenever'
+
+        if dow == 2 or force or mock_run:
+            if value > 0:
+                phrase = ' '.join([str(value), 'pounds', 'of', 'vouchers', 'expiring', 'end', 'of', expiry])
+                self.log(f'\tphrase={phrase}')
+                self._announce(message=phrase)
+            else:
+                self.log('\tno expiring vouchers', level='WARNING')
+
+# ---------------------------------------------------------------------------------------------------------
 

@@ -10,19 +10,11 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-# import asyncio
-# import adbase
-
-import inspect
 import random
 import time
 from datetime import datetime, timedelta
-import requests
-
-
-import arrow  # pylint: disable=E0401
+from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 import appdaemon.plugins.hass.hassapi as hass  # pylint: disable=E0401 disable=E0611
-import appdaemon.adbase as ad  # pylint: disable=E0401,E0611
 
 class Alarms(hass.Hass):
     """This is the documentation for Alarms"""
@@ -32,12 +24,16 @@ class Alarms(hass.Hass):
     normal_alarm_callback = None
     test_alarm_callback = None
     rota = None
+    lib = None
 
 # -------------------------------------------------------------------------------------------------
 
     def initialize(self):
         """."""
         self.log('-'*72)
+
+        # self.lib = AutomationLib(self.get_ad_api())
+        self.lib = AutomationLib(self)
 
         self.rota = self.generate_rota(datetime(2024, 5, 16).date(), 12)
 
@@ -53,12 +49,12 @@ class Alarms(hass.Hass):
         self.log('\t*_alarm registered')
 
         # set state
-        self.run_daily(self.set_alarm_state, '21:00:10') # pre-set - make sure before max retires (to bed)
+        self.run_daily(self.set_alarm_state, '20:30:10') # pre-set - make sure before max retires (to bed)
         self.run_daily(self.set_alarm_state, '00:00:10') # re-set - also can fire event set_alarm_state
 
         self.set_alarm_state()
 
-        self.call_service("announcer/announce", entity_id='media_player.study', message='Alarms initialised', snapshot=False)
+        # self.call_service('announcer/initialised', name=self.name.capitalize())
 
 # -------------------------------------------------------------------------------------------------
 
@@ -72,6 +68,8 @@ class Alarms(hass.Hass):
 
         self.set_early_alarm()
         self.set_normal_alarm()
+        self.show_alarm_time('early')
+        self.show_alarm_time('normal')
 
 # -------------------------------------------------------------------------------------------------
 
@@ -83,6 +81,10 @@ class Alarms(hass.Hass):
 # -------------------------------------------------------------------------------------------------
 
     def get_early_alarm_time(self):
+
+        night_deliver = [4, 58]
+        night_collect = [5, 25]
+        default = [8, 0]
 
         day = datetime.now().date()
 
@@ -102,39 +104,62 @@ class Alarms(hass.Hass):
         self.log(f'\t{day1} is {shift1} shift (day/shift1)')
 
         override = self.get_state('input_boolean.override') == 'on'
-        # early_alarm_time = self.get_state('input_datetime.early_alarm_time')
 
-        if override: # (early_alarm_time != "04:58:00" and early_alarm_time != "05:25:00") or override: # and not override:
+        if override:
             # must be set specifically, don't change
             hour = self.get_state('input_datetime.early_alarm_time', attribute='hour')
             minute = self.get_state('input_datetime.early_alarm_time', attribute='minute')
             alarm_time = f'{hour:02d}:{minute:02d}'
         else:
-            hour = 4
-            minute = 58
+            hour = night_deliver[0]
+            minute = night_deliver[1]
             if shift1 == 'Night' and shift0 == 'Night':
-                hour = 5
-                minute = 25
+                hour = night_collect[0]
+                minute = night_collect[1]
             alarm_time = f'{hour:02d}:{minute:02d}'
 
         if not override: # leave if we are overridden, assume set
             if shift0 == 'Off' and shift1 == 'Night':
                 # transition shift
                 state = 'off'
+                hour = default[0]
+                minute = default[1]
                 self.log('\tdisabling due to transition shift off->night', level='WARNING')
+            elif shift0 == 'Night' and shift1 == 'Off':
+                # transition shift
+                state = 'on'
+                hour = night_collect[0]
+                minute = night_collect[1]
+                self.log(f'\tenabling due to transition shift night->off', level='WARNING')
+            elif shift0 == 'Off' and shift1 == 'Off':
+                # transition shift
+                state = 'off'
+                hour = default[0]
+                minute = default[1]
+            elif shift1 == 'Night' and shift0 == 'Night':
+                state = 'on'
+                hour = night_collect[0]
+                minute = night_collect[1]
             else:
                 # just use tomorrows (or todays) shift
                 state = 'off' if shift1 == 'Off' else 'on'
+                # hour = default[0]
+                # minute = default[1]
+                # alarm_time = f'{hour:02d}:{minute:02d}'
+
+            alarm_time = f'{hour:02d}:{minute:02d}'
         else:
             self.log('\toverride is set', level='WARNING')
             state = 'on'
 
+        # print(f'get_early_alarm_time state={state} alarm_time={alarm_time} hour={hour} minute={minute}')
         return state, alarm_time, hour, minute
 
 # -------------------------------------------------------------------------------------------------
 
     def set_early_alarm_time(self, state, alarm_time, hour, minute):
 
+        # self.log(f'set_early_alarm_time state={state} alarm_time={alarm_time} hour={hour} minute={minute}', level="WARNING")
         self.set_state('input_datetime.early_alarm_time', state=alarm_time, hour=hour, minute=minute, second=0)
         self.set_state('input_boolean.early_alarm', state=state)
 
@@ -155,7 +180,7 @@ class Alarms(hass.Hass):
 
     def get_normal_alarm_time(self):
 
-        dow = self.dow()
+        dow = self.lib.dow()
 
         # (21-00 on tuesday or friday/saturday) or (00-03 on wednesday or saturday/sunday) -> set alarm later
         later = (self.now_is_between('21:00:00', '23:59:59') and ((dow == 2) or (5 <= dow <= 6))) or (self.now_is_between('00:00:00', '03:00:00') and ((dow == 3) or (6 <= dow <= 7)))
@@ -193,6 +218,21 @@ class Alarms(hass.Hass):
 
 # -------------------------------------------------------------------------------------------------
 
+    def show_alarm_time(self, alarm_type):
+
+        time_entity_id = f'input_datetime.{alarm_type}_alarm_time'
+        bool_entity_id = f'input_boolean.{alarm_type}_alarm'
+
+        state = self.get_state(time_entity_id, attribute="attributes")
+        d = datetime.now() + timedelta(days=1)
+        t = datetime(d.year, d.month, d.day, state['hour'], state['minute'], 0, 0) + timedelta(minutes=-5)
+        alarm_time = f"{t.hour:02d}:{t.minute:02d}"
+        state = self.get_state(bool_entity_id)
+        message = f'The {alarm_type} morning alarm is set to {alarm_time}' if state == 'on' else f'The {alarm_type} morning alarm is cancelled'
+        self.call_service("announcer/announce", entity_id='media_player.study', message=message, snapshot=False)
+
+# -------------------------------------------------------------------------------------------------
+
     def reset_alarms(self, entity='', attribute='', old='', new='', kwargs={}):
 
         self._cancel_timer(self.early_alarm_callback, 'early alarm')
@@ -209,105 +249,13 @@ class Alarms(hass.Hass):
         state, alarm_time, hour, minute = self.get_early_alarm_time()
         self.set_early_alarm_time(state, alarm_time, hour, minute)
 
-        self.set_alarm_state()
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def log_function_name(self, start=True):
-
-        name = inspect.currentframe().f_back.f_code.co_name
-
-        self.log(('\t>>> begin' if start else '\t<<< end') + f' {name}', level='INFO')
-
-# -------------------------------------------------------------------------------------------------
-
-    def is_bank_holiday(self, dt=datetime.now()):
-
-        # self.log(f'\tdt={dt}')
-
-        url = 'https://www.gov.uk/bank-holidays.json'
-        today = f'{dt:%Y-%m-%d}'
-
-        is_bank_holiday = False
-
-        resp = requests.get(url=url)
-        # https://requests.readthedocs.io/en/master/user/quickstart/#json-response-content
-        data = resp.json()
-
-        events = data["england-and-wales"]["events"]
-
-        for event in events:
-            date_str = event["date"]
-            dt = datetime.strptime(date_str, '%Y-%m-%d')
-
-            if f'{dt.date():%Y-%m-%d}' == today:
-                is_bank_holiday = True
-
-        # t = 'is not' if not is_bank_holiday else 'is'
-        # self.log(f'\t{t} bank holiday')
-
-        return is_bank_holiday
-
-# ---------------------------------------------------------------------------------------------------------
-
-    # def is_weekday(self):
-    #     dow = self.dow()
-    #     weekday = 1 <= dow <= 5
-    #     state = 'on' if weekday is True else 'off'
-    #     self.set_state('input_boolean.is_weekday', state=state)
-    #     return weekday
-
-# ---------------------------------------------------------------------------------------------------------
-
-    # def is_sunday(self):
-    #     return self.dow() == 7
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_after(self, hour):
-
-        dt = datetime.now()
-        return dt.hour >= hour
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_mock_run(self):
-
-        return self.get_state('input_boolean.mock_run') == 'on'
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def dow(self):
-
-        return arrow.now().isoweekday()
+        # self.set_alarm_state()
 
 # ---------------------------------------------------------------------------------------------------------
 
     def get_alarm_debug(self):
 
         return self.get_state("input_boolean.alarm_debug") == "on"
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def get_sun_elevation(self):
-
-        elev = self.get_state('sun.sun', attribute='elevation')
-        self.log(f'\telev={elev:2.2f}', level='DEBUG')
-
-        return elev
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def get_entity_id(self):
-
-        if self.get_state('input_boolean.testing') == 'on':
-            entity_id = 'media_player.study'
-            volume = 0.2
-        else:
-            entity_id = 'media_player.kitchen'
-            volume = 0.5
-
-        return (entity_id, volume)
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -342,12 +290,8 @@ class Alarms(hass.Hass):
         alarm = None
         action = kwargs['action']
         alarm_type = kwargs['alarm_type']
-        entity_id = f'input_datetime.{alarm_type}_alarm_time'
-
-        if alarm_type == 'test':
-            enabled = True
-        else:
-            enabled = self.get_state(f'input_boolean.{alarm_type}_alarm') == 'on'
+        bool_entity_id = f'input_boolean.{alarm_type}_alarm'
+        time_entity_id = f'input_datetime.{alarm_type}_alarm_time'
 
         self.log(f"\t{alarm_type} alarm enabled", level='DEBUG')
         self.log(f"\taction={action}", level='DEBUG')
@@ -355,13 +299,13 @@ class Alarms(hass.Hass):
         debug = self.get_alarm_debug()
 
         if action == 'set':
-            state = self.get_state(entity_id, attribute="attributes")
+            state = self.get_state(time_entity_id, attribute="attributes")
             if debug:
                 now = datetime.now() + timedelta(minutes=1)
                 self.log(f"\t{now}", level='DEBUG')
                 alarm_time = f"{now.hour:02d}:{now.minute:02d}"
-                self.set_state(entity_id, state=f'{alarm_time}:00', hour=now.hour, minute=now.minute, second=0)
-                state = self.get_state(entity_id, attribute="attributes")
+                self.set_state(time_entity_id, state=f'{alarm_time}:00', hour=now.hour, minute=now.minute, second=0)
+                state = self.get_state(time_entity_id, attribute="attributes")
             else:
                 d = datetime.now() + timedelta(days=1)
                 t = datetime(d.year, d.month, d.day, state['hour'], state['minute'], 0, 0) + timedelta(minutes=-5)
@@ -370,7 +314,9 @@ class Alarms(hass.Hass):
             alarm = self.run_daily(self.alarm, f'{alarm_time}:00', **kwargs)
             # self.log(f'\t{alarm_type} alarm set for {alarm_time}:00 using {entity_id}')
         elif action == 'cancel':
-            alarm_time = '' # just set it to empty because we referece it in message below
+            self.set_state(bool_entity_id, state='off')
+            alarm_time = 'unset' # can trace in message below
+
             if alarm_type == 'early':
                 alarm = self.early_alarm_callback
             elif alarm_type == 'normal':
@@ -381,12 +327,11 @@ class Alarms(hass.Hass):
         else:
             self.log(f"\tUnexpected alarm action {action}", level='WARNING')
 
-
-        state = self.get_state(f'input_boolean.{alarm_type}_alarm')
-        message = f'The {alarm_type} morning alarm is set to {alarm_time}' if state == 'on' else f'The {alarm_type} morning alarm is cancelled'
-        # if self.get_state('input_boolean.verbose') == 'on':
-        #     self.log(f'\t{message}', level='WARNING')
-        self.call_service("announcer/announce", entity_id='media_player.study', message=message, snapshot=False)
+        # state = self.get_state(bool_entity_id)
+        # message = f'The {alarm_type} morning alarm is set to {alarm_time}' if state == 'on' else f'The {alarm_type} morning alarm is cancelled'
+        # # if self.get_state('input_boolean.verbose') == 'on':
+        # #     self.log(f'\t{message}', level='WARNING')
+        # self.call_service("announcer/announce", entity_id='media_player.study', message=message, snapshot=False)
 
         return alarm
 
@@ -489,21 +434,23 @@ class Alarms(hass.Hass):
     def play_normal_alarm(self, dow=None):
 
         if dow is None:
-            dow = arrow.now().isoweekday()
-        bank_holiday = self.is_bank_holiday()
+            dow = self.lib.dow()
+
+        bank_holiday = self.lib.is_bank_holiday()
 
         return self.get_state(entity_id='input_boolean.normal_alarm') == 'on' and (not bank_holiday) and dow <= 5 and dow != 3
 
 # ---------------------------------------------------------------------------------------------------------
 
     def lumie_alarm(self, kwargs={}):
-        self.log_function_name()
+
+        # self.lib.log_function_name()
         test = 'test' in kwargs
         seconds = 5*60 if 'test' not in kwargs else 10
         elev = self.get_state('sun.sun', 'elevation')
         enabled = self.get_state('input_boolean.lumie') == 'on' and elev < 5
-        dow = arrow.now().isoweekday()
-        holiday = self.is_bank_holiday()
+        dow = self.lib.dow()
+        holiday = self.lib.is_bank_holiday()
 
         if not holiday and enabled and dow <= 5 and dow != 3 or test:
             # TODO: record handles?
@@ -514,7 +461,7 @@ class Alarms(hass.Hass):
         else:
             self.log(f'\tskipping lumie alarm holiday={holiday} enabled={enabled} dow={dow}', level='INFO')
 
-        self.log_function_name(False)
+        # self.lib.log_function_name(False)
 
 # ---------------------------------------------------------------------------------------------------------
 

@@ -1,37 +1,50 @@
-utils:
-  module: utils
-  class: Utils
+automationlib:
+  module: automationlib
+  global: true
+
+# test:
+#   module: test
+#   class: Test
+#   dependencies:
+#     - automationlib
 
 announcer:
   module: announcer
   class: Announcer
   dependencies:
-    - utils
+    - automationlib
 
 automation:
   module: automation
   class: Automation
   dependencies:
-    - utils
+    - automationlib
     - announcer
 
 alarms:
   module: alarms
   class: Alarms
   dependencies:
-    - utils
+    - automationlib
     - announcer
 
 starling:
   module: starling
   class: Starling
   dependencies:
-    - utils
+    - automationlib
     - announcer
 
-somos:
+sonos:
   module: sonos
   class: Sonos
   dependencies:
-    - utils
+    - automationlib
+    - announcer
+
+location:
+  module: location
+  class: Location
+  dependencies:
+    - automationlib
     - announcer
