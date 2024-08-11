@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+
+import appdaemon.plugins.hass.hassapi as hass  # pylint: disable=E0401 disable=E0611
+from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+
+class Test(hass.Hass):
+    """This is the documentation for Test"""
+
+    lib = None
+
+# -------------------------------------------------------------------------------------------------
+
+    def initialize(self):
+        """."""
+
+        self.lib = AutomationLib(self)
+
+        self.log('-'*72)
+        # self.log(f'\t{self.name} initialised (dow={self.lib.dow()})')
+        # self.call_service('announcer/initialised', name=self.name)
+        self.call_service('announcer/initialised', name=self.name.capitalize())
+

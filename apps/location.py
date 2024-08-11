@@ -95,7 +95,7 @@ class Location(hass.Hass):
 
         self.listen_state(self.max_location_detect, self.max_entity_id, old='Papworth', name='Papworth', location='proximity.papworth')
 
-        self.call_service('announcer/initialised', name=self.name.capitalize())
+        self.call_service('announcer/initialised', name=self.name.capitalize(), announce=False)
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -111,6 +111,7 @@ class Location(hass.Hass):
         self.log(f'\tentity_id={entity_id} state={state} name={name}')
 
         if village:
+            message = "Max is in the village"
             if direction != 'towards':
                 announce = False
         else:
@@ -120,7 +121,7 @@ class Location(hass.Hass):
                 message = f'Max has left {name}'
 
         if announce:
-            self.announce(entity_id='media_player.study', message=message)
+            self.call_service('announcer/announce', entity_id='media_player.study', message=message)
 
         if village:
             self.call_service('automation/max_home')

@@ -1,0 +1,10 @@
+# ---------------------------------------------------------------------------------------------------------
+
+    def test_kwargs(self, **kwargs):
+        self.log_function_name()
+        self.log(kwargs['test'])
+        self.log(kwargs['alarm_type'])
+        self.log(kwargs['foo'])
+        self.log(kwargs['__thread_id'])
+        self.log_function_name(False)
+

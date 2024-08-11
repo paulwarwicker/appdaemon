@@ -56,7 +56,7 @@
     def get_debug(self):
     def get_verbose(self):
     def get_testing(self):
-    def get_alarm_debug(self):
+    def get_alarm_testing(self):
     def get_sun_elevation(self):
     def set_debug(self, torf):
     def log_test(self, kwargs={}):

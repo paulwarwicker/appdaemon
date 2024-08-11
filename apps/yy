@@ -1,0 +1,66 @@
+
+C:\Windows\System32>powershell -NoProfile -ExecutionPolicy Bypass -File f:\easeus.ps1 -post
+--------------------------------------------------------------------------------
+Pre=False
+Post=True
+SourceDirectory=
+TargetDirectory=
+RobocopyArgs=
+Logfile=
+TidyBackups False
+ClearBakups False
+BackupBackups False
+NDays=0
+DayOfWeek 0
+--------------------------------------------------------------------------------
+Pre=False
+Post=False
+SourceDirectory=F:\easeus\Full backup (local)
+TargetDirectory=E:\CYPHER\Full backup (local)
+RobocopyArgs=/FFT /S /DCOPY:DA /COPY:DAT /ZB /J /R:1000000 /W:30
+Logfile=f:\local-backup-post.log
+TidyBackups True
+ClearBakups False
+BackupBackups True
+NDays=28
+DayOfWeek 0
+VERBOSE: Performing the operation "Move File" on target "Item: F:\local-backup-post.log Destination:
+F:\local-backup-post.log.old".
+You cannot call a method on a null-valued expression.
+At F:\easeus.ps1:80 char:5
++     $threshold = $lastFull.LastWriteTime.AddHours(-1)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+
+F:\easeus\Full backup (local) E:\CYPHER\Full backup (local) /FFT /S /DCOPY:DA /COPY:DAT /ZB /J /R:1000000 /W:30
+
+ Log File : f:\local-backup-post.log
+
+
+2024-07-30 07:44:50.279032 DEBUG automation: call_service: homeassistant/update_entity, {'entity_id': 'weather.openweathermap'}
+2024-07-30 07:44:55.011128 DEBUG automation:    unjoin ['media_player.bedroom']
+2024-07-30 07:44:55.012111 DEBUG automation: call_service: media_player/unjoin, {'entity_id': ['media_player.bedroom']}
+2024-07-30 07:44:55.017601 DEBUG automation:    join ['media_player.bedroom']
+2024-07-30 07:44:55.019534 DEBUG automation: call_service: media_player/join, {'entity_id': 'media_player.bedroom', 'group_members': []}
+2024-07-30 07:44:55.023777 DEBUG automation: call_service: media_player/volume_mute, {'entity_id': 'media_player.bedroom', 'is_volume_muted': True}
+2024-07-30 07:44:55.028249 DEBUG automation: get state: input_boolean.mock_run, {} from automation
+2024-07-30 07:45:00.043279 INFO alarms:         alarm_type=normal debug=False play=True
+2024-07-30 07:45:00.045846 INFO alarms:         media_content_id=aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1
+2024-07-30 07:45:02.036175 INFO automation: Previous message repeated 1 times
+2024-07-30 07:45:02.036952 DEBUG automation:            dt=2024-07-29 21:14:46.603678
+2024-07-30 07:45:02.199860 DEBUG automation:            is not bank holiday
+2024-07-30 07:45:02.202714 DEBUG automation:            is_not_bank_holiday=True no_downstairs_motion=True
+2024-07-30 07:45:02.205457 DEBUG automation:            setting speaker volume to 0.01 for media_player.bedroom
+2024-07-30 07:45:02.207220 DEBUG automation: call_service: media_player/volume_set, {'entity_id': 'media_player.bedroom', 'volume_level': 0.01}
+2024-07-30 07:45:02.210617 DEBUG automation: call_service: media_player/volume_mute, {'entity_id': 'media_player.bedroom', 'is_volume_muted': False}
+2024-07-30 07:45:02.229486 DEBUG automation: get state: sensor.google_travel_time, {} from automation
+2024-07-30 07:45:02.231013 DEBUG automation: get state: sensor.max_dir_of_travel, {} from automation
+2024-07-30 07:45:02.232703 DEBUG automation: get state: sensor.maxine_iphone_activity, {} from automation
+2024-07-30 07:45:02.235148 DEBUG automation: set state: sensor.max_driving_status, {'state': 'Not Driving'} from automation
+2024-07-30 07:45:02.242444 DEBUG automation: get state: input_boolean.mock_run, {} from automation
+2024-07-30 07:45:02.249769 DEBUG automation: get state: switch.garden_tap, {} from automation
+2024-07-30 07:45:02.258401 DEBUG automation: get state: cover.remootio_device_host_192_168_1_13_s_n_30c92235df30xupwfafu_none, {} from automation
+2024-07-30 07:45:02.270539 DEBUG automation: get state: binary_sensor.tmbkr7nu5p5079987_doors_locked, {} from automation
+2024-07-30 07:46:00.253432 DEBUG automation: get state: sensor.google_travel_time, {} from automation
+2024-07-30 07:46:00.255637 DEBUG automation: get state: sensor.max_dir_of_travel, {} from automation

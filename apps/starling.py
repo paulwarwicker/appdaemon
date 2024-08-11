@@ -50,7 +50,7 @@ class Starling(hass.Hass):
         self.fire_event('refresh_calendar_events')
         self.run_in_thread(self.add_starling_calendar_events, 0)
 
-        self.call_service('announcer/initialised', name=self.name.capitalize())
+        self.call_service('announcer/initialised', name=self.name.capitalize(), announce=False)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -68,71 +68,72 @@ class Starling(hass.Hass):
 # -------------------------------------------------------------------------------------------------
 
     def add_starling_calendar_events(self, kwargs={}):
+        pass
 
-        # self.lib.log_function_name()
-        helper = self.starling
-        account = helper.account()
-        account_uid = account.account_uid
-        default_category_uid = account.default_category_uid
+        # # self.lib.log_function_name()
+        # helper = self.starling
+        # account = helper.account()
+        # account_uid = account.account_uid
+        # default_category_uid = account.default_category_uid
 
-        state = self.get_state('sensor.starling_events', attribute='scheduled_events')
-        # self.log(state)
+        # state = self.get_state('sensor.starling_events', attribute='scheduled_events')
+        # # self.log(state)
 
-        data = helper.get_request("/direct-debit/mandates")
+        # data = helper.get_request("/direct-debit/mandates")
 
-        for el in data["mandates"]:
-            add = True
-            dd = DirectDebit(el)
-            next_date = dd.next_date
-            last_date = dd.last_date
-            summary = f'{dd.originator_name} - {dd.reference}'
+        # for el in data["mandates"]:
+        #     add = True
+        #     dd = DirectDebit(el)
+        #     next_date = dd.next_date
+        #     last_date = dd.last_date
+        #     summary = f'{dd.originator_name} - {dd.reference}'
 
-            if (dd.cancelled is not None) or (next_date is None and last_date is None):
-                continue
+        #     if (dd.cancelled is not None) or (next_date is None and last_date is None):
+        #         continue
 
-            for el in state["calendar.starling"]["events"]:
-                match=next_date == el["start"] and summary == el["summary"]
-                # self.log(f'dd {match} next_date={next_date} last_date={last_date} summary={summary}  -  start={el["start"]} summary={el["summary"]}', level='WARNING')
-                if match:
-                    add = False
-                    self.log(f'\t\tSkip previously entered DD next_date={next_date} summary={summary}', level='WARNING')
-                    break
+        #     for el in state["calendar.starling"]["events"]:
+        #         match=next_date == el["start"] and summary == el["summary"]
+        #         # self.log(f'dd {match} next_date={next_date} last_date={last_date} summary={summary}  -  start={el["start"]} summary={el["summary"]}', level='WARNING')
+        #         if match:
+        #             add = False
+        #             self.log(f'\t\tSkip previously entered DD next_date={next_date} summary={summary}', level='WARNING')
+        #             break
 
-                match = last_date == el["start"] and summary == el["summary"]
-                # self.log(f'dd {match} next_date={next_date} last_date={last_date} summary={summary}  -  start={el["start"]} summary={el["summary"]}', level='WARNING')
-                if match:
-                    add = False
-                    self.log(f'\t\tSkip previously entered DD last_date={last_date} summary={summary}', level='WARNING')
-                    break
+        #         match = last_date == el["start"] and summary == el["summary"]
+        #         # self.log(f'dd {match} next_date={next_date} last_date={last_date} summary={summary}  -  start={el["start"]} summary={el["summary"]}', level='WARNING')
+        #         if match:
+        #             add = False
+        #             self.log(f'\t\tSkip previously entered DD last_date={last_date} summary={summary}', level='WARNING')
+        #             break
 
-            if add:
-                self.add_starling_dd_calendar_event(dd)
+        #     if add:
+        #         self.add_starling_dd_calendar_event(dd)
 
 
-        data = helper.get_request(f"/payments/local/account/{account_uid}/category/{default_category_uid}/standing-orders")
+        # data = helper.get_request(f"/payments/local/account/{account_uid}/category/{default_category_uid}/standing-orders")
 
-        for el in data["standingOrders"]:
-            add = True
-            so = StandingOrder(helper, el)
+        # for el in data["standingOrders"]:
+        #     add = True
+        #     so = StandingOrder(helper, el)
 
-            next_date = so.next_date
-            summary = f'{so.payee_name} - {so.reference}'
+        #     next_date = so.next_date
+        #     summary = f'{so.payee_name} - {so.reference}'
 
-            if (so.cancelled_at is not None) or (next_date is None):
-                continue
+        #     if (so.cancelled_at is not None) or (next_date is None):
+        #         continue
 
-            for el in state["calendar.starling"]["events"]:
-                match=next_date == el["start"] and summary == el["summary"]
-                # print(f'so {match} next_date={next_date} summary={summary}  -  start={el["start"]} summary={el["summary"]}')
-                if match:
-                    add = False
-                    self.log(f'\t\tSkip previously entered SO next_date={next_date} summary={summary}', level='WARNING')
-                    break
+        #     for el in state["calendar.starling"]["events"]:
+        #         match=next_date == el["start"] and summary == el["summary"]
+        #         # print(f'so {match} next_date={next_date} summary={summary}  -  start={el["start"]} summary={el["summary"]}')
+        #         if match:
+        #             add = False
+        #             self.log(f'\t\tSkip previously entered SO next_date={next_date} summary={summary}', level='WARNING')
+        #             break
 
-            if add:
-                self.add_starling_so_calendar_event(so)
+        #     if add:
+        #         self.add_starling_so_calendar_event(so)
 
-        # self.lib.log_function_name(False)
+        # # self.lib.log_function_name(False)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -271,40 +272,42 @@ class Starling(hass.Hass):
 # -------------------------------------------------------------------------------------------------
 
     def add_starling_dd_calendar_event(self, dd):
+        pass
 
-        amount = dd.amount
-        currency = dd.currency
-        reference = dd.reference
-        last_date = dd.last_date
-        originator = dd.originator_name
-        summary = f'{originator} - {reference}'
-        description=f"{currency} {amount:.2f} payable to {originator} : Reference {reference} : Last payment was on {last_date}"
+        # amount = dd.amount
+        # currency = dd.currency
+        # reference = dd.reference
+        # last_date = dd.last_date
+        # originator = dd.originator_name
+        # summary = f'{originator} - {reference}'
+        # description=f"{currency} {amount:.2f} payable to {originator} : Reference {reference} : Last payment was on {last_date}"
 
-        if dd.next_date is not None:
-            start_date = datetime.strptime(dd.next_date, '%Y-%m-%d').date()
-            end_date = start_date + timedelta(days=1)
-            self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
-            self.log('future direct debit added', level='WARNING')
+        # if dd.next_date is not None:
+        #     start_date = datetime.strptime(dd.next_date, '%Y-%m-%d').date()
+        #     end_date = start_date + timedelta(days=1)
+        #     self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
+        #     self.log('future direct debit added', level='WARNING')
 
-        if dd.last_date is not None:
-            start_date = datetime.strptime(dd.last_date, '%Y-%m-%d').date()
-            end_date = start_date + timedelta(days=1)
-            self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
-            self.log('past direct debit added', level='WARNING')
+        # if dd.last_date is not None:
+        #     start_date = datetime.strptime(dd.last_date, '%Y-%m-%d').date()
+        #     end_date = start_date + timedelta(days=1)
+        #     self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
+        #     self.log('past direct debit added', level='WARNING')
 
 # -------------------------------------------------------------------------------------------------
 
     def add_starling_so_calendar_event(self, so):
+        pass
 
-        start_date = datetime.strptime(so.start_date, '%Y-%m-%d').date()
-        end_date = start_date + timedelta(days=1)
-        summary = f'{so.payee_name} - {so.reference}'
-        frequency = so.frequency.lower().title()
-        category = so.spending_category.lower().title()
-        description=f"{so.currency} {so.amount} payable to {so.payee_name} : Frequency {frequency} x{so.interval} : Category {category}"
-        # self.log(f'start_date={start_date} end_date={end_date} summary={summary} description={description}')
-        self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
-        self.log('future standing order added', level='WARNING')
+        # start_date = datetime.strptime(so.start_date, '%Y-%m-%d').date()
+        # end_date = start_date + timedelta(days=1)
+        # summary = f'{so.payee_name} - {so.reference}'
+        # frequency = so.frequency.lower().title()
+        # category = so.spending_category.lower().title()
+        # description=f"{so.currency} {so.amount} payable to {so.payee_name} : Frequency {frequency} x{so.interval} : Category {category}"
+        # # self.log(f'start_date={start_date} end_date={end_date} summary={summary} description={description}')
+        # self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
+        # self.log('future standing order added', level='WARNING')
 
 # -------------------------------------------------------------------------------------------------
 

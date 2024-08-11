@@ -3,8 +3,8 @@
 # docker logs --tail 20 appdaemon
 
 appdaemon:
-  latitude: 52.252640449615
-  longitude: 0.026033911856051
+  latitude: !secret latitude
+  longitude: !secret longitudex
   elevation: 20
   total_threads: 10
   time_zone: Europe/London

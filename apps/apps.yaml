@@ -48,3 +48,9 @@ location:
   dependencies:
     - automationlib
     - announcer
+
+weather:
+  module: weather
+  class: Weather
+  log_level: DEBUG
+  # location: 78704 US
