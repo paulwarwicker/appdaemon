@@ -4,7 +4,7 @@
 
 appdaemon:
   latitude: !secret latitude
-  longitude: !secret longitudex
+  longitude: !secret longitude
   elevation: 20
   total_threads: 10
   time_zone: Europe/London
