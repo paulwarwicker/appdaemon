@@ -31,7 +31,7 @@ class Location(hass.Hass):
         'proximity.newmarket': 'Newmarket junction',
         'proximity.bar_hill': 'Bar Hill junction',
         'proximity.village': 'Max is in the village',
-        'proximity.sainsbury_eddington': 'Sainsburys Eddington',
+        'proximity.sainsburys_eddington': 'Sainsburys Eddington',
         'proximity.waitrose_trumpington': 'Waitrose Trumpington',
         'proximity.morrisons_stives': 'Morrisons St Ives',
         'proximity.gay_kellaway_racing': 'Gay Kellaway Racing',
@@ -49,6 +49,8 @@ class Location(hass.Hass):
         self.lib = AutomationLib(self)
 
         self.listen_event(self.status_event, 'status')
+        self.listen_event(self.set_log_level_event, 'set_log_level')
+        self.listen_event(self.max_village_event, 'max_village')
 
         self.listen_state(self.max_location_detect, self.max_entity_id, new='Village', name='Village', location='proximity.village')
 
@@ -107,7 +109,7 @@ class Location(hass.Hass):
         direction = self.get_state("proximity.home", attribute="dir_of_travel")
         self.log(f'\tdirection={direction}', level='DEBUG')
 
-        name = self.locations[entity_id]
+        name = self.locations.get(entity_id, 'Unknown location')
         self.log(f'\tentity_id={entity_id} state={state} name={name}')
 
         if village:
@@ -145,5 +147,19 @@ class Location(hass.Hass):
     def status_event(self, event, data, kwargs):
 
         pass
+
+# -------------------------------------------------------------------------------------------------
+
+    def set_log_level_event(self, event, data, kwargs) -> None:
+
+        level = data['level']
+        self.set_log_level(level)
+
+# ---------------------------------------------------------------------------------
+
+    def max_village_event(self, event, data, kwargs) -> None:
+
+        print('hre')
+        self.max_location_announce('proximity.village', 'arrive', {})
 
 # ---------------------------------------------------------------------------------

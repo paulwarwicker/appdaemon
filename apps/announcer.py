@@ -45,6 +45,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         self.listen_event(self.test_message_event, 'test_message')
         self.listen_event(self.vouchers_announce_event, 'vouchers_announce')
         self.listen_event(self.bins_announce_event, 'bins_announce')
+        self.listen_event(self.set_log_level_event, 'set_log_level')
 
         self.register_service('announcer/announce', self.announce)
         self.register_service('announcer/broadcast', self.broadcast)
@@ -91,6 +92,13 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
 # -------------------------------------------------------------------------------------------------
 
+    def set_log_level_event(self, event, data, kwargs={}) -> None:
+
+        level = data['level']
+        self.set_log_level(level)
+
+# -------------------------------------------------------------------------------------------------
+
     def announce_worker(self, *args, **kwargs) -> None:
 
         self.log('\tannounce_worker listening')
@@ -105,8 +113,8 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
     async def announce(self, namespace, domain, service, kwargs) -> None:
 
-        entity_id = kwargs['entity_id']
-        message = kwargs['message']
+        entity_id = kwargs.get('entity_id', None)
+        message = kwargs.get('message', 'Unspecified message')
         snapshot = kwargs.get('snapshot', False)
         announce = kwargs.get('announce', True)
 
@@ -204,6 +212,9 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             if snapshot:
                 self.call_service('sonos/restore', entity_id=entity_id, with_group=True)
         else:
+            if self.get_state('input_boolean.mute_announcement') == 'on':
+                message = f"(muted) {message}"
+
             self._desktop_notification(message)
 
 # ---------------------------------------------------------------------------------------------------------

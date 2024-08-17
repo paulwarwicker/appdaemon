@@ -19,10 +19,10 @@ BASE_URL = "https://api.starlingbank.com/api/v2"
 BASE_URL_SANDBOX = "https://api-sandbox.starlingbank.com/api/v2"
 # SPENDING_CATEGORIES = ['BIKE', 'BILLS_AND_SERVICES', 'BUCKET_LIST', 'CAR', 'CASH', 'CELEBRATION', 'CHARITY', 'CHILDREN', 'CLOTHES', 'COFFEE', 'DEBT_REPAYMENT', 'DIY', 'DRINKS', 'EATING_OUT', 'EDUCATION', 'EMERGENCY', 'ENTERTAINMENT', 'ESSENTIAL_SPEND', 'EXPENSES', 'FAMILY', 'FITNESS', 'FUEL', 'GAMBLING', 'GAMING', 'GARDEN', 'GENERAL', 'GIFTS', 'GROCERIES', 'HOBBY', 'HOLIDAYS', 'HOME', 'IMPULSE_BUY', 'INCOME', 'INSURANCE', 'INVESTMENTS', 'LIFESTYLE', 'MAINTENANCE_AND_REPAIRS', 'MEDICAL', 'MORTGAGE', 'NON_ESSENTIAL_SPEND', 'PAYMENTS', 'PERSONAL_CARE', 'PERSONAL_TRANSFERS', 'PETS', 'PROJECTS', 'RELATIONSHIPS', 'RENT', 'SAVING', 'SHOPPING', 'SUBSCRIPTIONS', 'TAKEAWAY', 'TAXI', 'TRANSPORT', 'TREATS', 'WEDDING', 'WELLBEING', 'NONE', 'REVENUE', 'OTHER_INCOME', 'CLIENT_REFUNDS', 'INVENTORY', 'STAFF', 'TRAVEL', 'WORKPLACE', 'REPAIRS_AND_MAINTENANCE', 'ADMIN', 'MARKETING', 'BUSINESS_ENTERTAINMENT', 'INTEREST_PAYMENTS', 'BANK_CHARGES', 'OTHER', 'FOOD_AND_DRINK', 'EQUIPMENT', 'PROFESSIONAL_SERVICES', 'PHONE_AND_INTERNET', 'VEHICLES', 'DIRECTORS_WAGES', 'VAT', 'CORPORATION_TAX', 'SELF_ASSESSMENT_TAX', 'INVESTMENT_CAPITAL', 'TRANSFERS', 'LOAN_PRINCIPAL', 'PERSONAL', 'DIVIDENDS']
 
-import appdaemon.plugins.hass.hassapi as hass  # pylint: disable=E0401 disable=E0611
+from appdaemon.plugins.hass.hassapi import Hass  # pylint: disable=E0401 disable=E0611
 
-class Starling(hass.Hass):
-    """This is the documentation for Automation"""
+class Starling(Hass):
+    """This is the documentation for Starling"""
 
     starling = None
     lib = None
@@ -36,6 +36,7 @@ class Starling(hass.Hass):
 
         self.log('-'*72)
 
+        self.listen_event(self.set_log_level_event, 'set_log_level')
         self.listen_event(self.delete_calendar_events, 'delete_calendar_events')
         self.listen_event(self.add_calendar_events, 'add_calendar_events')
         self.listen_event(self.check_feed, 'check_feed')
@@ -338,6 +339,13 @@ class Starling(hass.Hass):
         # self.show_starling_account()
 
         self.set_state('input_boolean.status', state='off')
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def set_log_level_event(self, event, data, kwargs={}) -> None:
+
+        level = data['level']
+        self.set_log_level(level)
 
 # ---------------------------------------------------------------------------------
 
@@ -717,3 +725,4 @@ class StarlingAccount:
         # description=f"\n{so.currency}{so.amount} - {so.payee_name}\n{so.interval} {so.frequency}\n"
         # self.log(f'start_date={start_date} end_date={end_date} summary={summary} description={description}')
         # self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
+

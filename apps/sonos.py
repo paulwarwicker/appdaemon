@@ -34,6 +34,7 @@ class Sonos(Hass):
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.join_test_event, 'join_test')
+        self.listen_event(self.set_log_level_event, 'set_log_level')
 
         self.run_daily(self.sonos_configuration_2, '06:59:55')
         self.run_daily(self.sonos_configuration_2, '07:44:55')
@@ -160,3 +161,9 @@ class Sonos(Hass):
         return state == 'playing'
 
 # ---------------------------------------------------------------------------------------------------------
+
+    def set_log_level_event(self, event, data, kwargs={}) -> None:
+
+        level = data['level']
+        self.set_log_level(level)
+

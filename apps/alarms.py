@@ -25,6 +25,12 @@ class Alarms(Hass):
     test_alarm_callback = None
     rota = None
     lib = None
+    night_deliver = [4, 58]
+    night_collect = [5, 25]
+    default = [8, 0]
+    callbacks = [None, None, None]
+    STUDY = 'media_player.study'
+    BEDROOM = 'media_player.bedroom'
 
 # -------------------------------------------------------------------------------------------------
 
@@ -39,6 +45,7 @@ class Alarms(Hass):
 
         self.listen_event(self.set_alarm_state_event, 'set_alarm_state')
         self.listen_event(self.status_event, 'status')
+        self.listen_event(self.set_log_level_event, 'set_log_level')
 
         self.listen_state(self.set_early_alarm_callback, 'input_boolean.early_alarm', new='on', action='set')
         self.listen_state(self.set_early_alarm_callback, 'input_boolean.early_alarm', new='off', action='cancel')
@@ -69,18 +76,33 @@ class Alarms(Hass):
 
 # -------------------------------------------------------------------------------------------------
 
+    def set_backup_alarm(self, e_id) -> None:
+
+        entity_id = f'switch.sonos_alarm_{e_id}'
+        self.set_state(entity_id, state="on")
+
+# -------------------------------------------------------------------------------------------------
+
+    def cancel_backup_alarm(self, e_id) -> None:
+
+        entity_id = f'switch.sonos_alarm_{e_id}'
+        self.set_state(entity_id, state="off")
+
+# -------------------------------------------------------------------------------------------------
+
     def set_early_alarm(self):
 
         state, alarm_time, hour, minute = self.get_early_alarm_time()
         self.set_early_alarm_time(state, alarm_time, hour, minute)
 
+        if alarm_time == "04:58":
+            self.set_backup_alarm('1978') # 05:00
+        elif alarm_time == "05:25":
+            self.set_backup_alarm('2104') # 05:27
+
 # -------------------------------------------------------------------------------------------------
 
     def get_early_alarm_time(self):
-
-        night_deliver = [4, 58]
-        night_collect = [5, 25]
-        default = [8, 0]
 
         day = datetime.now().date()
 
@@ -107,41 +129,54 @@ class Alarms(Hass):
             minute = self.get_state('input_datetime.early_alarm', attribute='minute')
             alarm_time = f'{hour:02d}:{minute:02d}'
         else:
-            hour = night_deliver[0]
-            minute = night_deliver[1]
+            hour = self.night_deliver[0]
+            minute = self.night_deliver[1]
             if shift1 == 'Night' and shift0 == 'Night':
-                hour = night_collect[0]
-                minute = night_collect[1]
+                hour = self.night_collect[0]
+                minute = self.night_collect[1]
             alarm_time = f'{hour:02d}:{minute:02d}'
 
         if not override: # leave if we are overridden, assume set
             if shift0 == 'Off' and shift1 == 'Night':
+                self.log('\tscenario 1')
                 # transition shift
                 state = 'off'
-                hour = default[0]
-                minute = default[1]
+                hour = self.default[0]
+                minute = self.default[1]
                 self.log('\tdisabling due to transition shift off->night', level='WARNING')
             elif shift0 == 'Night' and shift1 == 'Off':
+                self.log('\tscenario 2')
                 # transition shift
                 state = 'on'
-                hour = night_collect[0]
-                minute = night_collect[1]
-                self.log(f'\tenabling due to transition shift night->off', level='WARNING')
+                hour = self.night_collect[0]
+                minute = self.night_collect[1]
+                self.log('\tenabling due to transition shift night->off', level='WARNING')
             elif shift0 == 'Off' and shift1 == 'Off':
-                # transition shift
+                self.log('\tscenario 3')
                 state = 'off'
-                hour = default[0]
-                minute = default[1]
-            elif shift1 == 'Night' and shift0 == 'Night':
+                hour = self.default[0]
+                minute = self.default[1]
+            elif shift1 == shift0 == 'Night' and shift1 == 'Night':
+                self.log('\tscenario 4')
                 state = 'on'
-                hour = night_collect[0]
-                minute = night_collect[1]
+                hour = self.night_collect[0]
+                minute = self.night_collect[1]
+            elif shift0 == 'Day' and shift1 == 'Day':
+                self.log('\tscenario 5')
+                state = 'on'
+                hour = self.night_deliver[0]
+                minute = self.night_deliver[1]
+            elif shift0 == 'Day' and shift1 == 'Off':
+                self.log('\tscenario 7')
+                state = 'off'
+                hour = self.night_deliver[0]
+                minute = self.night_deliver[1]
             else:
+                self.log('\tscenario 0', level="ERROR")
                 # just use tomorrows (or todays) shift
                 state = 'off' if shift1 == 'Off' else 'on'
-                # hour = default[0]
-                # minute = default[1]
-                # alarm_time = f'{hour:02d}:{minute:02d}'
+                # we don't want to end up here - use specifc cases
+                # do not set hour/minute. if end up with blank time in widget, we got here!
 
             alarm_time = f'{hour:02d}:{minute:02d}'
         else:
@@ -159,7 +194,6 @@ class Alarms(Hass):
         self.set_state('input_datetime.early_alarm', state=f'{alarm_time}:00', hour=hour, minute=minute, second=0)
         self.set_state('input_boolean.early_alarm', state=state)
 
-        # if self.early_alarm_callback is None:
         if state == 'on':
             self.set_early_alarm_callback('input_boolean.early_alarm', 'state', 'off', 'on', {'action':'set'})
         else:
@@ -171,6 +205,9 @@ class Alarms(Hass):
 
         state, alarm_time, hour, minute = self.get_normal_alarm_time()
         self.set_normal_alarm_time(state, alarm_time, hour, minute)
+
+        if alarm_time == "07:45":
+            self.set_backup_alarm('2108') # 07:50
 
 # -------------------------------------------------------------------------------------------------
 
@@ -207,7 +244,6 @@ class Alarms(Hass):
         self.set_state('input_datetime.normal_alarm', state=f"{alarm_time}:00", hour=hour, minute=minute, second=0)
         self.set_state('input_boolean.normal_alarm', state=state)
 
-        # if self.normal_alarm_callback is None:
         if state == 'on':
             self.set_normal_alarm_callback('input_boolean.normal_alarm', 'state', 'off', 'on', {'action':'set'})
         else:
@@ -226,7 +262,7 @@ class Alarms(Hass):
         alarm_time = f"{t.hour:02d}:{t.minute:02d}"
         state = self.get_state(bool_entity_id)
         message = f'The {alarm_type} morning alarm is set to {alarm_time}' if state == 'on' else f'The {alarm_type} morning alarm is cancelled'
-        self.call_service("announcer/announce", entity_id='media_player.study', message=message, snapshot=False)
+        self.call_service("announcer/announce", entity_id=self.STUDY, message=message, snapshot=False)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -256,18 +292,6 @@ class Alarms(Hass):
 
 # ---------------------------------------------------------------------------------------------------------
 
-    def cancel_alarm_if_set(self, entity_id, end_time, start_time='05:00:00'):
-
-        if self.now_is_between(start_time, end_time):
-            self.log(f'\tmotion detected between {start_time} and {end_time}')
-            state = self.get_state(entity_id=entity_id, attribute="state")
-            if state == 'on':
-                self.set_state(entity_id, state="off")
-        else:
-            self.log('\tmotion detected but outside time window')
-
-# ---------------------------------------------------------------------------------------------------------
-
     def set_early_alarm_callback(self, entity, attribute, old, new, kwargs):
 
         self._cancel_timer(self.early_alarm_callback, 'early alarm')
@@ -290,7 +314,7 @@ class Alarms(Hass):
         bool_entity_id = f'input_boolean.{alarm_type}_alarm'
         time_entity_id = f'input_datetime.{alarm_type}_alarm'
 
-        self.log(f"\t{alarm_type} alarm enabled", level='DEBUG')
+        self.log(f"\t{alarm_type} alarm enabled")
         self.log(f"\taction={action}", level='DEBUG')
 
         debug = self.get_alarm_testing()
@@ -316,8 +340,11 @@ class Alarms(Hass):
 
             if alarm_type == 'early':
                 alarm = self.early_alarm_callback
+                self.cancel_backup_alarm('1978') # 05:00
+                self.cancel_backup_alarm('2104') # 05:27
             elif alarm_type == 'normal':
                 alarm = self.normal_alarm_callback
+                self.cancel_backup_alarm('2108') # 07:50
             elif alarm_type == 'test':
                 alarm = self.test_alarm_callback
             self._cancel_timer(alarm, f'{alarm_type} alarm')
@@ -341,47 +368,67 @@ class Alarms(Hass):
 
 # ---------------------------------------------------------------------------------------------------------
 
+    def is_test(self, kwargs):
+
+        return kwargs['alarm_type'] == 'test' or self.get_alarm_testing()
+
+# ---------------------------------------------------------------------------------------------------------
+
     def _alarm(self, kwargs):
 
         alarm_type = kwargs['alarm_type']
-        test = alarm_type == 'test' or self.get_state('input_boolean.alarm_testing') == 'on'
-        debug = self.get_alarm_testing()
-        entity_id = 'media_player.bedroom'
+        test = self.is_test(kwargs)
+        entity_id = self.BEDROOM
+        # entity_id = self.STUDY
 
         if test:
             play = True
-            entity_id = 'media_player.study'
+            entity_id = self.STUDY
         else:
-            play = alarm_type == 'early' or alarm_type == 'normal' # (alarm_type == 'normal' and self.play_normal_alarm())
+            play = True # alarm_type == 'early' or alarm_type == 'normal' # (alarm_type == 'normal' and self.play_normal_alarm())
 
         if play:
             media_content_id = self.select_alarm(alarm_type=alarm_type)
-            self.log(f'\talarm_type={alarm_type} debug={debug} play={play} entity_id={entity_id} media_content_id={media_content_id}')
+            self.log(f'\talarm_type={alarm_type} test={test} play={play} entity_id={entity_id} media_content_id={media_content_id}')
 
-            self.run_sequence(
-                [
-                    {'media_player/volume_mute': {'entity_id': entity_id, 'is_volume_muted': False}},
-                    {'media_player/volume_set': {'entity_id': entity_id, 'volume_level': 0}},
-                    {'media_player/play_media': {'entity_id': entity_id, 'media_content_type': "music", 'media_content_id': media_content_id}},
-                    {'media_player/repeat_set': {'entity_id': entity_id, 'repeat': 'off'}}
-                ]
-            )
+            # self.run_sequence(
+            #     [
+            #         {'media_player/volume_mute': {'entity_id': entity_id, 'is_volume_muted': False}},
+            #         {'media_player/volume_set': {'entity_id': entity_id, 'volume_level': 0}},
+            #         {'media_player/play_media': {'entity_id': entity_id, 'media_content_type': "music", 'media_content_id': media_content_id}},
+            #         {'media_player/repeat_set': {'entity_id': entity_id, 'repeat': 'off'}}
+            #     ]
+            # )
 
-            divisor = 36
+            self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
+            self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=0)
+            self.call_service('media_player/play_media', entity_id=entity_id, media_content_type="music", media_content_id=media_content_id)
+            self.call_service('media_player/repeat_set', entity_id=entity_id, repeat='off')
+
+            divisor = 100
             target_volume = 50  # deal in integers for convenience
 
             if test:
-                span = 2 * divisor # 3s increments
+                span = 2 * divisor # 2s increments
             else:
                 span = 5 * divisor # 5s incremnets
 
             volume = 0
-            incr_volume = target_volume * (5/100.0)  # 5% increase in volume
+            incr_volume = target_volume * (2.5/100.0)  # 2.5% increase in volume
             sleeptime = span/divisor
+
+            disabled = False
 
             while volume < target_volume:
                 volume += incr_volume
                 self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=volume/100.0)
+                if not disabled and volume > 0.15:
+                    if alarm_type == 'early':
+                        self.cancel_backup_alarm('1978') # 05:00
+                        self.cancel_backup_alarm('2104') # 05:27
+                    elif alarm_type == 'normal':
+                        self.cancel_backup_alarm('2108') # 07:50
+                    disabled = True
                 time.sleep(sleeptime)
 
 # ---------------------------------------------------------------------------------------------------------
@@ -446,10 +493,10 @@ class Alarms(Hass):
 
         if not holiday and enabled and dow <= 5 and dow != 3 or test:
             # TODO: record handles?
-            self.run_in_thread(self.lumie_phase1, 0, brightness=100,transition=seconds, rgb_color=[255, 180, 10])  # now
+            self.callback[0] = self.run_in_thread(self.lumie_phase1, 0, brightness=100,transition=seconds, rgb_color=[255, 180, 10])  # now
             if self.now_is_between('04:00:00', '08:00:00'):
-                self.run_in_thread(self.lumie_phase2, seconds, brightness=250, transition=seconds, rgb_color=[250, 250, 250]) # +5m
-            self.run_in_thread(self.lumie_phase3, 4*seconds)  # +20m
+                self.callback[1] = self.run_in_thread(self.lumie_phase2, seconds, brightness=250, transition=seconds, rgb_color=[250, 250, 250]) # +5m
+            self.callback[2] = self.run_in_thread(self.lumie_phase3, 4*seconds)  # +20m
         else:
             self.log(f'\tskipping lumie alarm holiday={holiday} enabled={enabled} dow={dow}', level='INFO')
 
@@ -566,7 +613,7 @@ class Alarms(Hass):
             self.cancel_timer(timer, True)
             timer = None
             if message is not None:
-                self.log(f'\t{message} cancelled', level='DEBUG')
+                self.log(f'\t{message} cancelled')
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -580,3 +627,9 @@ class Alarms(Hass):
                 self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
 
 # -------------------------------------------------------------------------------------------------
+
+    def set_log_level_event(self, event, data, kwargs={}) -> None:
+
+        level = data['level']
+        self.set_log_level(level)
+

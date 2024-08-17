@@ -13,6 +13,8 @@ class Weather(Hass):
 
         self.log('-'*72)
 
+        self.listen_event(self.set_log_level_event, 'set_log_level')
+
         path = Path(f'{self.AD.config_dir}/secrets.yaml')
         path = path if path.is_file() else Path('/homeassistant/secrets.yaml') # HAOS
         with path.open('r', encoding='utf8') as f:
@@ -153,3 +155,11 @@ class Weather(Hass):
         """Convert a Zulu based timestring to datetime"""
         utc_dt = zulu.replace("Z","UTC")
         return datetime.strptime(utc_dt, "%Y-%m-%dT%H:%M:%S%Z")
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def set_log_level_event(self, event, data, kwargs={}) -> None:
+
+        level = data['level']
+        self.set_log_level(level)
+
