@@ -24,6 +24,7 @@ automation:
 alarms:
   module: alarms
   class: Alarms
+  log_level: DEBUG
   dependencies:
     - automationlib
     - announcer
