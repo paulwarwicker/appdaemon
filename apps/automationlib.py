@@ -8,8 +8,8 @@ from datetime import datetime,timedelta
 import requests  # pylint: disable=E0401
 import arrow  # pylint: disable=E0401
 
-from appdaemon.adapi import ADAPI # pylint: disable=E0401 disable=E0611
-from appdaemon.plugins.hass.hassapi import Hass  # pylint: disable=E0401 disable=E0611
+from adapi import ADAPI # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # pylint: disable=E0401 disable=E0611
 
 class AutomationLib():
     """Documentation for AutomationLib"""
@@ -17,7 +17,7 @@ class AutomationLib():
     def __init__(self, adapi: ADAPI) -> None:
         """__init__"""
 
-        adapi = self.adapi = adapi
+        self.adapi = adapi
         self.debug = adapi.get_state('input_boolean.debug') == 'on'
         self.verbose = adapi.get_state('input_boolean.verbose') == 'on'
         self.testing = adapi.get_state('input_boolean.testing') == 'on'
@@ -27,6 +27,8 @@ class AutomationLib():
 
         # self.logger = adapi._logging.get_child('automationlib')
         # self.logger.log(msg=f"\t{message}", level="INFO")
+
+        adapi.log('initialised')
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -40,7 +42,7 @@ class AutomationLib():
     def is_bank_holiday(self, dt=datetime.now()) -> bool:
         """is today (or dt argument) a bank holiday"""
 
-        self.log_debug(f'\tdt={dt}')
+        self.adapi.log(f'\tdt={dt}', level='DEBUG')
 
         url = 'https://www.gov.uk/bank-holidays.json'
         today = f'{dt:%Y-%m-%d}'
@@ -60,7 +62,7 @@ class AutomationLib():
                 is_bank_holiday = True
 
         t = 'is not' if not is_bank_holiday else 'is'
-        self.log_debug(f'\t{t} bank holiday')
+        self.adapi.log(f'\t{t} bank holiday', level='DEBUG')
 
         return is_bank_holiday
 
@@ -124,7 +126,7 @@ class AutomationLib():
         """get preciptation today"""
 
         result = float(self.adapi.get_state(entity_id='sensor.icambr4_precipitation_today'))
-        self.log_debug(f'\tmmrain={result}')
+        self.adapi.log(f'\tmmrain={result}', level='DEBUG')
 
         return result
 
@@ -157,12 +159,27 @@ class AutomationLib():
 
         return self.adapi.get_state('input_boolean.verbose') == 'on'
 
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def get_verbose_debug(self) -> bool:
+        """get verbose debug setting"""
+
+        return self.get_verbose() and self.get_debug()
+
 # ---------------------------------------------------------------------------------------------------------
 
     def get_testing(self) -> bool:
         """get testing setting"""
 
         return self.adapi.get_state('input_boolean.testing') == 'on'
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def get_testing_verbose_debug(self) -> bool:
+        """get verbose debug setting"""
+
+        return self.get_testing() and self.get_verbose() and self.get_debug()
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -184,21 +201,16 @@ class AutomationLib():
 
 # ---------------------------------------------------------------------------------------------------------
 
-    def log_debug(self, message) -> None:
-        """log a debug message"""
-
-        self.adapi.log(f'\t{message}', level='DEBUG')
-
-# ---------------------------------------------------------------------------------------------------------
-
     def log_function_name(self, start=True) -> None:
         """log function name as log message"""
 
-        name = inspect.currentframe().f_back.f_code.co_name
         # print(inspect.currentframe())
+        # print(inspect.currentframe().f_back)
 
-        if self.verbose or self.debug:
-            self.adapi.log(('\t>>> begin' if start else '\t<<< end') + f' {name}', level='INFO')
+        name = inspect.currentframe().f_back.f_code.co_name
+
+        # if self.verbose or self.debug:
+        self.adapi.log(('\t>>> begin' if start else '\t<<< end') + f' {name}', level='INFO')
 
 # -------------------------------------------------------------------------------------------------
 
@@ -218,6 +230,49 @@ class AutomationLib():
         """return minutes as integer number """
 
         return int(timedelta(minutes=minutes).total_seconds())
+
+# -------------------------------------------------------------------------------------------------
+
+    def is_twilight(self) -> bool:
+        """is it twilight"""
+        # civil twilight is a sun elevation -6 degrees below horizon
+
+        elev = self.adapi.get_state('sun.sun', attribute='elevation')
+        twilight = -6 < elev < 0
+        t = 'is' if twilight else 'is not'
+        self.adapi.log(f'{t} twilight', level='DEBUG')
+
+        return twilight
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def is_night(self) -> bool:
+        """is it night"""
+        # civil twilight is a sun elevation -6 degrees below horizon
+
+        elev = self.adapi.get_state('sun.sun', attribute='elevation')
+        night = elev <= -6
+        t = 'is' if night else 'is not'
+        self.adapi.log(f'{t} night', level='DEBUG')
+
+        return night
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def is_below_horizon(self) -> bool:
+        """is sun below the horizon"""
+
+        elev = self.adapi.get_state('sun.sun', attribute='elevation')
+        below = elev <= 0
+        t = 'is' if below else 'is not'
+        self.adapi.log(f'{t} below horizon')
+
+        return below
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def percent_to_brightness(self, percent):
+        return int(255/100 * percent)
 
 # ---------------------------------------------------------------------------------------------------------
 

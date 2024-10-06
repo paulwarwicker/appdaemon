@@ -11,11 +11,12 @@
 # https://github.com/nickw444/appdaemon-testing
 
 import inspect
-import math
-import traceback
+# import traceback
+# import asyncio
 from datetime import datetime, timedelta
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from appdaemon.plugins.hass.hassapi import Hass  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # pylint: disable=E0401 disable=E0611
+# import Hass  # pylint: disable=E0401 disable=E0611
 
 # from typing import Dict
 # from pprint import pprint
@@ -59,16 +60,18 @@ class Automation(Hass):
     MAXINE_ENTITY_ID = 'device_tracker.maxine_iphone'
     PAUL_ENTITY_ID = 'device_tracker.paulw_iphone'
     BROADCAST_ENTITY_ID = ['media_player.kitchen', 'media_player.bathroom', 'media_player.dining_room']
-    OTHER_ENTITY_IDd = ['media_player.study', 'media_player.bedroom_2']
+    OTHER_ENTITY_ID = ['media_player.study', 'media_player.bedroom_2']
 
 # -------------------------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
 
-        self.log('-'*72)
+        # self.log('-'*72)
 
         self.lib = AutomationLib(self)
+
+        self.call_service('scene/reload')
 
         self.register_service('automation/set_downstairs_motion_flag', self.set_downstairs_motion_flag)
         self.register_service('automation/log_function_name', self._log_function_name)
@@ -79,31 +82,9 @@ class Automation(Hass):
         self.testing = True if self.get_state('input_boolean.default_testing_state') == 'on' else False
 
         self.listen_event(self.lights_off, "ios.action_fired", actionName='Lights')
-        self.listen_event(self.water_garden_for_action, "ios.action_fired", actionName='Water15', minutes=15)
         self.listen_event(self.set_all_state_event, 'set_all_state')
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.max_home_event, 'max_home')
-        self.listen_event(self.water_garden_event, 'water_garden')
-
-        # self.listen_state(self.paul_home, self.PAUL_ENTITY_ID)
-        self.listen_state(self.garage_door_open, self.PAUL_ENTITY_ID, old='not_home', new='home')
-        self.listen_state(self.garage_door_close, self.PAUL_ENTITY_ID, old='home', new='not_home')
-        self.listen_state(self.max_home, self.MAXINE_ENTITY_ID, new='Home')
-
-        self.listen_state(self.water_garden_for, 'input_boolean.water_garden_1', new='on', minutes=1)
-        self.listen_state(self.water_garden_stop, 'input_boolean.water_garden_1', new='off')
-        self.listen_state(self.water_garden_for, 'input_boolean.water_garden_15', new='on', minutes=15)
-        self.listen_state(self.water_garden_stop, 'input_boolean.water_garden_15', new='off')
-        self.listen_state(self.water_garden_for, 'input_boolean.water_garden_20', new='on', minutes=20)
-        self.listen_state(self.water_garden_stop, 'input_boolean.water_garden_20', new='off')
-        self.listen_state(self.water_garden_for, 'input_boolean.water_garden_30', new='on', minutes=30)
-        self.listen_state(self.water_garden_stop, 'input_boolean.water_garden_30', new='off')
-
-        self.listen_state(self.garage_door_announce_opening, self.GARAGE_ENTITY_ID, new='opening')
-        self.listen_state(self.garage_door_announce_closing, self.GARAGE_ENTITY_ID, new='closing')
-        self.listen_state(self.garage_door_announce_open, self.GARAGE_ENTITY_ID, new='open')
-        self.listen_state(self.garage_door_announce_closed, self.GARAGE_ENTITY_ID, new='closed')
-        self.listen_state(self.garage_door_debug, self.GARAGE_ENTITY_ID)
 
         self.listen_state(self.set_console_log_level, 'input_boolean.debug', new='on')
         self.listen_state(self.set_console_log_level, 'input_boolean.debug', new='off')
@@ -149,8 +130,8 @@ class Automation(Hass):
         self.run_daily(self.reset, '04:00:00')
 
         # set state
-        self.run_daily(self.set_all_state, '21:00:10') # pre-set - make sure before max retires (to bed)
-        self.run_daily(self.set_all_state, '00:00:10') # re-set - possibly dodgy as won't be confirmed before max retires
+        self.run_daily(self.set_all_state, '20:00:00') # pre-set - make sure before max retires (to bed)
+        # self.run_daily(self.set_all_state, '00:00:10') # re-set - possibly dodgy as won't be confirmed before max retires
 
         self.run_daily(self.downstairs_off, '02:00:00')
 
@@ -167,8 +148,6 @@ class Automation(Hass):
 
         self.run_daily(self.front_door_battery, "19:29:00")
 
-        self.run_daily(self.water_garden_daily, '19:30:00')  # , 'minutes': 10)
-
         self.run_daily(self.outside_lights_off, "21:30:00")
 
         # self.run_daily(self.rearm_kitchen_alarm, '07:00:30')
@@ -176,40 +155,92 @@ class Automation(Hass):
 
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.max_travel_time_to_home, runtime)
-        self.run_minutely(self.check_garden_tap, runtime)
-        self.run_minutely(self.check_garage_door, runtime)
-        self.run_minutely(self.check_karoq_door, runtime)
+        # self.run_minutely(self.check_karoq_door, runtime)
 
         runtime = datetime(2024, 1, 1, 0, 0, 0)
         self.run_hourly(self.update_openweathermap, runtime)
         self.run_hourly(self.check_roborock, runtime)
 
-        # interval = timedelta(minutes=5)
-        # self.run_every(self.update_openweathermap, "now", interval.total_seconds())
-        # self.log('\trun_every registered')
-
         self.set_all_state()
-        self.run_in_thread(self.backup, 0)
+        # self.run_in_thread(self.backup, 0)
         self._set_console_log_level()
+
+        offset = timedelta(minutes=-15)
+        self.call_service('timestamp/set', name='tap')
+        self.call_service('timestamp/set', name='upstairs')
+        self.call_service('timestamp/set', name='prev_upstairs')
+        self.call_service('timestamp/set', name='downstairs')
+        self.call_service('timestamp/set', name='karoq')
+        self.call_service('timestamp/set', name='garage')
+        self.call_service('timestamp/set', name='vacuum')
+        self.call_service('timestamp/set', name='general', offset=offset)
+        self.call_service('timestamp/set', name='travel', offset=offset)
+        # self.call_service('timestamp/status')
 
         self.call_service('announcer/initialised', name=self.name.capitalize(), announce=False)
 
+        self.log('initialised')
+
         # self.dummy()
+        self.test()
+        # self.test()
+
+
+# -------------------------------------------------------------------------------------------------
+
+    def test(self, kwargs={}) -> None:
+        """test method"""
+
+        self.lib.log_function_name()
+        # traceback.print_stack() # leave
+
+        # ts = self.call_service('timestamp/get_timestamp', name='travel', return_result=True)
+        # print(f'ts={ts}')
+
+        # future_time = self.parse_time('07:00:00')
+        # self.log(future_time)
+        # self.log(future_time.hour)
+        # self.log(future_time.minute)
+        # self.log(future_time.second)
+        # self.set_all_state()
+
+        # state = self.get_state(entity_id='media_player.kitchen', attribute="all")
+        # self.log(f'{state}')
+        # attributes = state['attributes']
+        # self.log(f'{attributes}')
+        # media_content_id = attributes.get('media_content_id', '')
+        # media_content_type = attributes.get('media_content_type', '')
+        # muted = attributes.get('is_volume_muted', True)
+        # self.log(f'{media_content_type} {media_content_id} {muted}')
+
+        # self.log(f'is_below_horizon={self.lib.is_below_horizon()}')
+        # self.log(f'is_twilight={self.lib.is_twilight()}')
+        # self.log(f'is_night={self.lib.is_night()}')
+
+        # self.call_service('sonos/unjoin_all')
+        # self.call_service('sonos/unjoin_entity', entity_id='media_player.bedroom')
+
+        # self.reset()
+
+        # func = getattr(self, 'desktop_notification')
+        # func('testing')
+
+        self.lib.log_function_name(False)
 
 # -------------------------------------------------------------------------------------------------
 
     def dummy(self) -> None:
         """dummy"""
 
-        self.log_function_name()
-        self.log_function_name(False)
+        self.lib.log_function_name()
+        self.lib.log_function_name(False)
 
 # -------------------------------------------------------------------------------------------------
 
     def set_all_state(self, kwargs={}) -> None:
         """set all state - reset to false and then set_default_state"""
 
-        self.log_function_name()
+        self.lib.log_function_name()
 
         booleans = {
             # !!! do NOT include debug/verbose/testing !!!
@@ -226,7 +257,7 @@ class Automation(Hass):
 
         self.set_default_state()
 
-        self.log_function_name(False)
+        self.lib.log_function_name(False)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -379,32 +410,9 @@ class Automation(Hass):
     def test_test(self, entity, attribute, old, new, kwargs) -> None:
         """test test"""
 
-        self.log_function_name()
+        self.lib.log_function_name()
         self.run_in(self.test, 0)
-        self.log_function_name(False)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def test(self, kwargs={}) -> None:
-        """test method"""
-
-        self.log_function_name()
-        traceback.print_stack() # leave
-        # future_time = self.parse_time('07:00:00')
-        # self.log(future_time)
-        # self.log(future_time.hour)
-        # self.log(future_time.minute)
-        # self.log(future_time.second)
-        # self.set_all_state()
-        state = self.get_state(entity_id='media_player.kitchen', attribute="all")
-        self.log(f'{state}')
-        attributes = state['attributes']
-        self.log(f'{attributes}')
-        media_content_id = attributes.get('media_content_id', '')
-        media_content_type = attributes.get('media_content_type', '')
-        muted = attributes.get('is_volume_muted', True)
-        self.log(f'{media_content_type} {media_content_id} {muted}')
-        self.log_function_name(False)
+        self.lib.log_function_name(False)
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -412,15 +420,14 @@ class Automation(Hass):
         """reset dowstairs motion flag and set default sonos configuration"""
 
         self.reset_downstairs_motion_flag()
-        self.sonos_unjoin_all({})
-        self.sonos_configure1({})  # failsafe for bank holiday
+        self.call_service('sonos/unjoin_all')
 
         self.set_state('input_boolean.override', state='off')
         self.set_state('input_boolean.sonos', state='off')
         self.set_state('input_boolean.test_1', state='off')
         self.set_state('input_boolean.test_2', state='off')
         self.set_state('input_boolean.test_3', state='off')
-        self.log('\treset')
+        self.log('\treset', level='WARNING')
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -452,16 +459,7 @@ class Automation(Hass):
     def broadcast(self, volume, message) -> None:
         """broadcast to multiple devices using announcer"""
 
-        self.call_service("announcer/broadcast", BROADCAST_ENTITY_ID=self.BROADCAST_ENTITY_ID, OTHER_ENTITY_IDd=self.OTHER_ENTITY_IDd, volume=volume, message=message, snapshot=False)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_garage_door_closed(self) -> bool:
-        """is garage door closed"""
-
-        state = self.get_state(self.GARAGE_ENTITY_ID)
-
-        return state == 'closed'
+        self.call_service("announcer/broadcast", broadcast_entity_id=self.BROADCAST_ENTITY_ID, other_entity_id=self.OTHER_ENTITY_ID, volume=volume, message=message, snapshot=False)
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -480,13 +478,6 @@ class Automation(Hass):
             if debug:
                 self.log(f'\tignored - {entity_id} already on brightness={prev_brightness}', level='DEBUG')
         return prev_state
-
-# ---------------------------------------------------------------------------------------------------------
-
-    # def rearm_kitchen_alarm(self, kwargs={}) -> None:
-    #     """rearm kitch alarm"""
-
-    #     self.call_service('switch/turn_on', entity_id='switch.sonos_alarm_1392')
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -557,50 +548,7 @@ class Automation(Hass):
             else:
                 self.log(f'\tmessage={message} ts={self.travel_announce_ts.ctime()} ({self.travel_announce_ts.timestamp():6.3f})', level='DEBUG')
                 self.announce(entity_id='media_player.study', message=message)
-                self.set_timestamp('travel')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def set_timestamp(self, timestamp) -> None:
-        """set a named timestamo"""
-
-        if timestamp is not None:
-            ts = datetime.now()
-            if timestamp == "travel":
-                self.travel_announce_ts = ts
-            elif timestamp == "garage":
-                self.garage_announce_ts = ts
-            elif timestamp == "karoq":
-                self.karoq_announce_ts = ts
-            elif timestamp == "tap":
-                self.tap_ts = ts
-            elif timestamp == "general":
-                self.general_announce_ts = ts
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def max_home(self, entity='', attribute='', old='', new='', kwargs={}) -> None:
-        """turn on lights when returning after dark. start timer to turn off front door light"""
-
-        if self.is_below_horizon():
-            self.run_sequence(
-                [
-                    {'light/turn_on': {'entity_id': ['light.standard_lamp_1', 'light.front_door_1'], 'brightness': 128}},
-                    {'light/turn_on': {'entity_id': ['light.hallway_1'], 'brightness': 64}},
-                ]
-            )
-
-            self.front_door_light_on()
-            seconds = self.lib.interval(minutes=10)
-            self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
-            self.run_in(self.front_door_light_off, seconds)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def paul_home(self, entity='', attribute='', old='', new='', kwargs={}) -> None:
-        """."""
-
-        self.log(f'\tentity={entity} attribute={attribute} old={old} new={new}')  # kwargs={kwargs}')
+                self.call_service('timestamp/set', name='travel')
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -620,110 +568,6 @@ class Automation(Hass):
         if entity_id:
             self.delay(1)
             self.set_state(entity_id, state='off')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def water_garden_for(self, entity, attribute, old, new, kwargs={}) -> None:
-        """water garden for <minutes> minutes. different switches will set 1, 15, 20, 30 minutes"""
-
-        minutes = kwargs['minutes']
-
-        if minutes:
-            self.tap_on(minutes=minutes)
-        else:
-            self.error('no timer set')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def water_garden_for_action(self, event, data, kwargs={}) -> None:
-        """water garden for 15 minutes as an iOS action"""
-
-        minutes = kwargs['minutes']
-
-        self.log(f'\twater_garden_for_action for {minutes:d} minutes')
-        self.water_garden_for_n_minutes({minutes: minutes})  # was minutes=minutes
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def water_garden_for_n_minutes(self, kwargs={}) -> None:
-        """water garden for <minutes> minutes"""
-
-        self.water_garden_for('', '', '', '', kwargs)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def water_garden_stop(self, entity, attribute, old, new, kwargs={}) -> None:
-        """stop watering garden"""
-
-        self.tap_off() # TODO: stop running thread
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def water_garden_daily(self, kwargs={}) -> None:
-        """water garden daily"""
-
-        if self.lib.is_summer():
-            if self.lib.no_rain():
-                kwargs = {**kwargs, 'minutes': self.DAILY_WATERING_MINUTES}
-                self.water_garden_for_n_minutes(kwargs)
-                self.announce(message=f'Watering garden for {self.DAILY_WATERING_MINUTES} minutes')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def tap_on(self, **kwargs) -> None:
-        """turn garden tap on for <minutes> minutes"""
-
-        minutes = kwargs['minutes']
-
-        if minutes:
-            self.log(f'\ttap_on for {minutes:d} minutes')
-            self.call_service('switch/turn_on', entity_id='switch.garden_tap')
-            self.tap_ts = datetime.now()
-            seconds = self.lib.interval(minutes=minutes)
-            self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
-            self.run_in(self.tap_off, seconds)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def tap_off(self, kwargs={}) -> None:
-        """turn garden tap off"""
-
-        self.call_service('switch/turn_off', entity_id='switch.garden_tap')
-        self.announce(message='The garden tap is now off')
-        self.tap_ts = None
-        self.set_state('input_boolean.water_garden_1', state='off')
-        self.set_state('input_boolean.water_garden_15', state='off')
-        self.set_state('input_boolean.water_garden_20', state='off')
-        self.set_state('input_boolean.water_garden_30', state='off')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def check_garden_tap(self, kwargs) -> None:
-        """check garden tap state"""
-
-        state = self.get_state('switch.garden_tap')
-
-        if state == 'on':
-            self.log(f'\tGarden tap is {state}', level='WARNING')
-            seconds = (datetime.now() - self.tap_ts).seconds
-            n = math.ceil(seconds / 60)
-            diff1,diff2 = divmod(seconds, 60)
-            self.log(f'\t\t{diff1} {diff2}')
-            if diff1 > 0 and ((diff1 + 1) % 10) == 0:
-                self.announce(message=f'The garden tap has been on for {n} minutes', entity_id=['media_player.kitchen','media_player.study'])
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def check_garage_door(self, kwargs={}) -> None:
-        """check garage door state"""
-
-        state = self.get_state(self.GARAGE_ENTITY_ID)
-
-        if state != 'closed':
-            self.log(f'\tGarage door is {state} garage_announce_ts={self.garage_announce_ts}', level='WARNING')
-            diff = (datetime.now() - self.garage_announce_ts).seconds
-            if diff >= self.lib.interval(minutes=60):
-                self.garage_door_announce(state=state)
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -753,24 +597,6 @@ class Automation(Hass):
 
 # ---------------------------------------------------------------------------------------------------------
 
-    def garage_door(self, entity, attribute, old, new, kwargs={}) -> None:
-        """listener for garage door"""
-
-        below = self.is_below_horizon()
-
-        if new == 'opening':
-            if below:
-                self.garage_door_lights(on=True)
-        elif new == 'closed':
-            if below:
-                seconds = self.lib.interval(minutes=1)
-                self.log(f'\tstart garage_door_light timer for {seconds:d}s', level='DEBUG')
-                self.run_in(self.garage_door_lights_off, seconds)
-
-        self.garage_door_announce(state=new)
-
-# ---------------------------------------------------------------------------------------------------------
-
     def karoq_door_announce(self, **kwargs) -> None:
         """karoq door announcement"""
 
@@ -782,85 +608,7 @@ class Automation(Hass):
             message = 'The car door is unlocked'
 
         self.announce(message=message)
-        self.set_timestamp('karoq')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def garage_door_announce(self, **kwargs) -> None:
-        """garage door announcement"""
-
-        state = kwargs['state']
-
-        if state == 'opening':
-            message = 'The garage door is opening'
-        elif state == 'closing':
-            message = 'The garage door is closing'
-        elif state == 'closed':
-            message = 'The garage door is closed'
-        elif state == 'open':
-            message = 'The garage door is open'
-        elif state == 'unavailable':
-            return
-        else:
-            state = self.get_state(self.GARAGE_ENTITY_ID)
-            message = f'The garage door is {state}'
-
-        self.announce(message=message)
-        self.desktop_notification(message=message)
-        self.set_timestamp('garage')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def garage_door_open(self, entity, attribute, old, new, kwargs) -> None:
-        """open garage door"""
-
-        self.call_service('cover/open_cover', entity_id=self.GARAGE_ENTITY_ID)
-        if self.is_below_horizon():
-            self.garage_door_lights(on=True)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def garage_door_close(self, entity, attribute, old, new, kwargs) -> None:
-        """close garage door"""
-
-        self.call_service('cover/close_cover', entity_id=self.GARAGE_ENTITY_ID)
-        if self.is_below_horizon():
-            self.garage_door_lights(on=False)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def garage_door_announce_opening(self, entity, attribute, old, new, kwargs) -> None:
-        """announce garage door opening"""
-
-        self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'closed', 'opening')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def garage_door_announce_closing(self, entity, attribute, old, new, kwargs) -> None:
-        """announce garage door closing"""
-
-        self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'open', 'closing')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def garage_door_announce_open(self, entity, attribute, old, new, kwargs) -> None:
-        """announce garage door is now open"""
-
-        self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'opening', 'open')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def garage_door_announce_closed(self, entity, attribute, old, new, kwargs) -> None:
-        """announce garage door is now closed"""
-
-        self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'closing', 'closed')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def garage_door_debug(self, entity, attribute, old, new, kwarg) -> None:
-
-        state = self.get_state(self.GARAGE_ENTITY_ID)
-        self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} state={state}', level='INFO')  # kwargs={kwargs}
+        self.call_service('timestamp/set', name='karoq')
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -1034,12 +782,15 @@ class Automation(Hass):
         self.downstairs_motion_flag = True
         self.log(f'\tdownstairs_motion_flag={self.downstairs_motion_flag}', level='DEBUG')
         self.downstairs_ts = datetime.now()
-        # self.count = 2
         self.stairs_motion(**kwargs)
-        if self.now_is_between('05:00:00', '07:00:00'):
-            self.sonos_unjoin_all(kwargs)
+
+        # if self.now_is_between('05:00:00', '07:00:00'):
+        if self.lib.is_night():
+            self.call_service('sonos/unjoin_all')
+            self.call_service('light/turn_off', entity_id='light.lumie')
+
         # self.cancel_alarm_if_set('switch.sonos_alarm_1392', '07:00:00')  # 07:00 alarm
-        self.cancel_alarm_if_set('input_boolean.early_alarm', '07:00:00', '06:00:00')
+        # self.cancel_alarm_if_set('input_boolean.early_alarm', '07:00:00', '06:00:00')
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -1152,10 +903,10 @@ class Automation(Hass):
         self.log(f'\tts1={self.downstairs_ts.ctime()} ({self.downstairs_ts.timestamp():6.3f})', level='DEBUG')
         self.log(f'\tts2={self.upstairs_ts.ctime()} ({self.upstairs_ts.timestamp():6.3f})', level='DEBUG')
 
-        if self.is_below_horizon():
+        if self.lib.is_below_horizon():
             seconds = kwargs['timer']
-            self._cancel_timer(self.stairs_timer, 'stairs timer')
             self.override = not kwargs['check_override']
+            self._cancel_timer(self.stairs_timer, 'stairs timer')
             self.bannister_on()
             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
             self.stairs_timer = self.run_in(self.bannister_off, seconds, **kwargs)
@@ -1166,7 +917,7 @@ class Automation(Hass):
 
         self.call_service('light/turn_on', entity_id='light.bannister', brightness=77)
         elev = self.get_state('sun.sun', 'elevation')
-        if elev < 5 and not self.now_is_between('01:30:00', 'sunrise'):
+        if elev < 5: # and not self.now_is_between('01:30:00', 'sunrise'):
             self.call_service('light/turn_on', entity_id='light.hallway_1', brightness=64)
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1273,7 +1024,7 @@ class Automation(Hass):
     def ding_hallway_light(self, kwargs={}) -> None:
         """Turn on hallway light when dark"""
 
-        if self.is_night():  # civil dusk till civil dawn
+        if self.lib.is_night():  # civil dusk till civil dawn
             self.call_service('light/turn_on', entity_id='light.hallway_1', brightness=64, transition=5)
             seconds = 10*60
             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
@@ -1313,7 +1064,7 @@ class Automation(Hass):
     def _front_door_light_on(self, kwargs={}) -> None:
 
         if self.now_is_between('sunset', 'sunrise + 1:00:00'):
-            if self.is_below_horizon():
+            if self.lib.is_below_horizon():
                 self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=0)
                 self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=128, transition=10)
                 self.call_service('light/turn_on', entity_id='light.garage_1', brightness=128, transition=10)
@@ -1486,32 +1237,6 @@ class Automation(Hass):
 
 # ---------------------------------------------------------------------------------
 
-    def status_event(self, event, data, kwargs={}) -> None:
-
-        self.status('','','','')
-
-# ---------------------------------------------------------------------------------
-
-    def water_garden_event(self, event, data, kwargs={}) -> None:
-
-        minutes = data['minutes']
-        self.water_garden_for_n_minutes({'minutes': minutes})
-        self.announce(message=f'Watering garden for {minutes} minutes')
-
-# ---------------------------------------------------------------------------------
-
-    def max_home_event(self, event, data, kwargs={}) -> None:
-
-        self.max_home('', '', '', '', {})
-
-# ---------------------------------------------------------------------------------
-
-    def fire_status_event(self, entity='', attribute='', old='', new='', kwargs={}) -> None:
-
-        self.fire_event("status")
-
-# ---------------------------------------------------------------------------------
-
     def status(self, entity, attribute, old, new, kwargs={}) -> None:
 
         status = f'\n\n\tkitchen_timer={self.kitchen_timer}\n'
@@ -1583,13 +1308,13 @@ class Automation(Hass):
 
 # ---------------------------------------------------------------------------------
 
-    async def set_downstairs_motion_flag(self, namespace, domain, service, data) -> None:
+    def set_downstairs_motion_flag(self, namespace, domain, service, data) -> None:
 
         self.downstairs_motion_flag = data['state']
 
 # ---------------------------------------------------------------------------------
 
-    async def _log_function_name(self, namespace, domain, service, data) -> None:
+    def _log_function_name(self, namespace, domain, service, data) -> None:
 
         type_ = data.get('start', True)
         self.log(f'\ttype={type_}')
@@ -1597,9 +1322,54 @@ class Automation(Hass):
 
 # ---------------------------------------------------------------------------------
 
-    async def _max_home(self, namespace, domain, service, data) -> None:
+    def status_event(self, event, data, kwargs) -> None:
+
+        self.status('','','','')
+
+# ---------------------------------------------------------------------------------
+
+    def fire_status_event(self, entity='', attribute='', old='', new='', kwargs={}) -> None:
+
+        self.fire_event("status")
+
+# ---------------------------------------------------------------------------------
+
+    def max_home_event(self, event, data, kwargs) -> None:
 
         self.max_home('', '', '', '', {})
+
+# ---------------------------------------------------------------------------------
+
+    def _max_home(self, namespace, domain, service, data) -> None:
+
+        self.max_home('', '', '', '', {})
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def max_home(self, entity, attribute, old, new, kwargs) -> None:
+        """turn on lights when returning after dark. start timer to turn off front door light"""
+
+        elev = self.get_state('sun.sun', attribute='elevation')
+
+        if elev <= 0:
+            self.run_sequence(
+                [
+                    {'light/turn_on': {'entity_id': ['light.standard_lamp_1', 'light.front_door_1'], 'brightness': 128}},
+                    {'light/turn_on': {'entity_id': ['light.hallway_1'], 'brightness': 64}},
+                ]
+            )
+
+            self.front_door_light_on()
+            seconds = self.lib.interval(minutes=10)
+            self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
+            self.run_in(self.front_door_light_off, seconds)
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def paul_home(self, entity='', attribute='', old='', new='', kwargs={}) -> None:
+        """."""
+
+        self.log(f'\tentity={entity} attribute={attribute} old={old} new={new}')  # kwargs={kwargs}')
 
 # -------------------------------------------------------------------------------------------------
 
@@ -1620,71 +1390,3 @@ class Automation(Hass):
             self.log(('\t>>> begin' if start else '\t<<< end') + f' {name}', level='INFO')
 
 # -------------------------------------------------------------------------------------------------
-
-    def is_twilight(self) -> bool:
-        """is it twilight"""
-        # civil twilight is a sun elevation -6 degrees below horizon
-
-        elev = self.get_sun_elevation()
-        twilight = -6 < elev < 0
-        t = 'is' if twilight else 'is not'
-        self.log_debug(f'{t} twilight')
-
-        return twilight
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_night(self) -> bool:
-        """is it night"""
-        # civil twilight is a sun elevation -6 degrees below horizon
-
-        elev = self.get_sun_elevation()
-        night = elev <= -6
-        t = 'is' if night else 'is not'
-        self.log_debug(f'{t} night')
-
-        return night
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def is_below_horizon(self) -> bool:
-        """is sun below the horizon"""
-        # civil twilight is a sun elevation -6 degrees below horizon
-
-        elev = self.get_sun_elevation()
-        below = elev < 0
-        t = 'is' if below else 'is not'
-        self.log_debug(f'{t} below horizon')
-
-        return below
-
-# ---------------------------------------------------------------------------------------------------------
-
-    # def is_predusk(self) -> bool:
-    #     """is it dusk (dusk less than 1 degree sun elevation)"""
-
-    #     elev = self.get_sun_elevation()
-    #     predusk = elev < 1
-    #     t = 'is' if predusk else 'is not'
-    #     self.log_debug(f'{t} predusk')
-
-    #     return predusk
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def get_sun_elevation(self) -> float:
-        """get sun elevation"""
-
-        elev = self.get_state('sun.sun', attribute='elevation')
-        self.log_debug(f'elev={elev:2.2f}')
-
-        return elev
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def log_debug(self, message) -> None:
-        """log debug message"""
-
-        self.log(f'\t{message}', level="DEBUG")
-
-# ---------------------------------------------------------------------------------------------------------

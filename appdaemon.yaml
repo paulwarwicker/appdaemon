@@ -3,7 +3,7 @@ appdaemon:
   longitude: 0.02619477478856411
   elevation: 20
   time_zone: Europe/London
-  total_threads: 10
+  total_threads: 20
   thread_duration_warning_threshold: 120 # 0 doesn't appear to work - https://appdaemon.readthedocs.io/en/latest/CONFIGURE.html
   plugins:
     HASS:

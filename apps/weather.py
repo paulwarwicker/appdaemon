@@ -1,17 +1,17 @@
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import yaml
-import json # keep for debug
 import math
+import yaml
+# import json # keep for debug
 import aiohttp  # pylint: disable=E0401 disable=E0611
-from appdaemon.plugins.hass.hassapi import Hass  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # pylint: disable=E0401 disable=E0611
 
 class Weather(Hass):
     """Weather app using tomorrow.io data"""
     def initialize(self):
 
-        self.log('-'*72)
+        # self.log('-'*72)
 
         path = Path(f'{self.AD.config_dir}/secrets.yaml')
         path = path if path.is_file() else Path('/homeassistant/secrets.yaml') # HAOS
@@ -42,12 +42,17 @@ class Weather(Hass):
 
         self.call_service('announcer/initialised', name=self.name.capitalize(), announce=False)
 
+        self.log('initialised')
+
     async def get_weather_async(self, *args):
+        """get weather data"""
+
         async with aiohttp.ClientSession() as session:
             async with session.get(**self.request_kwargs) as resp:
                 if resp.status == 200:
                     # self.log('Got weather async', level='DEBUG')
                     json_data = await resp.json()
+                    # print(json_data)
                     await self.publish_current_temperature(json_data)
                     await self.publish_low_forecast(json_data)
                     await self.publish_rain_forecast(json_data)
@@ -57,6 +62,8 @@ class Weather(Hass):
                     self.log(f'Error getting weather async: {resp.status}', level='ERROR')
 
     async def publish_current_temperature(self, json_data):
+        """Publish current temperataure"""
+
         temp = json_data['timelines']['hourly'][1]['values']['temperature']
         await self.set_state(
             'sensor.weather_tomorrowio_temperature',
@@ -66,6 +73,7 @@ class Weather(Hass):
 
     async def publish_low_forecast(self, json_data):
         """Publish forecasted low over next 12 hours"""
+
         low_temp12 = float('inf')
         low_temp24 = float('inf')
         low_dt12 = None
@@ -125,6 +133,7 @@ class Weather(Hass):
 
         for el in json_data['timelines']['hourly']:
             if n < 0:
+                n += 1
                 continue  # we need to skip two samples
             cum_prob_3h += el['values']['precipitationProbability']
             if count == n_samples:
@@ -150,6 +159,7 @@ class Weather(Hass):
         )
 
     def convert_zulu(self, zulu) -> datetime:
+
         """Convert a Zulu based timestring to datetime"""
         utc_dt = zulu.replace("Z","UTC")
         return datetime.strptime(utc_dt, "%Y-%m-%dT%H:%M:%S%Z")

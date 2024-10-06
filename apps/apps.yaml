@@ -20,6 +20,29 @@ automation:
   dependencies:
     - automationlib
     - announcer
+    - timestamp
+
+timestamp:
+  module: timestamp
+  class: Timestamp
+  dependencies:
+    - automationlib
+    - announcer
+
+garage:
+  module: garage
+  class: Garage
+  dependencies:
+    - automationlib
+    - announcer
+
+location:
+  module: location
+  class: Location
+  dependencies:
+    - automationlib
+    - announcer
+    - timestamp
 
 alarms:
   module: alarms
@@ -29,9 +52,10 @@ alarms:
     - automationlib
     - announcer
 
-starling:
-  module: starling
-  class: Starling
+tap:
+  module: tap
+  class: Tap
+  # log_level: DEBUG
   dependencies:
     - automationlib
     - announcer
@@ -43,15 +67,40 @@ sonos:
     - automationlib
     - announcer
 
-location:
-  module: location
-  class: Location
-  dependencies:
-    - automationlib
-    - announcer
-
 weather:
   module: weather
   class: Weather
   log_level: DEBUG
   # location: 78704 US
+  dependencies:
+    # - automationlib
+    - announcer
+
+starling:
+  module: starling
+  class: Starling
+  dependencies:
+    - automationlib
+    - announcer
+
+timers:
+  module: timers
+  class: Timers
+  dependencies:
+    - automationlib
+    - announcer
+
+car:
+  module: car
+  class: Car
+  dependencies:
+    - automationlib
+    - announcer
+
+# motion:
+#   module: motion
+#   class: Motion
+#   dependencies:
+#     - automationlib
+#     - announcer
+

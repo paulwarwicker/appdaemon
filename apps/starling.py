@@ -19,9 +19,9 @@ BASE_URL = "https://api.starlingbank.com/api/v2"
 BASE_URL_SANDBOX = "https://api-sandbox.starlingbank.com/api/v2"
 # SPENDING_CATEGORIES = ['BIKE', 'BILLS_AND_SERVICES', 'BUCKET_LIST', 'CAR', 'CASH', 'CELEBRATION', 'CHARITY', 'CHILDREN', 'CLOTHES', 'COFFEE', 'DEBT_REPAYMENT', 'DIY', 'DRINKS', 'EATING_OUT', 'EDUCATION', 'EMERGENCY', 'ENTERTAINMENT', 'ESSENTIAL_SPEND', 'EXPENSES', 'FAMILY', 'FITNESS', 'FUEL', 'GAMBLING', 'GAMING', 'GARDEN', 'GENERAL', 'GIFTS', 'GROCERIES', 'HOBBY', 'HOLIDAYS', 'HOME', 'IMPULSE_BUY', 'INCOME', 'INSURANCE', 'INVESTMENTS', 'LIFESTYLE', 'MAINTENANCE_AND_REPAIRS', 'MEDICAL', 'MORTGAGE', 'NON_ESSENTIAL_SPEND', 'PAYMENTS', 'PERSONAL_CARE', 'PERSONAL_TRANSFERS', 'PETS', 'PROJECTS', 'RELATIONSHIPS', 'RENT', 'SAVING', 'SHOPPING', 'SUBSCRIPTIONS', 'TAKEAWAY', 'TAXI', 'TRANSPORT', 'TREATS', 'WEDDING', 'WELLBEING', 'NONE', 'REVENUE', 'OTHER_INCOME', 'CLIENT_REFUNDS', 'INVENTORY', 'STAFF', 'TRAVEL', 'WORKPLACE', 'REPAIRS_AND_MAINTENANCE', 'ADMIN', 'MARKETING', 'BUSINESS_ENTERTAINMENT', 'INTEREST_PAYMENTS', 'BANK_CHARGES', 'OTHER', 'FOOD_AND_DRINK', 'EQUIPMENT', 'PROFESSIONAL_SERVICES', 'PHONE_AND_INTERNET', 'VEHICLES', 'DIRECTORS_WAGES', 'VAT', 'CORPORATION_TAX', 'SELF_ASSESSMENT_TAX', 'INVESTMENT_CAPITAL', 'TRANSFERS', 'LOAN_PRINCIPAL', 'PERSONAL', 'DIVIDENDS']
 
-import appdaemon.plugins.hass.hassapi as hass  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # pylint: disable=E0401 disable=E0611
 
-class Starling(hass.Hass):
+class Starling(Hass):
     """This is the documentation for Automation"""
 
     starling = None
@@ -34,7 +34,7 @@ class Starling(hass.Hass):
 
         self.lib = AutomationLib(self)
 
-        self.log('-'*72)
+        # self.log('-'*72)
 
         self.listen_event(self.delete_calendar_events, 'delete_calendar_events')
         self.listen_event(self.add_calendar_events, 'add_calendar_events')
@@ -51,6 +51,8 @@ class Starling(hass.Hass):
         self.run_in_thread(self.add_starling_calendar_events, 0)
 
         self.call_service('announcer/initialised', name=self.name.capitalize(), announce=False)
+
+        self.log('initialised')
 
 # -------------------------------------------------------------------------------------------------
 

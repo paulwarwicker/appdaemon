@@ -11,7 +11,7 @@
 # https://github.com/nickw444/appdaemon-testing
 
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from appdaemon.plugins.hass.hassapi import Hass  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # pylint: disable=E0401 disable=E0611
 
 class Sonos(Hass):
     """Documentation for Sonos"""
@@ -20,6 +20,7 @@ class Sonos(Hass):
     other_entity_id = ['media_player.study', 'media_player.bedroom_2']
     main_entity_id = ['media_player.bathroom', 'media_player.study', 'media_player.bedroom', 'media_player.bedroom_2']
     study_entity_id = 'media_player.study'
+    bedroom_entity_id = 'media_player.bedroom'
     lib = None
     automation = None
 
@@ -28,19 +29,26 @@ class Sonos(Hass):
     def initialize(self):
         """."""
 
-        self.log('-'*72)
+        # self.log('-'*72)
 
         self.lib = AutomationLib(self)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.join_test_event, 'join_test')
 
-        self.run_daily(self.sonos_configuration_2, '06:59:55')
-        self.run_daily(self.sonos_configuration_2, '07:44:55')
-        self.run_daily(self.sonos_configuration_1, '08:59:55')
-        self.run_daily(self.sonos_configuration_1, '09:59:55')
+        self.register_service('sonos/unjoin_all', self.unjoin_all)
+        self.register_service('sonos/unjoin_entity', self.unjoin_entity)
+        self.register_service('sonos/set_configuration', self.set_configuration)
+
+        # self.run_daily(self.sonos_configuration_4, '04:30:00')
+        # self.run_daily(self.sonos_configuration_2, '06:59:55')
+        # self.run_daily(self.sonos_configuration_2, '07:44:55')
+        # self.run_daily(self.sonos_configuration_1, '08:59:55')
+        # self.run_daily(self.sonos_configuration_1, '09:59:55')
 
         self.call_service('announcer/initialised', name=self.name.capitalize(), announce=False)
+
+        self.log('initialised')
 
 # -------------------------------------------------------------------------------------------------
 
@@ -82,11 +90,11 @@ class Sonos(Hass):
         no_downstairs_motion = True
         if check_downstairs_motion:
             no_downstairs_motion = not self.downstairs_motion_flag
-        self.lib.log_debug(f"\tis_not_bank_holiday={is_not_bank_holiday} no_downstairs_motion={no_downstairs_motion}")
+        self.log(f"\tis_not_bank_holiday={is_not_bank_holiday} no_downstairs_motion={no_downstairs_motion}", level='DEBUG')
 
         if is_not_bank_holiday and no_downstairs_motion:
             for speaker in speakers:
-                self.lib.log_debug(f'\tsetting speaker volume to {volume[speaker]} for {speaker}')
+                self.log(f'\tsetting speaker volume to {volume[speaker]} for {speaker}', level='DEBUG')
                 self.call_service('media_player/volume_set', entity_id=speaker, volume_level=volume[speaker])
                 self.call_service('media_player/volume_mute', entity_id=speaker, is_volume_muted=False)
 
@@ -106,12 +114,13 @@ class Sonos(Hass):
 # ---------------------------------------------------------------------------------------------------------
 
     def sonos_configuration_2(self, kwargs={}):
+        # bedroom with join
 
         speakers = ['media_player.bedroom']
         volume = { 'media_player.bedroom': 0.01 }
 
         # don't bother to check downstairs_motion_flag but mute for bank holiday - checked in sonos_configure
-        self._sonos_configure(speakers, volume, True, 7, True, False)
+        self._sonos_configure(speakers, volume, True, 7, True, False) # join
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -122,6 +131,17 @@ class Sonos(Hass):
 
         # don't bother to check downstairs_motion_flag but mute for bank holiday - checked in sonos_configure
         self._sonos_configure(speakers, volume, True, 7, True, False)
+
+# ---------------------------------------------------------------------------------------------------------
+
+    def sonos_configuration_4(self, kwargs={}):
+        # bedroom no join
+
+        speakers = ['media_player.bedroom']
+        volume = { 'media_player.bedroom': 0.01 }
+
+        # don't bother to check downstairs_motion_flag but mute for bank holiday - checked in sonos_configure
+        self._sonos_configure(speakers, volume, True, 7, False, False)
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -151,12 +171,28 @@ class Sonos(Hass):
 
 # ---------------------------------------------------------------------------------------------------------
 
-    def is_playing(self, entity_id=None):
+    async def unjoin_all(self, namespace, domain, service, kwargs) -> None:
 
-        if entity_id is None:
-            entity_id, volume = self.lib.get_entity_id()
-
-        state = self.get_state(entity_id=entity_id, attribute="state")
-        return state == 'playing'
+        self.sonos_unjoin_all()
 
 # ---------------------------------------------------------------------------------------------------------
+
+    async def unjoin_entity(self, namespace, domain, service, kwargs) -> None:
+
+        entity_id = kwargs['entity_id']
+        self.call_service('media_player/unjoin', entity_id=entity_id)
+
+# ---------------------------------------------------------------------------------------------------------
+
+    async def set_configuration(self, namespace, domain, service, kwargs) -> None:
+
+        config = kwargs['config']
+
+        if config == '1':
+            self.sonos_configuration_1()
+        elif config == '2':
+            self.sonos_configuration_2()
+        elif config == '3':
+            self.sonos_configuration_3()
+        elif config == '4':
+            self.sonos_configuration_4()

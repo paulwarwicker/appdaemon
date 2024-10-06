@@ -7,11 +7,11 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-from datetime import datetime, timedelta
+# from datetime import datetime, timedelta
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-import appdaemon.plugins.hass.hassapi as hass  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # pylint: disable=E0401 disable=E0611
 
-class Location(hass.Hass):
+class Location(Hass):
     """This is the documentation for Location"""
 
     lib = None
@@ -44,58 +44,47 @@ class Location(hass.Hass):
     def initialize(self):
         """."""
 
-        self.log('-'*72)
+        # self.log('-'*72)
 
-        self.lib = AutomationLib(self)
+        # self.lib = AutomationLib(self)
 
-        self.listen_event(self.status_event, 'status')
+        # self.listen_event(self.status_event, 'status') # TODO: maybe
 
+        # arrive
         self.listen_state(self.max_location_detect, self.max_entity_id, new='Village', name='Village', location='proximity.village')
-
-        # self.listen_state(self.max_location_detect, self.max_entity_id, new='DS_Smith_Fordham', name='DS_Smith_Fordham', location='proximity.ds_smith_fordham')
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='DS_Smith_Fordham', name='DS_Smith_Fordham', location='proximity.ds_smith_fordham')
-
-        # self.listen_state(self.max_location_detect, self.max_entity_id, new='DS_Smith_Warboys', name='DS_Smith_Warboys', location='proximity.ds_smith_warboys')
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='DS_Smith_Warboys', name='DS_Smith_Warboys', location='proximity.ds_smith_warboys')
-
         self.listen_state(self.max_location_detect, self.max_entity_id, new='Pilates', name='Pilates', location='proximity.pilates')
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Pilates', name='Pilates', location='proximity.pilates')
-
-        # self.listen_state(self.max_location_detect, self.max_entity_id, new='Pilates_Class', name='Pilates_Class', location='proximity.pilates_class')
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Pilates_Class', name='Pilates_Class', location='proximity.pilates_class')
-
         self.listen_state(self.max_location_detect, self.max_entity_id, new='Indian_Ocean', name='Indian_Ocean', location='proximity.indian_ocean', duration=10)
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Indian_Ocean', name='Indian_Ocean', location='proximity.indian_ocean')
-
         self.listen_state(self.max_location_detect, self.max_entity_id, new='Karen_Wax', name='Karen_Wax', location='proximity.karen_wax', duration=10)
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Karen_Wax', name='Karen_Wax', location='proximity.karen_wax')
-
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Karen_Nails', name='Karen_Nails', location='proximity.karen_nails')
-
+        self.listen_state(self.max_location_detect, self.max_entity_id, new='Karen_Smith', name='Karen_Smith', location='proximity.karen_smith')
+        self.listen_state(self.max_location_detect, self.max_entity_id, new='Gay_Kellaway_Racing', name='Gay_Kellaway_Racing', location='proximity.gay_kellaway_racing')
+        # self.listen_state(self.max_location_detect, self.max_entity_id, new='DS_Smith_Fordham', name='DS_Smith_Fordham', location='proximity.ds_smith_fordham')
+        # self.listen_state(self.max_location_detect, self.max_entity_id, new='DS_Smith_Warboys', name='DS_Smith_Warboys', location='proximity.ds_smith_warboys')
+        # self.listen_state(self.max_location_detect, self.max_entity_id, new='Pilates_Class', name='Pilates_Class', location='proximity.pilates_class')
         # self.listen_state(self.max_location_detect, self.max_entity_id, new='Bar_Hill', name='Bar_Hill', location='proximity.bar_hill')
+        # self.listen_state(self.max_location_detect, self.max_entity_id, new='Sainsburys_Eddington', name='Sainsburys_Eddington', location='proximity.sainsburys_eddington')
+        # self.listen_state(self.max_location_detect, self.max_entity_id, new='Waitrose_Trumpington', name='Waitrose_Trumpington', location='proximity.waitrose_trumpington')
+        # self.listen_state(self.max_location_detect, self.max_entity_id, new='Morrisons_StIves', name='Morrisons_StIves', location='proximity.morrisons_stives')
 
+        # leave
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='DS_Smith_Fordham', name='DS_Smith_Fordham', location='proximity.ds_smith_fordham')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='DS_Smith_Warboys', name='DS_Smith_Warboys', location='proximity.ds_smith_warboys')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Pilates', name='Pilates', location='proximity.pilates')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Pilates_Class', name='Pilates_Class', location='proximity.pilates_class')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Indian_Ocean', name='Indian_Ocean', location='proximity.indian_ocean', duration=10)
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Karen_Wax', name='Karen_Wax', location='proximity.karen_wax', duration=10)
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Karen_Nails', name='Karen_Nails', location='proximity.karen_nails')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Karen_Smith', name='Karen_Smith', location='proximity.karen_smith')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Martyn_Tracey', name='Martyn_Tracey', location='proximity.martyn_tracey')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Papworth', name='Papworth', location='proximity.papworth')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Gay_Kellaway_Racing', name='Gay_Kellaway_Racing', location='proximity.gay_kellaway_racing')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Morrisons_StIves', name='Morrisons_StIves', location='proximity.morrisons_stives')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Sainsburys_Eddington', name='Sainsburys_Eddington', location='proximity.sainsburys_eddington')
+        self.listen_state(self.max_location_detect, self.max_entity_id, old='Waitrose_Trumpington', name='Waitrose_Trumpington', location='proximity.waitrose_trumpington')
         # self.listen_state(self.max_location_detect, self.max_entity_id, old='Newmarket', name='Newmarket', location='proximity.newmarket')
 
-        self.listen_state(self.max_location_detect, self.max_entity_id, new='Karen_Smith', name='Karen_Smith', location='proximity.karen_smith')
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Karen_Smith', name='Karen_Smith', location='proximity.karen_smith')
-
-        # self.listen_state(self.max_location_detect, self.max_entity_id, new='Sainsburys_Eddington', name='Sainsburys_Eddington', location='proximity.sainsburys_eddington')
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Sainsburys_Eddington', name='Sainsburys_Eddington', location='proximity.sainsburys_eddington')
-
-        # self.listen_state(self.max_location_detect, self.max_entity_id, new='Waitrose_Trumpington', name='Waitrose_Trumpington', location='proximity.waitrose_trumpington')
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Waitrose_Trumpington', name='Waitrose_Trumpington', location='proximity.waitrose_trumpington')
-
-        self.listen_state(self.max_location_detect, self.max_entity_id, new='Morrisons_StIves', name='Morrisons_StIves', location='proximity.morrisons_stives')
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Morrisons_StIves', name='Morrisons_StIves', location='proximity.morrisons_stives')
-
-        self.listen_state(self.max_location_detect, self.max_entity_id, new='Gay_Kellaway_Racing', name='Gay_Kellaway_Racing', location='proximity.gay_kellaway_racing')
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Gay_Kellaway_Racing', name='Gay_Kellaway_Racing', location='proximity.gay_kellaway_racing')
-
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Martyn_Tracey', name='Martyn_Tracey', location='proximity.martyn_tracey')
-
-        self.listen_state(self.max_location_detect, self.max_entity_id, old='Papworth', name='Papworth', location='proximity.papworth')
-
         self.call_service('announcer/initialised', name=self.name.capitalize(), announce=False)
+
+        self.log('initialised')
 
 # ---------------------------------------------------------------------------------------------------------
 

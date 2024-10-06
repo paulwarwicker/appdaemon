@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import appdaemon.plugins.hass.hassapi as hass  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # pylint: disable=E0401 disable=E0611
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 
-class Test(hass.Hass):
+class Test(Hass):
     """This is the documentation for Test"""
 
     lib = None
