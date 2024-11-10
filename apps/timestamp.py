@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# **************************
-# *** use vscode instead ***
-# **************************
 
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
@@ -12,7 +9,7 @@
 
 from datetime import datetime, timedelta
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from hassapi import Hass  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
 # from typing import Dict
 # from pprint import pprint
@@ -22,21 +19,20 @@ class Timestamp(Hass):
 
     lib = None
     tap_ts = None
+    # FIXME: should be dictionary
     upstairs_ts = datetime.now()
     downstairs_ts = datetime.now()
-    prev_upstairs_ts = datetime.now()
+    prev_upstairs_ts = datetime.now() + timedelta(minutes=-15)
     karoq_announce_ts = datetime.now()
     garage_announce_ts = datetime.now()
     vacuum_announce_ts = datetime.now()
     general_announce_ts = datetime.now() + timedelta(minutes=-15)
     travel_announce_ts = datetime.now() + timedelta(minutes=-15)
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
-
-        # self.log('-'*72)
 
         self.lib = AutomationLib(self)
 
@@ -45,12 +41,12 @@ class Timestamp(Hass):
         self.register_service('timestamp/status', self.status_service)
 
         self.listen_event(self.status_event, 'status')
+        self.listen_event(self.status_event, 'timestamps')
 
-        self.call_service('announcer/initialised', name=self.name.capitalize(), announce=False)
+        self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
+        self.log('initialised', level='WARNING')
 
-        self.log('initialised')
-
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def set_timestamp_service(self, namespace, domain, service, kwargs) -> None:
         """set a named timestamp"""
@@ -86,7 +82,10 @@ class Timestamp(Hass):
             elif name == "vacuum":
                 self.vacuum_announce_ts = ts
 
-# ---------------------------------------------------------------------------------------------------------
+            if self.lib.get_verbose_debug():
+                self.log(f'\t\t{name} timestamp set to {ts}', level='DEBUG')
+
+# ----------------------------------------------------------------------------------------------
 
     def get_timestamp_service(self, namespace, domain, service, kwargs):
         """get a named timestamp"""
@@ -118,22 +117,22 @@ class Timestamp(Hass):
 
         return ts
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def status_service(self, namespace, domain, service, kwargs):
         """status event"""
 
-        self.status()
+        self.status('','','','',{})
 
 # ---------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs) -> None:
 
-        self.status()
+        self.status('','','','',{})
 
 # ---------------------------------------------------------------------------------
 
-    def status(self, entity='', attribute='', old='', new='', kwargs={}) -> None:
+    def status(self, entity, attribute, old, new, kwargs) -> None:
 
         status = f'\n\n\ttap_ts={self.tap_ts}\n'
         status += f'\tupstairs_ts={self.upstairs_ts}\n'
@@ -143,6 +142,12 @@ class Timestamp(Hass):
         status += f'\ttravel_announce_ts={self.travel_announce_ts}\n'
         status += f'\tgarage_announce_ts={self.garage_announce_ts}\n'
         status += f'\tvacuum_announce_ts={self.vacuum_announce_ts}\n'
+
+        diff1 = (self.upstairs_ts - self.downstairs_ts).seconds
+        diff2 = (self.upstairs_ts - self.prev_upstairs_ts).seconds
+
+        status += f'\tupstairs vs downstairs ts={diff1}\n'
+        status += f'\tupstairs vs prev_upstairs ts={diff2}\n'
 
         self.log(f'{status}')
 

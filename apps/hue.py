@@ -2,7 +2,7 @@ import asyncio
 
 from aiohue import HueBridgeV2
 
-from hassapi import Hass
+from hassapi import Hass # type: ignore
 
 HUE_HOST = "192.168.x.x"
 HUE_KEY = "secret"

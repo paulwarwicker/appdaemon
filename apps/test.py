@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from hassapi import Hass  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 
 class Test(Hass):
@@ -8,7 +8,7 @@ class Test(Hass):
 
     lib = None
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def initialize(self):
         """."""
@@ -18,5 +18,4 @@ class Test(Hass):
         self.log('-'*72)
         # self.log(f'\t{self.name} initialised (dow={self.lib.dow()})')
         # self.call_service('announcer/initialised', name=self.name)
-        self.call_service('announcer/initialised', name=self.name.capitalize())
-
+        self.call_service('announcer/initialised', name=self.name.lower())
