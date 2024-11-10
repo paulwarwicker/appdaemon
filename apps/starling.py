@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# **************************
-# *** use vscode instead ***
-# **************************
 
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
@@ -10,33 +7,33 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from datetime import datetime, timedelta
-import requests  # pylint: disable=E0401
-import urllib3  # pylint: disable=E0401 disable=E0611
+import json
+# import uuid
+# import b64decode
+import requests  # type: ignore # pylint: disable=E0401
+import urllib3  # type: ignore # pylint: disable=E0401 disable=E0611
+
+from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
 BASE_URL = "https://api.starlingbank.com/api/v2"
 BASE_URL_SANDBOX = "https://api-sandbox.starlingbank.com/api/v2"
 # SPENDING_CATEGORIES = ['BIKE', 'BILLS_AND_SERVICES', 'BUCKET_LIST', 'CAR', 'CASH', 'CELEBRATION', 'CHARITY', 'CHILDREN', 'CLOTHES', 'COFFEE', 'DEBT_REPAYMENT', 'DIY', 'DRINKS', 'EATING_OUT', 'EDUCATION', 'EMERGENCY', 'ENTERTAINMENT', 'ESSENTIAL_SPEND', 'EXPENSES', 'FAMILY', 'FITNESS', 'FUEL', 'GAMBLING', 'GAMING', 'GARDEN', 'GENERAL', 'GIFTS', 'GROCERIES', 'HOBBY', 'HOLIDAYS', 'HOME', 'IMPULSE_BUY', 'INCOME', 'INSURANCE', 'INVESTMENTS', 'LIFESTYLE', 'MAINTENANCE_AND_REPAIRS', 'MEDICAL', 'MORTGAGE', 'NON_ESSENTIAL_SPEND', 'PAYMENTS', 'PERSONAL_CARE', 'PERSONAL_TRANSFERS', 'PETS', 'PROJECTS', 'RELATIONSHIPS', 'RENT', 'SAVING', 'SHOPPING', 'SUBSCRIPTIONS', 'TAKEAWAY', 'TAXI', 'TRANSPORT', 'TREATS', 'WEDDING', 'WELLBEING', 'NONE', 'REVENUE', 'OTHER_INCOME', 'CLIENT_REFUNDS', 'INVENTORY', 'STAFF', 'TRAVEL', 'WORKPLACE', 'REPAIRS_AND_MAINTENANCE', 'ADMIN', 'MARKETING', 'BUSINESS_ENTERTAINMENT', 'INTEREST_PAYMENTS', 'BANK_CHARGES', 'OTHER', 'FOOD_AND_DRINK', 'EQUIPMENT', 'PROFESSIONAL_SERVICES', 'PHONE_AND_INTERNET', 'VEHICLES', 'DIRECTORS_WAGES', 'VAT', 'CORPORATION_TAX', 'SELF_ASSESSMENT_TAX', 'INVESTMENT_CAPITAL', 'TRANSFERS', 'LOAN_PRINCIPAL', 'PERSONAL', 'DIVIDENDS']
 
-from appdaemon.plugins.hass.hassapi import Hass  # pylint: disable=E0401 disable=E0611
-
 class Starling(Hass):
-    """This is the documentation for Starling"""
+    """This is the documentation for Automation"""
 
-    starling = None
     lib = None
+    starling = None
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def initialize(self):
         """."""
 
         self.lib = AutomationLib(self)
 
-        self.log('-'*72)
-
-        self.listen_event(self.set_log_level_event, 'set_log_level')
         self.listen_event(self.delete_calendar_events, 'delete_calendar_events')
         self.listen_event(self.add_calendar_events, 'add_calendar_events')
         self.listen_event(self.check_feed, 'check_feed')
@@ -51,11 +48,12 @@ class Starling(Hass):
         self.fire_event('refresh_calendar_events')
         self.run_in_thread(self.add_starling_calendar_events, 0)
 
-        self.call_service('announcer/initialised', name=self.name.capitalize(), announce=False)
+        self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
+        self.log('initialised', level='WARNING')
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def show_starling_account(self, kwargs={}):
+    def show_starling_account(self, kwargs):
 
         account = self.starling.account()
         account.update()
@@ -66,12 +64,13 @@ class Starling(Hass):
 
         # goal = helper.find_savings_goal('Tax')
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def add_starling_calendar_events(self, kwargs={}):
+    def add_starling_calendar_events(self, kwargs):
         pass
 
         # # self.lib.log_function_name()
+
         # helper = self.starling
         # account = helper.account()
         # account_uid = account.account_uid
@@ -136,15 +135,15 @@ class Starling(Hass):
 
         # # self.lib.log_function_name(False)
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def check_starling_balance(self, event, data, kwargs={}):
+    def check_starling_balance(self, event, data, kwargs):
 
-        self._check_starling_balance()
+        self._check_starling_balance({})
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def _check_starling_balance(self, kwargs={}):
+    def _check_starling_balance(self, kwargs):
 
         helper = self.starling
         account = helper.account()
@@ -257,20 +256,20 @@ class Starling(Hass):
         #     if add:
         #         self.add_starling_so_calendar_event(so)
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def check_feed(self, event, data, kwargs={}):
+    def check_feed(self, event, data, kwargs):
 
         self._check_feed()
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def _check_feed(self):
 
         self.lib.log_function_name()
         self.lib.log_function_name(False)
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def add_starling_dd_calendar_event(self, dd):
         pass
@@ -295,7 +294,7 @@ class Starling(Hass):
         #     self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
         #     self.log('past direct debit added', level='WARNING')
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def add_starling_so_calendar_event(self, so):
         pass
@@ -310,27 +309,31 @@ class Starling(Hass):
         # self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
         # self.log('future standing order added', level='WARNING')
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def delete_calendar_events(self, event, data, kwargs={}):
+    def delete_calendar_events(self, event, data, kwargs):
 
         self.lib.log_function_name()
+
         state = self.get_state('sensor.starling_events', attribute='scheduled_events')
         for el in state["calendar.starling"]["events"]:
             print(el)
+
         self.lib.log_function_name(False)
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def add_calendar_events(self, event, data, kwargs={}):
+    def add_calendar_events(self, event, data, kwargs):
 
         self.lib.log_function_name()
-        self.add_starling_calendar_events()
+
+        self.add_starling_calendar_events({})
+
         self.lib.log_function_name(False)
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def status_event(self, event, data, kwargs={}):
+    def status_event(self, event, data, kwargs):
 
         status = f'\n\n'
 
@@ -339,13 +342,6 @@ class Starling(Hass):
         # self.show_starling_account()
 
         self.set_state('input_boolean.status', state='off')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def set_log_level_event(self, event, data, kwargs={}) -> None:
-
-        level = data['level']
-        self.set_log_level(level)
 
 # ---------------------------------------------------------------------------------
 
@@ -389,7 +385,7 @@ class StarlingHelper:
     def put_request(self, endpoint: str, data: str) -> None:
 
         url = self.url(endpoint)
-        response = self._session.put(url, headers=self._auth_headers, data=json_dumps(data))
+        response = self._session.put(url, headers=self._auth_headers, data=json.dumps(data)) # was json_dumps
         # print(response.status_code, response.headers)
         response.raise_for_status()
         return
@@ -410,7 +406,7 @@ class StarlingHelper:
 
     def show_savings_goals(self):
 
-        for uid, goal in self.account.savings_goals.items():
+        for uid, goal in self._account.savings_goals.items():
             if goal.target_minor_units is not None:
                 print(f'{uid} - {goal.name} = {goal.target_currency}{goal.total_saved_minor_units:6.2f} ({goal.target_currency}{goal.target_minor_units:6.2f})')
             else:
@@ -418,7 +414,7 @@ class StarlingHelper:
 
     def find_savings_goal(self, name):
 
-        for uid, goal in self.account.savings_goals.items():
+        for uid, goal in self._account.savings_goals.items():
             if goal.name == name:
                 return goal
 
@@ -543,28 +539,28 @@ class SavingsGoal:
         """Add funds to a savings goal."""
 
         url = f"/account/{self._helper.account.account_uid}/savings-goals/{self.uid}/add-money/{uuid4()}"
-        json = {
+        _json = {
             "amount": {
                 "currency": self.total_saved_currency,
                 "minorUnits": deposit_minor_units,
             }
         }
 
-        self._helper.put_request(url, json)
+        self._helper.put_request(url, _json)
         self.update()
 
     def withdraw(self, withdraw_minor_units: int) -> None:
         """Withdraw funds from a savings goal."""
 
         url = f"/account/{self._helper.account.account_uid}/savings-goals/{self.uid}/withdraw-money/{uuid4()}"
-        json = {
+        _json = {
             "amount": {
                 "currency": self.total_saved_currency,
                 "minorUnits": withdraw_minor_units,
             }
         }
 
-        self._helper.put_request(url, json)
+        self._helper.put_request(url, _json)
         self.update()
 
     def get_image(self, filename: str = None) -> None:
@@ -573,9 +569,9 @@ class SavingsGoal:
         if filename is None:
             filename = "{0}.png".format(self.name)
 
-        json = self._helper.get_request(f"/account/{self._helper.account.account_uid}/savings-goals/{self.uid}/photo")
+        _json = self._helper.get_request(f"/account/{self._helper.account.account_uid}/savings-goals/{self.uid}/photo")
 
-        base64_image = json["base64EncodedPhoto"]
+        base64_image = _json["base64EncodedPhoto"]
 
         with open(filename, "wb") as file:
             file.write(b64decode(base64_image))
@@ -725,4 +721,3 @@ class StarlingAccount:
         # description=f"\n{so.currency}{so.amount} - {so.payee_name}\n{so.interval} {so.frequency}\n"
         # self.log(f'start_date={start_date} end_date={end_date} summary={summary} description={description}')
         # self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
-

@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# **************************
-# *** use vscode instead ***
-# **************************
 
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
@@ -11,58 +8,54 @@
 # https://github.com/nickw444/appdaemon-testing
 
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from appdaemon.plugins.hass.hassapi import Hass  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
 class Sonos(Hass):
     """Documentation for Sonos"""
 
+    lib = None
+    # FIXME: should be constants
     broadcast_entity_id = ['media_player.kitchen', 'media_player.bathroom', 'media_player.dining_room']
     other_entity_id = ['media_player.study', 'media_player.bedroom_2']
     main_entity_id = ['media_player.bathroom', 'media_player.study', 'media_player.bedroom', 'media_player.bedroom_2']
     study_entity_id = 'media_player.study'
-    lib = None
-    automation = None
+    bedroom_entity_id = 'media_player.bedroom'
+    ALL_ENTITIES = ['media_player.kitchen', 'media_player.bathroom', 'media_player.bedroom', 'media_player.bedroom_2', 'media_player.study', 'media_player.dining_room']
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def initialize(self):
         """."""
-
-        self.log('-'*72)
 
         self.lib = AutomationLib(self)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.join_test_event, 'join_test')
-        self.listen_event(self.set_log_level_event, 'set_log_level')
 
-        self.run_daily(self.sonos_configuration_2, '06:59:55')
-        self.run_daily(self.sonos_configuration_2, '07:44:55')
-        self.run_daily(self.sonos_configuration_1, '08:59:55')
-        self.run_daily(self.sonos_configuration_1, '09:59:55')
+        self.register_service('sonos/mute_all', self.mute_all)
+        self.register_service('sonos/unjoin_all', self.unjoin_all)
+        self.register_service('sonos/unjoin_entity', self.unjoin_entity)
+        self.register_service('sonos/set_configuration', self.set_configuration)
 
-        self.call_service('announcer/initialised', name=self.name.capitalize(), announce=False)
+        self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
+        self.log('initialised', level='WARNING')
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def sonos_unjoin_all(self, kwargs={}):
+    def mute_all(self, kwargs):
 
-        speakers = ['media_player.kitchen', 'media_player.bathroom', 'media_player.bedroom', 'media_player.bedroom_2', 'media_player.study', 'media_player.dining_room']
-        volume = {
-            'media_player.kitchen': 0.0,
-            'media_player.bathroom': 0.0,
-            'media_player.bedroom': 0.0,
-            'media_player.bedroom_2': 0.0,
-            'media_player.study': 0.0,
-            'media_player.dining_room': 0.0
-        }
+        self._configure(self.ALL_ENTITIES, {}, 0, True, False, True, False)
 
-        self._sonos_configure(speakers, volume, True, 0, False, False)
-        self.call_service('automation/set_downstairs_motion_flag', state=False)
+# ----------------------------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------------------------------------
+    def _configure(self, speakers: list, volume: list, delay: int, unjoin: bool, join: bool, mute: bool, check_downstairs_motion: bool):
 
-    def _sonos_configure(self, speakers, volume, unjoin, delay, join, check_downstairs_motion):
+
+        # is_not_bank_holiday = not self.lib.is_bank_holiday()
+        is_bank_holiday = self.lib.is_bank_holiday()
+
+        if self.lib.get_verbose_debug():
+            self.log(f"\tis_bank_holiday={is_bank_holiday}", level='DEBUG')
 
         if unjoin:
             self.log(f"\tunjoin {speakers}", level='DEBUG')
@@ -72,98 +65,131 @@ class Sonos(Hass):
             self.log(f"\tjoin {speakers}", level='DEBUG')
             self.call_service('media_player/join', entity_id=speakers[0], group_members=speakers[1:])
 
+        if mute:
+            self.log(f"\tmute {speakers}", level='DEBUG')
+
         # assume bank holiday and mute
-        for speaker in speakers:
-            self.call_service('media_player/volume_mute', entity_id=speaker, is_volume_muted=True)
+        self.call_service('media_player/volume_mute', entity_id=speakers, is_volume_muted=True)
 
-        if not self.lib.is_mock_run():
-            self.lib.delay(delay)
+        if mute or is_bank_holiday:
+            return
 
-        is_not_bank_holiday = not self.lib.is_bank_holiday()
-        no_downstairs_motion = True
-        if check_downstairs_motion:
-            no_downstairs_motion = not self.downstairs_motion_flag
-        self.lib.log_debug(f"\tis_not_bank_holiday={is_not_bank_holiday} no_downstairs_motion={no_downstairs_motion}")
-
-        if is_not_bank_holiday and no_downstairs_motion:
+        if not is_bank_holiday:
             for speaker in speakers:
-                self.lib.log_debug(f'\tsetting speaker volume to {volume[speaker]} for {speaker}')
+                self.log(f'\tsetting speaker volume to {volume[speaker]} for {speaker}', level='DEBUG')
                 self.call_service('media_player/volume_set', entity_id=speaker, volume_level=volume[speaker])
                 self.call_service('media_player/volume_mute', entity_id=speaker, is_volume_muted=False)
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def sonos_configuration_1(self, kwargs={}):
+    def configuration_1(self, kwargs):
 
-        speakers = [
-            'media_player.bedroom', 'media_player.bathroom', 'media_player.bedroom_2', ]
+        speakers = ['media_player.bedroom', 'media_player.bathroom', 'media_player.bedroom_2']
         volume = {
-            'media_player.bedroom': 0.01, 'media_player.bathroom': 0.3, 'media_player.bedroom_2': 0.3
+            'media_player.bedroom': 0.01,
+            'media_player.bathroom': 0.3,
+            'media_player.bedroom_2': 0.3
         }
 
-        # don't bother to check downstairs_motion_flag but mute for bank holiday - checked in sonos_configure
-        self._sonos_configure(speakers, volume, True, 7, True, False)
+        self._configure(speakers, volume, 7, True, True, False, False)
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def sonos_configuration_2(self, kwargs={}):
+    def configuration_2(self, kwargs):
+        # bedroom with join
 
         speakers = ['media_player.bedroom']
         volume = { 'media_player.bedroom': 0.01 }
 
-        # don't bother to check downstairs_motion_flag but mute for bank holiday - checked in sonos_configure
-        self._sonos_configure(speakers, volume, True, 7, True, False)
+        self._configure(speakers, volume, 7, True, True, False, False)
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def sonos_configuration_3(self, kwargs={}):
+    def configuration_3(self, kwargs):
 
         speakers = ['media_player.kitchen', 'media_player.bedroom', 'media_player.bedroom_2']
         volume = {'media_player.kitchen': 0.05, 'media_player.bedroom': 0.05, 'media_player.bedroom_2': 0.3}
 
-        # don't bother to check downstairs_motion_flag but mute for bank holiday - checked in sonos_configure
-        self._sonos_configure(speakers, volume, True, 7, True, False)
+        self._configure(speakers, volume, 7, True, True, False, False)
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def status_event(self, event, data, kwargs={}):
+    def configuration_4(self, kwargs):
+        # bedroom no join
+
+        speakers = ['media_player.bedroom']
+        volume = { 'media_player.bedroom': 0.01 }
+
+        self._configure(speakers, volume, 7, True, False, False, False)
+
+# ----------------------------------------------------------------------------------------------
+
+    def status_event(self, event, data, kwargs):
 
         status = '\n\n'
 
         self.log(f'{status}')
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def join_test_event(self, event, data, kwargs={}):
+    async def join_test_event(self, event, data, kwargs):
 
-        status = 'join_test'
+        print(100)
+        await self.unjoin_all('','','',{})
+        self.lib.delay(2)
+        self.configuration_1({})
+        self.lib.delay(2)
+        await self.unjoin_all('','','',{})
+        self.lib.delay(2)
+        self.configuration_2({})
+        self.lib.delay(2)
+        await self.unjoin_all('','','',{})
+        self.lib.delay(2)
+        self.configuration_3({})
+        self.lib.delay(2)
+        await self.unjoin_all('','','',{})
+        self.lib.delay(2)
+        self.configuration_4({})
+        self.lib.delay(2)
+        await self.unjoin_all('','','',{})
+        print(200)
 
-        self.log(f'{status}')
+# ----------------------------------------------------------------------------------------------
 
-        self.sonos_configuration_1()
-        self.lib.delay(5)
-        self.sonos_unjoin_all()
-        self.sonos_configuration_2()
-        self.lib.delay(5)
-        self.sonos_unjoin_all()
-        self.sonos_configuration_3()
-        self.lib.delay(5)
-        self.sonos_unjoin_all()
+    async def unjoin_all(self, namespace, domain, service, kwargs) -> None:
 
-# ---------------------------------------------------------------------------------------------------------
+        speakers = self.ALL_ENTITIES
+        # volume = {
+        #     'media_player.kitchen': 0.0,
+        #     'media_player.bathroom': 0.0,
+        #     'media_player.bedroom': 0.0,
+        #     'media_player.bedroom_2': 0.0,
+        #     'media_player.study': 0.0,
+        #     'media_player.dining_room': 0.0
+        # }
 
-    def is_playing(self, entity_id=None):
+        self._configure(speakers, {}, 0, True, False, True, False)
 
-        if entity_id is None:
-            entity_id, volume = self.lib.get_entity_id()
+# ----------------------------------------------------------------------------------------------
 
-        state = self.get_state(entity_id=entity_id, attribute="state")
-        return state == 'playing'
+    async def unjoin_entity(self, namespace, domain, service, kwargs) -> None:
 
-# ---------------------------------------------------------------------------------------------------------
+        entity_id = kwargs['entity_id']
+        self.call_service('media_player/unjoin', entity_id=entity_id)
 
-    def set_log_level_event(self, event, data, kwargs={}) -> None:
+# ----------------------------------------------------------------------------------------------
 
-        level = data['level']
-        self.set_log_level(level)
+    async def set_configuration(self, namespace, domain, service, kwargs) -> None:
 
+        config = kwargs['config']
+
+        if config == '1':
+            self.configuration_1({})
+        elif config == '2':
+            self.configuration_2({})
+        elif config == '3':
+            self.configuration_3({})
+        elif config == '4':
+            self.configuration_4({})
+
+# ----------------------------------------------------------------------------------------------

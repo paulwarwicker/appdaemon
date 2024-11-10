@@ -1,57 +1,126 @@
 automationlib:
   module: automationlib
   global: true
-
-# test:
-#   module: test
-#   class: Test
-#   dependencies:
-#     - automationlib
-
 announcer:
   module: announcer
   class: Announcer
+  log_level: DEBUG
   dependencies:
     - automationlib
-
 automation:
   module: automation
   class: Automation
-  dependencies:
-    - automationlib
-    - announcer
-
-alarms:
-  module: alarms
-  class: Alarms
   # log_level: DEBUG
   dependencies:
     - automationlib
     - announcer
-
-starling:
-  module: starling
-  class: Starling
+    - timestamp
+timestamp:
+  module: timestamp
+  class: Timestamp
+  # log_level: DEBUG
   dependencies:
     - automationlib
     - announcer
-
-sonos:
-  module: sonos
-  class: Sonos
-  dependencies:
-    - automationlib
-    - announcer
-
 location:
   module: location
   class: Location
+  # log_level: DEBUG
   dependencies:
     - automationlib
     - announcer
-
+    - timestamp
+alarms:
+  module: alarms
+  class: Alarms
+  log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+sonos:
+  module: sonos
+  class: Sonos
+  # log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+timers:
+  module: timers
+  class: Timers
+  # log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+motion:
+  module: motion
+  class: Motion
+  # log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+lighting:
+  module: lighting
+  class: Lighting
+  # log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+front_door:
+  module: front_door
+  class: FrontDoor
+  # log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+# --
+garage:
+  module: garage
+  class: Garage
+  log_level: INFO # DEBUG
+  dependencies:
+    - automationlib
+    - announcer
 weather:
   module: weather
   class: Weather
-  # log_level: DEBUG
+  log_level: INFO # DEBUG
   # location: 78704 US
+  dependencies:
+    # - automationlib
+    - announcer
+tap:
+  module: tap
+  class: Tap
+  log_level: INFO # DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+car:
+  module: car
+  class: Car
+  log_level: INFO # DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+# --
+# vacuum:
+#   module: vacuum
+#   class: Vacuum
+#   # log_level: DEBUG
+#   dependencies:
+#     - automationlib
+#     - announcer
+# doorbell:
+#   module: doorbell
+#   class: DoorBell
+#   # log_level: DEBUG
+#   dependencies:
+#     - automationlib
+#     - announcer
+# starling:
+#   module: starling
+#   class: Starling
+#   # log_level: DEBUG
+#   dependencies:
+#     - automationlib
+#     - announcer

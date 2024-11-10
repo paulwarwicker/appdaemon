@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# **************************
-# *** use vscode instead ***
-# **************************
 
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
@@ -12,299 +9,351 @@
 
 import threading
 import time
+import json
+import re
+import uuid
+import traceback
+from queue import Queue
 import yaml
 import arrow  # pylint: disable=E0401
-import requests  # pylint: disable=E0401
+import requests  # type: ignore # pylint: disable=E0401
 
-from queue import Queue
-from ics import Calendar
+from ics import Calendar # type: ignore # pylint: disable=E0401
 
-from appdaemon.plugins.hass.hassapi import Hass  # pylint: disable=E0401 disable=E0611
+from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+# app_lock decorator
+import adbase as ad # type: ignore pylint: disable=E0401 disable=W0611
 
 class Announcer(Hass): # pylint: disable=W0212 disable=W0621
     """This is the documentation for Announcer"""
 
+    lib = None
     queue = None
+    announce_queue = None
+    notify_queue = None
+    announce_lock = None
     cache = True
     START = 8
-    END = 21
-    lib = None
+    END = 23
+    # BROADCAST_ENTITY_ID = ['media_player.kitchen', 'media_player.bathroom', 'media_player.dining_room']
+    # OTHER_ENTITY_ID = ['media_player.study', 'media_player.bedroom', 'media_player.bedroom_2']
+    BROADCAST_ENTITY_ID = ['media_player.kitchen', 'media_player.bathroom']
+    OTHER_ENTITY_ID = ['media_player.study', 'media_player.bedroom', 'media_player.bedroom_2', 'media_player.dining_room']
+    ALL_ENTITY_ID = BROADCAST_ENTITY_ID + OTHER_ENTITY_ID
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """Documentation for Announcer"""
 
-        self.log('-'*72)
-
         self.lib = AutomationLib(self)
+
         self.queue = Queue(maxsize = 0)
+        self.notify_queue = Queue(maxsize = 0)
+        self.announce_queue = Queue(maxsize = 0)
+
+        self.register_service('announcer/announce', self.announce_service)
+        self.register_service('announcer/broadcast', self.broadcast_service)
+        self.register_service('announcer/notification', self.notification_service)
+        self.register_service('announcer/initialised', self.initialised_service)
 
         self.listen_event(self.status_event, 'status')
-        self.listen_event(self.test_message_event, 'test_message')
-        self.listen_event(self.vouchers_announce_event, 'vouchers_announce')
-        self.listen_event(self.bins_announce_event, 'bins_announce')
-        self.listen_event(self.set_log_level_event, 'set_log_level')
+        self.listen_event(self.vouchers_event, 'vouchers')
+        self.listen_event(self.bins_event, 'bins1')
+        self.listen_event(self.bins_event, 'bins2')
+        self.listen_event(self.bins_event, 'bins3')
+        self.listen_event(self.announce_event, 'announce')
+        self.listen_event(self.broadcast_event, 'broadcast')
 
-        self.register_service('announcer/announce', self.announce)
-        self.register_service('announcer/broadcast', self.broadcast)
-        self.register_service('announcer/notification', self.notification)
-        self.register_service('announcer/desktop_notification', self.desktop_notification)
-        self.register_service('announcer/initialised', self.initialised)
+        self.run_daily(self.bins, '19:30:00', event='preannounce')
+        self.run_daily(self.bins, '17:30:00', event='announce')
+        self.run_daily(self.bins, '19:30:00', event='followup')
 
-        self.run_daily(self.bins_preannounce, '19:30:00')
-        self.run_daily(self.bins_announce1, '17:30:00')
-        self.run_daily(self.bins_announce2, '19:30:00')
-        self.run_daily(self.vouchers_announce, '17:29:00')
+        self.announce_lock = threading.Lock()
+        announce_thread = threading.Thread(target=self.announce_worker)
+        announce_thread.daemon = True
+        announce_thread.start()
+        notify_thread = threading.Thread(target=self.notify_worker)
+        notify_thread.daemon = True
+        notify_thread.start()
 
-        # self.submit_to_executor(self.announce_worker)
-        t = threading.Thread(target=self.announce_worker)
-        t.daemon = True
-        t.start()
+        self.log('initialised', level='WARNING')
 
-        # self._announce('media_player.study', f'{self.name.capitalize()} initialised', False)
-        self.log('-'*72, level="WARNING")
+# ----------------------------------------------------------------------------------------------
 
-# -------------------------------------------------------------------------------------------------
+    def announce_service(self, namespace, domain, service, kwargs) -> None:
 
-    def status_event(self, event, data, kwargs={}) -> None:
+        if self.lib.get_verbose_debug():
+            self.log(f'namespace={namespace}, domain={domain}, service={service}, kwargs={kwargs}', level='DEBUG')
 
-        self._status()
-
-# -------------------------------------------------------------------------------------------------
-
-    def test_message_event(self, event, data, kwargs={}) -> None:
-
-        self._announce('media_player.study', 'Test message', False)
-
-# -------------------------------------------------------------------------------------------------
-
-    def vouchers_announce_event(self, event, data, kwargs={}) -> None:
-
-        self.vouchers_announce()
-
-# -------------------------------------------------------------------------------------------------
-
-    def bins_announce_event(self, event, data, kwargs={}) -> None:
-
-        self.bins_announce1()
-
-# -------------------------------------------------------------------------------------------------
-
-    def set_log_level_event(self, event, data, kwargs={}) -> None:
-
-        level = data['level']
-        self.set_log_level(level)
-
-# -------------------------------------------------------------------------------------------------
-
-    def announce_worker(self, *args, **kwargs) -> None:
-
-        self.log('\tannounce_worker listening')
-
-        while True:
-            # print(self.queue.queue)
-            (entity_id, message, snapshot, announce) = self.queue.get()
-            # print(f'\tworker get entity_id={entity_id} message={message} snapshot={snapshot} announce={announce}')
-            self._announce(entity_id, message, snapshot, announce)
-
-# -------------------------------------------------------------------------------------------------
-
-    async def announce(self, namespace, domain, service, kwargs) -> None:
-
-        entity_id = kwargs.get('entity_id', None)
-        message = kwargs.get('message', 'Unspecified message')
-        snapshot = kwargs.get('snapshot', False)
+        entity_id = kwargs['entity_id']
+        other_id = list(set(self.ALL_ENTITY_ID) - set(entity_id))
+        message = kwargs['message']
+        volume = kwargs.get('volume', 0.15)
         announce = kwargs.get('announce', True)
+        timestamp = kwargs.get('timestamp', None)
 
-        self.queue.put([entity_id, message, snapshot, announce])
-        # print(f'\tput entity_id={entity_id} message={message} snapshot={snapshot} announce={announce}')
+        entry = self.prepare('announce_service', entity_id, other_id, volume, message, announce, timestamp, None) # None is delay
+        # self.put_entry(self.announce_queue, entry)
+        with self.announce_lock:
+            self.announce(entry)
 
-# ---------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    async def broadcast(self, namespace, domain, service, kwargs) -> None:
+    def broadcast_service(self, namespace, domain, service, kwargs) -> None:
 
-        # print(f'\tin broadcast entity_id={entity_id}, message={message}, snapshot={snapshot}')
+        if self.lib.get_verbose_debug():
+            self.log(f'namespace={namespace}, domain={domain}, service={service}, kwargs={kwargs}', level='DEBUG')
 
-        self._broadcast(kwargs['broadcast_entity_id'],
-                        kwargs['other_entity_id'],
-                        kwargs['volume'],
-                        kwargs['message'],
-                        kwargs['snapshot'])
+        entity_id = kwargs.get('broadcast_entity_id', self.BROADCAST_ENTITY_ID)
+        other_id = kwargs.get('other_entity_id', self.OTHER_ENTITY_ID)
+        volume = kwargs.get('volume', 0.5)
+        message = kwargs['message']
+        announce = kwargs.get('announce', True)
+        timestamp = kwargs.get('timestamp', None)
 
-# ---------------------------------------------------------------------------------
+        if self.lib.get_testing():
+            entity_id = 'media_player.study'
+            other_id = []
+            volume = 0.15
 
-    async def desktop_notification(self, namespace, domain, service, data) -> None:
+        entry = self.prepare('broadcast_service', entity_id, other_id, volume, message, announce, timestamp, 4.0) # 4.0 is delay
+        # self.put_entry(self.announce_queue, entry)
+        with self.announce_lock:
+            self.announce(entry)
 
-        self._desktop_notification(data['message'])
+# ----------------------------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------------------------------------
+    def notification_service(self, namespace, domain, service, data) -> None:
 
-    async def notification(self, namespace, domain, service, data) -> None:
+        notify_type = data.get('type', 'desktop')
+        message = data.get('message', 'default message')
 
-        self._notification(data['message'])
+        self.notification(notify_type, message)
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    async def initialised(self, namespace, domain, service, data) -> None:
+    def initialised_service(self, namespace, domain, service, data) -> None:
 
         name = data.get('name', 'unknown')
-        entity_id = 'media_player.study'
         message = f'{name} initialised'
-        snapshot = False
-        announce = data.get('announce', True)
 
-        self.queue.put([entity_id, message, snapshot, announce])
-        # print(f'\tput entity_id={entity_id} message={message} snapshot={snapshot} announce={announce}')
+        self.notification('desktop', message)
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def _announceable(self, hint) -> bool:
+    def announce_event(self, event, data, kwargs) -> None:
 
-        if self.get_state('input_boolean.force_announcement') == 'on':
-            return True
+        message = 'first announce message'
 
-        # mute_announcement has precendence over hint
-        if self.get_state('input_boolean.mute_announcement') == 'on':
-            return False
+        for attempt in range(3):
+            if attempt == 1:
+                message = 'second announce message'
+            elif attempt == 2:
+                message = 'third announce message'
 
-        if hint is False:
-            return False
+            self.call_service('announcer/announce',
+                              entity_id='media_player.study',
+                              message=message,
+                              volume=0.15,
+                              announce=True,
+                              timestamp=None)
+            time.sleep(2.0)
 
-        dow = self.lib.dow()
+# ----------------------------------------------------------------------------------------------
 
-        announceable1 = self.now_is_between(f'{self.START:02d}:00:00', f'{self.END:02d}:30:00')
-        announceable2 = (dow in (2,4) and self.now_is_between('09:27:00', '09:58:00')) or (dow in (1,5) and self.now_is_between('16:27:00', '16:58:00'))
+    def broadcast_event(self, event, data, kwargs) -> None:
 
-        # print(f'\tannouncable1={announceable1} announcable2={announceable2}, announceable1 and not announceable2={announceable1 and not announceable2}')
+        entity_id = self.BROADCAST_ENTITY_ID
+        other_id = self.OTHER_ENTITY_ID
+        volume = 0.5
 
-        return announceable1 and not announceable2
+        message = 'first broadcast message'
 
-# ---------------------------------------------------------------------------------------------------------
+        for attempt in range(3):
+            if attempt == 1:
+                message = 'second broadcast message'
+            elif attempt == 2:
+                message = 'third broadcast message'
 
-    def _announce(self, entity_id=None, message='', snapshot=False, announce=True) -> None:
+            self.call_service('announcer/broadcast',
+                              entity_id=entity_id,
+                              other_id=other_id,
+                              message=message,
+                              volume=volume,
+                              announce=True,
+                              timestamp=None)
+            time.sleep(2.0)
 
-        # print(f'\tin _announce entity_id={entity_id} message={message} snapshot={snapshot}, announce={announce}')
+# ----------------------------------------------------------------------------------------------
 
-        (entity_id, volume) = self.lib.get_entity_id(entity_id)
+    def status_event(self, event, data, kwargs) -> None:
 
-        snapshot = self.lib.is_playing(entity_id)
+        self.status()
 
-        if self._announceable(announce):
-            if snapshot:
-                self.call_service('sonos/snapshot', entity_id=entity_id, with_group=True)
+# ----------------------------------------------------------------------------------------------
 
-            self._desktop_notification(message)
+    def vouchers_event(self, event, data, kwargs) -> None:
 
-            self.run_sequence(
-                [
-                    {'media_player/volume_set': {'entity_id': entity_id, 'volume_level': volume}},
-                    {'media_player/volume_mute': {'entity_id': entity_id, 'is_volume_muted': False}},
-                    # https://www.home-assistant.io/integrations/google_translate/
-                    {'tts/speak': {'entity_id': 'tts.google_en_co_uk', 'cache': self.cache, 'message': message, 'media_player_entity_id': entity_id}},
-                    {'media_player/repeat_set': {'entity_id': entity_id, 'repeat': 'off'}}
-                ]
-            )
+        self.vouchers_announce({})
 
-            time.sleep(len(message) * 0.25)
+# ----------------------------------------------------------------------------------------------
 
-            if snapshot:
-                self.call_service('sonos/restore', entity_id=entity_id, with_group=True)
+    def bins_event(self, event, data, kwargs) -> None:
+
+        event = kwargs.get('event')
+
+        self.bins_announce(event)
+
+# ----------------------------------------------------------------------------------------------
+
+    @ad.app_lock
+    def announce(self, entry) -> None: # pylint: disable=R0914
+
+        (uu_id, entity_list, other_id, volume, message, announce, timestamp, delay) = entry
+
+        verbose = self.lib.get_verbose_debug()
+
+        if entity_list is None:
+            self.log('entity_list is unspecified', level='ERROR')
+            traceback.print_stack()
+            return
+
+        entity_list = [entity_list] if isinstance(entity_list, str) else entity_list
+
+        if self.announceable(announce):
+            if self.lib.get_verbose_debug():
+                status = f'\n\n\tin announce\t{uu_id} entity_id={entity_list} volume={volume} message="{message}" announce={announce} delay={delay}\n'
+                status += f'\t\t\t{uu_id} other_id={other_id}\n'
+                status += self.print_queue(True)
+                self.log(status, level='DEBUG')
+
+            media_content_id = f'media-source://tts/cloud?message="{message}"'
+
+            entity_id = entity_list[0]
+
+            self.call_service('sonos/snapshot',
+                            entity_id='all',
+                            with_group=True)
+
+            time.sleep(5.0) # pause after snapshot
+
+            for entity in entity_list:
+                self.call_service('media_player/unjoin',
+                                entity_id=entity)
+                self.call_service('media_player/repeat_set',
+                                entity_id=entity,
+                                repeat='off')
+                self.call_service('media_player/volume_set',
+                                entity_id=entity,
+                                volume_level=volume)
+                self.call_service('media_player/volume_mute',
+                                entity_id=entity,
+                                is_volume_muted=False)
+
+            self.call_service('media_player/join',
+                            entity_id=entity_id,
+                            group_members=entity_list[1:])
+
+            for entity in other_id:
+                self.call_service('media_player/volume_mute',
+                                entity_id=entity,
+                                is_volume_muted=True)
+
+            self.call_service('media_player/volume_mute',
+                            entity_id=entity_id,
+                            is_volume_muted=False)
+
+            callback = getattr(self, 'restore')
+
+            self.call_service('media_player/play_media',
+                            entity_id=entity_id,
+                            media_content_type="music",
+                            media_content_id=media_content_id,
+                            # callback=callback,
+                            announce=True)
+
+            state = self.get_state(entity_id=entity_id, attribute="all")
+            delay = state['attributes']['media_duration'] + 2
+            delay = 10 # 8 works but more time required when 5 speakers
+
+            if verbose:
+                self.log(f'\t\n{state}', level='DEBUG')
+
+            if timestamp:
+                self.call_service('timestamp/set', name=timestamp)
+
+            time.sleep(delay)
+            self.call_service('sonos/restore', entity_id='all', with_group=True)
         else:
-            if self.get_state('input_boolean.mute_announcement') == 'on':
-                message = f"(muted) {message}"
-
-            self._desktop_notification(message)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def _broadcast(self, broadcast_entity_id, other_entity_id, volume, message, snapshot) -> None:
-
-        self.call_service('sonos/snapshot', entity_id='all')
-
-        self.call_service('media_player/join', entity_id=broadcast[0], group_members=broadcast[1:])
-
-        for e in broadcast_entity_id:
-            self.call_service('media_player/volume_set', entity_id=e, volume_level=volume)
-
-        for e in other_entity_id:
-            self.call_service('media_player/volume_mute', entity_id=e, is_volume_muted=True)
-
-        self._announce(broadcast_entity_id, message, False)
-
-        self.call_service('sonos/restore', entity_id='all')
-
-        for e in broadcast_entity_id + other_entity_id:
-            self.call_service('media_player/volume_mute', entity_id=e, is_volume_muted=False)
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def _desktop_notification(self, message) -> None:
-
-        self.log(f'\t{message}', level="WARNING")
-
-        self.run_sequence(
-            [
-                {'notify/disc0rd': {'title': 'Deferred notification', 'message': message, 'target': "1250932196613685313"}},
-                # {'notify/pushbullet': {'title': 'Deferred notification', 'message': message}}
-            ]
-        )
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def _notification(self, message) -> None:
-
-        self.log(f'\t{message}', level="WARNING")
-
-        self.run_sequence(
-            [
-                {'notify/disc0rd': {'title': 'FIXME: Notification', 'message': 'FIXME: ' + message, 'target': "1250932196613685313"}},
-                # {'notify/pushbullet': {'title': 'Deferred notification', 'message': message}}
-            ]
-        )
-
-# -------------------------------------------------------------------------------------------------
-
-    def _status(self) -> None:
-
-        status = '\n\n\t--\n'
-
-        self.log(f'{status}')
-
-        print(self.queue)
+            self.notification('desktop', message)
 
 # ---------------------------------------------------------------------------------
 
-    def bins_announce(self, announce_type, force=False):
+    def restore(self, kwargs) -> None:
+
+        time.sleep(10.0) # 8 works but more time required when 3 speakers
+        self.call_service('sonos/restore', entity_id='all', with_group=True)
+
+# ----------------------------------------------------------------------------------------------
+
+    def notification(self, notify_type, message) -> None:
+
+        if self.lib.get_verbose_debug():
+            self.log(f'\t{notify_type} notification message={message}', level="DEBUG")
+
+        self.call_service('notify/disc0rd', title='Desktop notification', message=message, target='1250932196613685313')
+
+        # self.call_service('notify/disc0rd', title='Notification', message=f'FIXME: {message}', target='1250932196613685313') # FIXME: title
+
+        # self.run_sequence(
+        #     [
+        #         {'notify/disc0rd': {'title': 'Notification', 'message': 'FIXME: ' + message, 'target': "1250932196613685313"}},
+        #     ]
+        # )
+
+# ----------------------------------------------------------------------------------------------
+
+    def bins(self, kwargs) -> None:
+
+        event = kwargs.get('event', None)
+
+        if event == 'preannounce':
+            self.bins_announce('preannounce', self.lib.get_testing())
+        elif event == 'announce':
+            self.bins_announce('announce1', self.lib.get_testing())
+        elif event == 'followup':
+            self.bins_announce('announce2', self.lib.get_testing())
+
+# ----------------------------------------------------------------------------------------------
+
+    def bins_announce(self, event, force=False):
 
         # https://www.scambs.gov.uk/recycling-and-bins/find-your-household-bin-collection-day#id=100091416947
         # baseurl = 'https://refusecalendarapi.azurewebsites.net/calendar/ical/'
         baseurl = 'https://servicelayer3c.azure-api.net/wastecalendar/calendar/ical/'
-        url = baseurl+'100091416947'  # was '100091416948'
+        url = baseurl+'100091416947'
         bins = []
-        dow = arrow.now().floor('day').shift(hours=6).shift(days=2)  # 6am day after tomorrow     # pylint: disable=E0401
 
-        if announce_type == 'preannounce':
-            dow = arrow.now().floor('day').shift(hours=6).shift(days=2)  # 6am day after tomorrow     # pylint: disable=E0401
-        else:
-            dow = arrow.now().floor('day').shift(hours=6).shift(days=1)  # 6am tomorrow       # pylint: disable=E0401
+        # 6am day after tomorrow or 6am tomorrow
+        dow = self.now().floor('day').shift(hours=6).shift(days=2) if event == 'preannounce' else self.now().floor('day').shift(hours=6).shift(days=1)
 
         loop = True
-        pattern = r'^Rate limit is exceeded. Try again in (\d+) seconds.$'
 
         while loop:
-            r = requests.get(url)  # pylint: disable=E0401
-            t = r.text
+            # r = requests.get(url) # FIXME: remove?
+            # t = r.text
+            t = requests.get(url).text
             if t[0] == '{':
                 y = json.loads(t)
-                a = re.search(pattern, y['message'])
+                a = re.search(r'^Rate limit is exceeded. Try again in (\d+) seconds.$', y['message'])
                 s = a.groups(1)[0]
                 self.lib.delay(int(s))
             else:
                 loop = False
 
-        c = Calendar(t)  # pylint: disable=E0401
+        c = Calendar(t)
 
         for e in iter(c.timeline.overlapping(dow, dow)):
             bins.append(e.name.split()[0].lower())
@@ -319,36 +368,22 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             else:
                 bins.append('bin')
 
-            if announce_type == 'preannounce':
+            phrase = ''
+
+            if event == 'preannounce':
                 phrase = ' '.join(['It', 'is', 'the', ' '.join(bins), 'this', 'week'])
-            elif announce_type == 'announce1':
+            elif event == 'announce':
                 phrase = ' '.join(['Can', 'you', 'put', 'the', ' '.join(bins), 'out', 'please'])
-            elif announce_type == 'announce2':
+            elif event == 'followup':
                 phrase = ' '.join(['Have', 'you', 'put', 'the', ' '.join(bins), 'out'])
+            else:
+                phrase = 'An error has occured'
 
-            self._announce(message=phrase)
+            self.broadcast(message=phrase, timestamp=f'bins_{event}')
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-    def bins_preannounce(self, kwargs={}) -> None:
-
-        self.bins_announce('preannounce', self.lib.get_testing())
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def bins_announce1(self, kwargs={}) -> None:
-
-        self.bins_announce('announce1')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def bins_announce2(self, kwargs={}) -> None:
-
-        self.bins_announce('announce2')
-
-# ---------------------------------------------------------------------------------------------------------
-
-    def vouchers_announce(self, kwargs={}) -> None:
+    def vouchers_announce(self, kwargs) -> None:
 
         dow = self.lib.dow()
 
@@ -362,7 +397,6 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         force = vouchers['force']
         value = vouchers['value']
         expiry = vouchers['expiry']
-        force = True
 
         if self.lib.is_mock_run():
             value = 1
@@ -370,10 +404,120 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         if dow == 2 or force:
             if value > 0:
-                phrase = ' '.join([str(value), 'pounds', 'of', 'vouchers', 'expiring', 'end', 'of', expiry])
-                self.log(f'\tphrase={phrase}')
-                self._announce(message=phrase)
+                message = ' '.join([str(value), 'pounds', 'of', 'vouchers', 'expiring', 'end', 'of', expiry])
+                self.broadcast(message=message, timestamp='vouchers')
             else:
                 self.log('\tno expiring vouchers', level='WARNING')
 
-# ---------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+
+    def announce_worker(self, *args, **kwargs) -> None:
+
+        self.log('\tannounce_worker listening')
+
+        while True:
+            entry = self.get_entry(self.announce_queue)
+            # with self.announce_lock:
+            self.announce(entry)
+
+# ----------------------------------------------------------------------------------------------
+
+    def notify_worker(self, *args, **kwargs) -> None:
+
+        self.log('\tnotify_worker listening')
+
+        while True:
+            entry = self.get_entry(self.notify_queue)
+            # with self.announce_lock:
+            self.announce(entry)
+
+# ----------------------------------------------------------------------------------------------
+
+    def prepare(self, method_id, entity_id, other_id, volume, message, announce, timestamp, delay) -> list: # pylint: disable=R0913
+
+        uu_id = uuid.uuid4()
+
+        if self.lib.get_testing():
+            volume = 0.15
+            entity_id = ['media_player.study']
+            other_id = list(set(self.ALL_ENTITY_ID) - set(entity_id))
+
+        if self.lib.get_verbose_debug():
+            status = f'\n\n\tin {method_id} put {uu_id} entity_id={entity_id} volume={volume} message="{message}" announce={announce} timestamp={timestamp} delay={delay}\n'
+            status += f'\t\t\t{uu_id} other_id={other_id}\n'
+
+        return [uu_id, entity_id, other_id, volume, message, announce, timestamp, delay]
+
+# ----------------------------------------------------------------------------------------------
+
+    def now(self):
+
+        return arrow.now() # pylint: disable=E1101
+
+# ----------------------------------------------------------------------------------------------
+
+    # @ad.app_lock
+    def get_entry(self, queue) -> list:
+
+        # with self._lock:
+        # result = self.announce_queue.get()
+        result = queue.get()
+
+        return result
+
+# ----------------------------------------------------------------------------------------------
+
+    # @ad.app_lock
+    def put_entry(self, queue, entry) -> None:
+
+        # with self._lock:
+        # self.announce_queue.put(entry)
+        queue.put(entry)
+
+# ----------------------------------------------------------------------------------------------
+
+    # @ad.app_lock
+    def print_queue(self, return_result=False) -> None:
+
+        status = '\n\tremaining queue:\n'
+
+        for item in self.queue.queue:
+            status += f'\t\t{item}\n'
+
+        if return_result:
+            return status
+
+        self.log(f'\n{status}')
+
+# ----------------------------------------------------------------------------------------------
+
+    def announceable(self, hint) -> bool:
+
+        # force_announcement has precendence over both mute_announcement and hint
+        if self.get_state('input_boolean.force_announcement') == 'on' and hint is True:
+            return True # only return true if forced and hint is true
+
+        # mute_announcement has precendence over hint
+        if self.get_state('input_boolean.mute_announcement') == 'on' or hint is False:
+            return False # is muted or hint is false
+
+        dow = self.lib.dow()
+
+        announceable1 = self.now_is_between(f'{self.START:02d}:00:00', f'{self.END:02d}:00:00')
+        announceable2 = (dow in (2,4) and self.now_is_between('09:27:00', '09:58:00')) or (dow in (1,5) and self.now_is_between('16:27:00', '16:58:00'))
+
+        if self.lib.get_verbose_debug():
+            self.log(f'\tannounceable1={announceable1} announceable2={announceable2}, announceable1 and not announceable2={announceable1 and not announceable2}', level='DEBUG')
+
+        return announceable1 and not announceable2
+
+# ----------------------------------------------------------------------------------------------
+
+    def status(self) -> None:
+
+        # status = '\n\n'
+        # self.log(f'{status}')
+
+        self.print_queue()
+
+# ---------------------------------------------------------------------------------
