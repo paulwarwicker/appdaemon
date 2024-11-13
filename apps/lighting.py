@@ -114,6 +114,9 @@ class Lighting(Hass):
             ]
         )
 
+        if self.now_is_between('05:00:00', '06:30:00'):
+            self.call_service('light/turn_off', entity_id=self.STANDARD_LAMP)
+
         if callback and seconds and key:
             if verbose:
                 self.log(f'welcome_lights_service data={data}', level='DEBUG')
