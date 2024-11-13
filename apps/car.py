@@ -50,7 +50,7 @@ class Car(Hass):
         if state == 'unavailable':
             self.count += 1
             if self.count >= 10:
-                self.log(f'\tkaroq_door_state={state} (probably away)', level='ERROR')
+                self.log(f'\tstate={state} (probably away)', level='ERROR')
                 self.count = 0
             return
 
@@ -61,7 +61,6 @@ class Car(Hass):
         if verbose:
             ts = self.call_service('timestamp/get', name='karoq', return_result=True)
             self.log(f'\tstate={state} locked={locked} lock_state={lock_state} ts={ts}', level='DEBUG')
-            self.log(f'\tThe car door is {lock_state} ts={ts}', level='DEBUG')
 
         if state != 'off':
             if self.lib.is_after(16):
