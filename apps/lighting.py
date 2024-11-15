@@ -664,7 +664,7 @@ class Lighting(Hass):
         for key in keys:
             timer = self.timers.get(key, None)
             if timer is not None and self.timer_running(timer):
-                time, interval, kwargs = self.info_timer(timer)
+                time, interval, kwargs = await self.info_timer(timer)
                 status += f'\tname={key} timer={timer} time={time} interval={interval} kwargs={kwargs} isrunning={self.timer_running(timer)}\n'
             else:
                 self.log(f'\t{key} timer is no longer extant or key ({key}) is invalid. pruning', level='WARNING')
