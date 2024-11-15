@@ -34,8 +34,8 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
     notify_queue = None
     announce_lock = None
     cache = True
-    START = 8
-    END = 23
+    START = 8 # :30
+    END = 22 # :30
     BROADCAST_ENTITY_ID = ['media_player.kitchen', 'media_player.bathroom']
     OTHER_ENTITY_ID = ['media_player.study', 'media_player.bedroom', 'media_player.bedroom_2', 'media_player.dining_room']
     ALL_ENTITY_ID = BROADCAST_ENTITY_ID + OTHER_ENTITY_ID
@@ -503,7 +503,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         dow = self.lib.dow()
 
-        announceable1 = self.now_is_between(f'{self.START:02d}:00:00', f'{self.END:02d}:00:00')
+        announceable1 = self.now_is_between(f'{self.START:02d}:30:00', f'{self.END:02d}:30:00')
         announceable2 = (dow in (2,4) and self.now_is_between('09:27:00', '09:58:00')) or (dow in (1,5) and self.now_is_between('16:27:00', '16:58:00'))
 
         if self.lib.get_verbose_debug():
