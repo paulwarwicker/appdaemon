@@ -36,8 +36,6 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
     cache = True
     START = 8
     END = 23
-    # BROADCAST_ENTITY_ID = ['media_player.kitchen', 'media_player.bathroom', 'media_player.dining_room']
-    # OTHER_ENTITY_ID = ['media_player.study', 'media_player.bedroom', 'media_player.bedroom_2']
     BROADCAST_ENTITY_ID = ['media_player.kitchen', 'media_player.bathroom']
     OTHER_ENTITY_ID = ['media_player.study', 'media_player.bedroom', 'media_player.bedroom_2', 'media_player.dining_room']
     ALL_ENTITY_ID = BROADCAST_ENTITY_ID + OTHER_ENTITY_ID
@@ -202,9 +200,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
     def bins_event(self, event, data, kwargs) -> None:
 
-        event = kwargs.get('event')
-
-        self.bins_announce(event)
+        self.bins({'event': event})
 
 # ----------------------------------------------------------------------------------------------
 
@@ -319,12 +315,12 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         event = kwargs.get('event', None)
 
-        if event == 'preannounce':
+        if event in ('preannounce','bins1') :
             self.bins_announce('preannounce', self.lib.get_testing())
-        elif event == 'announce':
-            self.bins_announce('announce1', self.lib.get_testing())
-        elif event == 'followup':
-            self.bins_announce('announce2', self.lib.get_testing())
+        elif event in ('announce', 'bins2'):
+            self.bins_announce('announce', self.lib.get_testing())
+        elif event in ('followup', 'bins3'):
+            self.bins_announce('followup', self.lib.get_testing())
 
 # ----------------------------------------------------------------------------------------------
 
@@ -377,9 +373,11 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             elif event == 'followup':
                 phrase = ' '.join(['Have', 'you', 'put', 'the', ' '.join(bins), 'out'])
             else:
-                phrase = 'An error has occured'
+                phrase = 'An error has occured in bins announce'
 
-            self.broadcast(message=phrase, timestamp=f'bins_{event}')
+            entry = self.prepare('broadcast_service', self.BROADCAST_ENTITY_ID, self.OTHER_ENTITY_ID, 0.5, phrase, True, f'bins_{event}', 4.0) # 4.0 is delay
+            with self.announce_lock:
+                self.announce(entry)
 
 # ----------------------------------------------------------------------------------------------
 
@@ -405,7 +403,9 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         if dow == 2 or force:
             if value > 0:
                 message = ' '.join([str(value), 'pounds', 'of', 'vouchers', 'expiring', 'end', 'of', expiry])
-                self.broadcast(message=message, timestamp='vouchers')
+                entry = self.prepare('broadcast_service', self.BROADCAST_ENTITY_ID, self.OTHER_ENTITY_ID, 0.5, message, True, 'vouchers', 4.0) # 4.0 is delay
+                with self.announce_lock:
+                    self.announce(entry)
             else:
                 self.log('\tno expiring vouchers', level='WARNING')
 
