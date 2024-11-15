@@ -12,13 +12,13 @@
 # import inspect
 # import traceback
 # import asyncio
+# from typing import Dict
 from datetime import datetime, timedelta
+# from pprint import pprint
+import pprint
+from io import StringIO
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-# import Hass  # pylint: disable=E0401 disable=E0611
-
-# from typing import Dict
-# from pprint import pprint
 
 class Automation(Hass):
     """Documentation for Automation"""
@@ -48,15 +48,14 @@ class Automation(Hass):
         self.verbose = self.get_state('input_boolean.default_verbose_state') == 'on'
         self.testing = self.get_state('input_boolean.default_testing_state') == 'on'
 
-        # self.listen_event(self.test_welcome_home_event, 'test_welcome_home')
         # self.listen_state(self.set_front_door_ding_test, 'input_boolean.test_front_door_ding', new='on', action='set')
         # self.listen_state(self.set_front_door_ding_test, 'input_boolean.test_front_door_ding', new='off', action='cancel')
 
         self.listen_event(self.set_all_state_event, 'set_all_state')
         self.listen_event(self.status_event, 'status')
 
-        self.listen_state(self.set_console_log_level, 'input_boolean.debug', new='on')
-        self.listen_state(self.set_console_log_level, 'input_boolean.debug', new='off')
+        self.listen_state(self.set_console_log_level, 'input_boolean.debug')
+        self.listen_state(self.set_console_log_level, 'input_boolean.verbose')
 
         self.listen_state(self.front_door_ding, 'binary_sensor.front_door_ding', old='off', new='on')
 
@@ -581,6 +580,16 @@ class Automation(Hass):
         status += f'\n\tdebug={self.debug}\n'
         status += f'\tverbose={self.verbose}\n'
         status += f'\ttesting={self.testing}\n'
+
+        # callbacks = self.get_callback_entries()
+        # # pprint(callbacks, indent=3, width=1, compact=True)
+        scheduler = self.get_scheduler_entries()
+        # # pprint.pprint(scheduler['alarms'], indent=3, width=1, compact=True)
+
+        # https://stackoverflow.com/questions/521532/how-do-i-get-pythons-pprint-to-return-a-string-instead-of-printing
+        s = StringIO()
+        pprint.pprint(scheduler['alarms'], s, indent=3, width=1, compact=True)
+        status += s.getvalue()
 
         self.log(f'{status}')
 
