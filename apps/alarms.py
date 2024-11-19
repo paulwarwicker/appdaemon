@@ -668,15 +668,15 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def add_shift_calendar_events(self, kwargs):
+    # def add_shift_calendar_events(self, kwargs):
 
-        # print(self.rota)
-        for a_date, shift in self.rota:
-            # print(f'{date} {shift}')
-            if shift != 'Off':
-                end_date = a_date + timedelta(days=1)
-                self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
+    #     # print(self.rota)
+    #     for a_date, shift in self.rota:
+    #         # print(f'{date} {shift}')
+    #         if shift != 'Off':
+    #             end_date = a_date + timedelta(days=1)
+    #             self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
 
-        self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
+    #     self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
 
 # -----------------------------------------------------------------------------------
