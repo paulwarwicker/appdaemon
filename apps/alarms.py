@@ -677,8 +677,6 @@ class Alarms(Hass):
                 end_date = a_date + timedelta(days=1)
                 self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
 
-# -----------------------------------------------------------------------------------
-     self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
+        self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
 
 # -----------------------------------------------------------------------------------
------------
