@@ -41,6 +41,11 @@ class Car(Hass):
         """check karoq status"""
 
         location = self.get_state(self.DEVICE_TRACKER_ID)
+        latitude = self.get_state(self.DEVICE_TRACKER_ID, 'latitude')
+        longitude = self.get_state(self.DEVICE_TRACKER_ID, 'longitude')
+
+        self.set_state('sensor.karoq_latitude', state=latitude)
+        self.set_state('sensor.karoq_longitude', state=longitude)
 
         if location != "home":
             return
