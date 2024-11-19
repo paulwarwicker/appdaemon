@@ -335,7 +335,7 @@ class Starling(Hass):
 
     def status_event(self, event, data, kwargs):
 
-        status = f'\n\n'
+        status = '\n\n'
 
         self.log(f'{status}')
 
@@ -401,8 +401,8 @@ class StarlingHelper:
 
     def get_payee(self, uid: str):
 
-        json = self.get_request(f"/payees/{uid}")
-        return json["payeeName"]
+        _json = self.get_request(f"/payees/{uid}")
+        return _json["payeeName"]
 
     def show_savings_goals(self):
 
@@ -584,22 +584,22 @@ class StarlingAccount:
 
         self._helper = helper
 
-        json = helper.get_request("/accounts")
+        _json = helper.get_request("/accounts")
 
         # Assume there will be only 1 account as this is the case with personal access.
-        account = json["accounts"][0]
+        account = _json["accounts"][0]
 
         self.account_uid = account["accountUid"]
         self.default_category_uid = account["defaultCategory"]
         self.currency = account["currency"]
         self.created_at = account["createdAt"]
 
-        json = helper.get_request(f"/accounts/{self.account_uid}/identifiers")
+        _json = helper.get_request(f"/accounts/{self.account_uid}/identifiers")
 
-        self.account_identifier = json.get("accountIdentifier")
-        self.bank_identifier = json.get("bankIdentifier")
-        self.iban = json.get("iban")
-        self.bic = json.get("bic")
+        self.account_identifier = _json.get("accountIdentifier")
+        self.bank_identifier = _json.get("bankIdentifier")
+        self.iban = _json.get("iban")
+        self.bic = _json.get("bic")
 
         # Account Data
         # self.account_identifier = None
