@@ -202,9 +202,7 @@ class Weather(Hass):
 
         if warning or testing:
             self.log(f'\tfrost warning ({temp})', level='WARNING')
-            self.call_service('announcer/broadcast',
-                              message='There is a chance of frost overnight',
-                              announce=True)
+            self.call_service('announcer/broadcast', message='There is a chance of frost overnight')
 
         return warning
 

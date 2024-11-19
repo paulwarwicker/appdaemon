@@ -64,12 +64,14 @@ class Lighting(Hass):
         self.register_service('lighting/front_door_on', self.front_door_on_service)
         self.register_service('lighting/hallway_off', self.hallway_off_service)
         self.register_service('lighting/lumie_on', self.lumie_on_service)
+        self.register_service('lighting/front_door_ding', self.front_door_ding_service)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.status_event, 'timers')
         self.listen_event(self.cancel_timers_event, 'cancel_timers')
-        self.listen_event(self.test_welcome_lights_event, 'test_welcome_lights') # see location for the real welcome_lights event handler
-        self.listen_event(self.test_front_door_on_event, 'front_door_on')
+        self.listen_event(self.welcome_lights_event, 'welcome_lights') # see location for the real welcome_lights event handler
+        self.listen_event(self.front_door_on_event, 'front_door_on')
+        self.listen_event(self.front_door_ding_event, 'front_door_ding_lights')
         self.listen_event(self.lights_off_event, "ios.action_fired", actionName='Lights')
 
         self.run_daily(self.living_room_on, "sunset + 00:10:00")
@@ -361,6 +363,33 @@ class Lighting(Hass):
 
 # ----------------------------------------------------------------------------------------------
 
+    def front_door_ding_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
+        """turn on front door/hallway lights"""
+
+        verbose = self.lib.get_verbose_debug()
+
+        callback = None
+        cb = data.get('cb', None)
+        key = data.get('key', None)
+        seconds = int(data.get('seconds', 0))
+
+        if cb:
+            callback = getattr(self, cb)
+
+        if verbose:
+            self.log(f'cb={cb} interval={seconds} key={key} callback={callback}', level='DEBUG')
+            self.log(f'namespace={namespace}, domain={domain}, service={service}, data={data}', level='DEBUG')
+
+        self.call_service('hue/activate_scene', entity_id='scene.front_door_hallway_front_door_ding', transition=10)
+        # self.call_service('light/turn_on', entity_id=self.FRONT_DOOR, brightness=200, transition=transition)
+        # self.call_service('light/turn_on', entity_id=self.HALLWAY, brightness=64, transition=transition)
+
+        if callback and seconds and key:
+            timer = self.run_in(callback, seconds, key=key)
+            self.set_timer(key, timer)
+
+# ----------------------------------------------------------------------------------------------
+
     def lights_off_event(self, event, data, kwargs:dict) -> None:
         """turn off hallway, garage and front door lights"""
 
@@ -380,15 +409,21 @@ class Lighting(Hass):
 
 # ----------------------------------------------------------------------------------------------
 
-    def test_welcome_lights_event(self, event, data, kwargs:dict) -> None:
+    def welcome_lights_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('lighting/welcome_lights', seconds=10, delay=10, cb='welcome_lights_off', key='welcome_lights')
 
 # ----------------------------------------------------------------------------------------------
 
-    def test_front_door_on_event(self, event, data, kwargs:dict) -> None:
+    def front_door_on_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('lighting/front_door_on', seconds=10, cb='front_door_off', key='front_door')
+
+# ----------------------------------------------------------------------------------------------
+
+    def front_door_ding_event(self, event, data, kwargs:dict) -> None:
+
+        self.call_service('lighting/front_door_ding', seconds=20, cb='front_door_hallway_off', key='front_door_ding')
 
 # ----------------------------------------------------------------------------------------------
 
@@ -502,6 +537,19 @@ class Lighting(Hass):
             self.log(f'\tturn off front door - {key}', level='WARNING')
 
         self.call_service('light/turn_off', entity_id=self.FRONT_DOOR, transition=10)
+
+# ----------------------------------------------------------------------------------------------
+
+    def front_door_hallway_off(self, kwargs:dict) -> None:
+
+        key = kwargs.get('key', None)
+
+        self.front_door_off(kwargs)
+
+        if key is not None:
+            self.log(f'\tturn off hallway - {key}', level='WARNING')
+
+        self.call_service('light/turn_off', entity_id=self.HALLWAY_LIGHTS, transition=10)
 
 # ----------------------------------------------------------------------------------------------
 
