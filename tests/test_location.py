@@ -21,12 +21,12 @@ KITCHEN_ENTITY_ID = 'media_player.kitchen'
     },
 )
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 def location() -> Location:
     pass
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 def test_initialize(hass_driver, location: Location):
 
@@ -39,7 +39,7 @@ def test_initialize(hass_driver, location: Location):
         mock.call("announcer/announce", entity_id=STUDY_ENTITY_ID, message='Location initialised')
     ])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 # def test_max_travel_time_to_home_when_before_dusk_and_study_muted(hass_driver, automation: Automation):
 
@@ -70,7 +70,7 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('sonos/restore', entity_id=entity_id, with_group=True)
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_travel_time_to_home_when_before_dusk_and_study_unmuted(hass_driver, automation: Automation):
@@ -101,7 +101,7 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('sonos/restore', entity_id=entity_id, with_group=True)
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_travel_time_to_home_when_after_dusk_and_study_muted(hass_driver, automation: Automation):
@@ -133,7 +133,7 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('sonos/restore', entity_id=entity_id, with_group=True)
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_travel_time_to_home_when_after_dusk_and_study_unmuted(hass_driver, automation: Automation):
@@ -164,7 +164,7 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('sonos/restore', entity_id=entity_id, with_group=True)
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_dssmith_announce1(hass_driver, automation: Automation):
@@ -177,7 +177,7 @@ def test_initialize(hass_driver, location: Location):
 
 #     automation.max_location_detect('entity', 'attribute', 'old', 'DS_Smith_Fordham', {'name': 'DS_Smith_Fordham', 'location': 'proximity.ds_smith_fordham', 'test': True})
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_dssmith_announce2(hass_driver, automation: Automation):
@@ -190,7 +190,7 @@ def test_initialize(hass_driver, location: Location):
 
 #     automation.max_location_detect('entity', 'attribute', 'DS_Smith_Fordham', 'new', {'name': 'DS_Smith_Fordham', 'location': 'proximity.ds_smith_fordham', 'test': True})
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 # def test_max_home(hass_driver, automation: Automation):
 
@@ -218,7 +218,7 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('light/turn_on', entity_id='light.hallway_1', brightness=64)
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_location_announce1(hass_driver, automation: Automation):
@@ -250,7 +250,7 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('sonos/restore', entity_id=entity_id, with_group=True)
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_location_announce2(hass_driver, automation: Automation):
@@ -282,7 +282,7 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('sonos/restore', entity_id=entity_id, with_group=True)
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_village_announce1(hass_driver, automation: Automation):
@@ -313,7 +313,7 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('light/turn_on', entity_id='light.hallway_1', brightness=64)
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_village_announce2(hass_driver, automation: Automation):
@@ -345,7 +345,7 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('light/turn_on', entity_id='light.hallway_1', brightness=64)
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_village_announce3(hass_driver, automation: Automation):
@@ -373,7 +373,7 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('sonos/restore', entity_id=STUDY_ENTITY_ID, with_group=True),
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # def test_max_village_announce4(hass_driver, automation: Automation):
@@ -402,4 +402,4 @@ def test_initialize(hass_driver, location: Location):
 #         mock.call('sonos/restore', entity_id=STUDY_ENTITY_ID, with_group=True),
 #     ])
 
-# # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------

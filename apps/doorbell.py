@@ -15,7 +15,7 @@ class DoorBell(Hass):
 
     lib = None
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -25,7 +25,7 @@ class DoorBell(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# # ----------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 #     async def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -34,7 +34,7 @@ class DoorBell(Hass):
 #         self.ding_front_door_light()
 #         self.ding_hallway_light()
 
-# # ----------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 #     def tapo_siren_on(self, kwargs) -> None:
 
@@ -43,20 +43,20 @@ class DoorBell(Hass):
 #         self.log(f'\tstart timer for{seconds:d}s', level='DEBUG')
 #         self.run_in(self.tapo_siren_off, seconds)
 
-# # ----------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 #     def tapo_siren_off(self, kwargs) -> None:
 
 #         self.call_service('siren/turn_off', entity_id='siren.tapo_hub_siren')
 
-# # ----------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 #     def front_door_announce(self, kwargs) -> None:
 
 #         message = 'Someone is at the front door' if not self.get_state('input_boolean.testing') == 'on' else 'just testing'
 #         self.call_service('announcer/broadcast', message=message, timestamp='front door')
 
-# # ----------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 #     def ding_front_door_light(self, kwargs) -> None:
 #         """Turn on front door light when dark when someone calls. see also front_door_light_on/off"""
@@ -73,7 +73,7 @@ class DoorBell(Hass):
 #             # FIXME:, brightness=brightness) # state=state??
 #             self.run_in(self.front_door_light_off, seconds)
 
-# # ----------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 #     def ding_hallway_light(self, kwargs) -> None:
 #         """Turn on hallway light when dark"""
@@ -84,7 +84,7 @@ class DoorBell(Hass):
 #             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
 #             self.run_in(self.hallway_off, seconds)
 
-# # ----------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 
 # import adbase

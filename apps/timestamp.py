@@ -29,7 +29,7 @@ class Timestamp(Hass):
     general_announce_ts = datetime.now() + timedelta(minutes=-15)
     travel_announce_ts = datetime.now() + timedelta(minutes=-15)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -46,7 +46,7 @@ class Timestamp(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_timestamp_service(self, namespace, domain, service, kwargs) -> None:
         """set a named timestamp"""
@@ -85,7 +85,7 @@ class Timestamp(Hass):
             if self.lib.get_verbose_debug():
                 self.log(f'\t\t{name} timestamp set to {ts}', level='DEBUG')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def get_timestamp_service(self, namespace, domain, service, kwargs):
         """get a named timestamp"""
@@ -117,20 +117,20 @@ class Timestamp(Hass):
 
         return ts
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status_service(self, namespace, domain, service, kwargs):
         """status event"""
 
         self.status('','','','',{})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs) -> None:
 
         self.status('','','','',{})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -153,4 +153,4 @@ class Timestamp(Hass):
 
         self.set_state('input_boolean.status', state='off')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

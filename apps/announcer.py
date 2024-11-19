@@ -40,7 +40,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
     OTHER_ENTITY_ID = ['media_player.study', 'media_player.bedroom', 'media_player.dining_room']
     ALL_ENTITY_ID = BROADCAST_ENTITY_ID + OTHER_ENTITY_ID
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """Documentation for Announcer"""
@@ -79,7 +79,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def announce_service(self, namespace, domain, service, kwargs) -> None:
 
@@ -97,7 +97,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         with self.announce_lock:
             self.announce(entry)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def broadcast_service(self, namespace, domain, service, kwargs) -> None:
 
@@ -120,7 +120,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         with self.announce_lock:
             self.announce(entry)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def notification_service(self, namespace, domain, service, data) -> None:
 
@@ -129,7 +129,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         self.notification(notify_type, message)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialised_service(self, namespace, domain, service, data) -> None:
 
@@ -138,7 +138,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         self.notification('desktop', message)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def announce_event(self, event, data, kwargs) -> None:
 
@@ -158,7 +158,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
                               timestamp=None)
             time.sleep(2.0)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def broadcast_event(self, event, data, kwargs) -> None:
 
@@ -183,25 +183,25 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
                               timestamp=None)
             time.sleep(2.0)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs) -> None:
 
         self.status()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def vouchers_event(self, event, data, kwargs) -> None:
 
         self.vouchers_announce({})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def bins_event(self, event, data, kwargs) -> None:
 
         self.bins({'event': event})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     @ad.app_lock
     def announce(self, entry) -> None: # pylint: disable=R0914
@@ -277,7 +277,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         else:
             self.notification('desktop', message)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def notification(self, notify_type, message) -> None:
 
@@ -286,7 +286,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         self.call_service('notify/disc0rd', title='Desktop notification', message=message, target='1250932196613685313')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def bins(self, kwargs) -> None:
 
@@ -299,7 +299,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         elif event in ('followup', 'bins3'):
             self.bins_announce('followup', self.lib.get_testing())
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def bins_announce(self, event, force=False):
 
@@ -356,7 +356,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             with self.announce_lock:
                 self.announce(entry)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def vouchers_announce(self, kwargs) -> None:
 
@@ -386,7 +386,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             else:
                 self.log('\tno expiring vouchers', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def announce_worker(self, *args, **kwargs) -> None:
 
@@ -397,7 +397,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             with self.announce_lock:
                 self.announce(entry)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def notify_worker(self, *args, **kwargs) -> None:
 
@@ -408,7 +408,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             with self.announce_lock:
                 self.announce(entry)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def prepare(self, method_id, entity_id, other_id, volume, message, announce, timestamp, delay) -> list: # pylint: disable=R0913
 
@@ -425,13 +425,13 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         return [uu_id, entity_id, other_id, volume, message, announce, timestamp, delay]
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def now(self):
 
         return arrow.now() # pylint: disable=E1101
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     # @ad.app_lock
     def get_entry(self, queue) -> list:
@@ -442,7 +442,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         return result
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     # @ad.app_lock
     def put_entry(self, queue, entry) -> None:
@@ -451,7 +451,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         # self.announce_queue.put(entry)
         queue.put(entry)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     # @ad.app_lock
     def print_queue(self, return_result=False) -> None:
@@ -466,7 +466,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         self.log(f'\n{status}')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def announceable(self, hint) -> bool:
 
@@ -488,7 +488,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         return announceable1 and not announceable2
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status(self) -> None:
 
@@ -497,4 +497,4 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         self.print_queue()
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

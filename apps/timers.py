@@ -17,7 +17,7 @@ class Timers(Hass):
     # timers = {'empty': (None, None)}
     timers = {}
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -33,7 +33,7 @@ class Timers(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_timer_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
         """set a timer service"""
@@ -43,7 +43,7 @@ class Timers(Hass):
 
         self.set_timer(name, timer)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def get_timer_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> str: # None:
         """get a timer service"""
@@ -52,7 +52,7 @@ class Timers(Hass):
 
         return self.get_timer(name)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def cancel_timer_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
         """cancel a timer service"""
@@ -61,7 +61,7 @@ class Timers(Hass):
 
         self._cancel_timer(name)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def remove_timer_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
         """remove a timer callback"""
@@ -70,7 +70,7 @@ class Timers(Hass):
 
         self.remove_timer(name)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def timer_status_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
         """status"""
@@ -80,7 +80,7 @@ class Timers(Hass):
         self.log(f'\t{status}\n\n')
         self.log(f'\t{self.timers}')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_timer(self, name:str, timer:str) -> None:
         """set a timer"""
@@ -114,7 +114,7 @@ class Timers(Hass):
 
         self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def get_timer(self, name:str) -> str:
         """get a timer"""
@@ -137,7 +137,7 @@ class Timers(Hass):
 
         return timer
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def _cancel_timer(self, name:str) -> None:
         """cancel a timer callback"""
@@ -158,7 +158,7 @@ class Timers(Hass):
 
         self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def remove_timer(self, name) -> None:
         """remove timer"""
@@ -172,7 +172,7 @@ class Timers(Hass):
         else:
             self.log(f'\t\t\tremove_timer did not find timer name={name}', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def check_timer(self, name, timer) -> bool:
 
@@ -193,11 +193,11 @@ class Timers(Hass):
             return False
 
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def print_timers(self) -> None:
         """print timers"""
 
         print(f'\t\t\t{self.timers}')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

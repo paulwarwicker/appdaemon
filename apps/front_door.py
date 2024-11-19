@@ -16,7 +16,7 @@ class FrontDoor(Hass):
     lib = None
     APP_THREADS = 20
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -34,28 +34,28 @@ class FrontDoor(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_battery_service(self, namespace, domain, service, kwargs) -> None:
         """front door battery service"""
 
         self.front_door_battery({})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_battery_event(self, event:str, data:dict, kwargs) -> None:
         """front door battery event"""
 
         self.front_door_battery({})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_ding_event(self, event:str, data:dict, kwargs) -> None:
         """front door ding event"""
 
         self.front_door_ding('','','','',{})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
     def front_door_battery(self, kwargs) -> None:
 
         message = None
@@ -80,7 +80,7 @@ class FrontDoor(Hass):
             message=f'Recharge front door battery ({level:d}%{battery})'
             self.call_service('announcer/notification', message=message)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -89,7 +89,7 @@ class FrontDoor(Hass):
         if self.lib.is_night():
             self.call_service('lighting/front_door_ding', seconds=300, cb='front_door_hallway_off', key='front_door_ding')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def siren_on(self, kwargs) -> None:
 
@@ -97,20 +97,20 @@ class FrontDoor(Hass):
         self.call_service('siren/turn_on', entity_id='siren.tapo_hub_siren')
         self.run_in(self.siren_off, delay)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def siren_off(self, kwargs) -> None:
 
         self.call_service('siren/turn_off', entity_id='siren.tapo_hub_siren')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_announce(self, kwargs) -> None:
 
         message = 'Someone is at the front door' if not self.get_state('input_boolean.testing') == 'on' else 'just testing'
         self.call_service('announcer/broadcast', message=message, timestamp='front_door')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def ding_front_door_light(self, kwargs) -> None:
         """Turn on front door light when dark when someone calls. see also front_door_light_on/off"""
@@ -127,7 +127,7 @@ class FrontDoor(Hass):
             # FIXME:, brightness=brightness) # state=state??
             self.run_in(self.front_door_light_off, seconds)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def ding_hallway_light(self, kwargs) -> None:
         """Turn on hallway light when dark"""
@@ -138,13 +138,13 @@ class FrontDoor(Hass):
             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
             self.run_in(self.hallway_off, seconds)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_light_on(self, kwargs) -> None:
 
         self.run_in(self._front_door_light_on, 0)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def _front_door_light_on(self, kwargs) -> None:
 
@@ -156,7 +156,7 @@ class FrontDoor(Hass):
             else:
                 self.run_in(self.int_front_door_light_on, 60)  # respawn self in 60s
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_light_off(self, kwargs) -> None:
 
@@ -166,4 +166,4 @@ class FrontDoor(Hass):
         self.call_service('light/turn_off', entity_id='light.hallway_1', transition=10)
         self.call_service('light/turn_off', entity_id='light.front_door_1', transition=10)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

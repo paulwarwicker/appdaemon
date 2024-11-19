@@ -21,7 +21,7 @@ class Motion(Hass):
     UTILITY_ENTITY_ID = 'light.utility_room_1'
     LUMIE_ENTITY_ID = 'light.lumie'
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -51,7 +51,7 @@ class Motion(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_downstairs_motion_flag(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
         """set downstairs motion flag"""
@@ -61,14 +61,14 @@ class Motion(Hass):
         if value:
             self.downstairs_motion_flag = value
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def reset_downstairs_motion_flag(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
         """reset downstairs motion flag"""
 
         self.downstairs_motion_flag = False
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def upstairs_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
@@ -105,7 +105,7 @@ class Motion(Hass):
 
         # self.lib.log_function_name(False)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def downstairs_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
@@ -126,7 +126,7 @@ class Motion(Hass):
 
         # self.lib.log_function_name(False)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def kitchen_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
@@ -139,7 +139,7 @@ class Motion(Hass):
 
         # self.lib.log_function_name(False)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def utility_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
@@ -155,7 +155,7 @@ class Motion(Hass):
 
         # self.lib.log_function_name(False)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
@@ -165,13 +165,13 @@ class Motion(Hass):
 
         self.set_state('input_boolean.status', state='off')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status_event(self, event:str, data:dict, kwargs:dict) -> None:
 
         self.status('','','','',{})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_motion(self, entity_id:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
@@ -187,7 +187,7 @@ class Motion(Hass):
 
         # self.lib.log_function_name(False)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def stairs_motion(self, **kwargs) -> None:
 
@@ -208,7 +208,7 @@ class Motion(Hass):
         if self.lib.is_below_horizon() or self.lib.get_testing():
             self.call_service('lighting/bannister_on', seconds=seconds, cb=cb, key=key)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_motion(self, entity_id:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
@@ -227,7 +227,7 @@ class Motion(Hass):
 
         # self.lib.log_function_name(False)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
 
@@ -236,7 +236,7 @@ class Motion(Hass):
 
         self.front_door_motion('', '', '', 'on', {'seconds': 5, 'key': 'front door', 'cb': 'front_door_off'})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def downstairs_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
 
@@ -245,7 +245,7 @@ class Motion(Hass):
 
         self.downstairs_motion('', '', '', '', {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def upstairs_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
 
@@ -254,7 +254,7 @@ class Motion(Hass):
 
         self.upstairs_motion('', '', '', '', {'seconds': 5, 'key': 'upstairs', 'cb': 'bannister_off'})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def stairs_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
 
@@ -265,7 +265,7 @@ class Motion(Hass):
         self.lib.delay(15)
         self.upstairs_motion('', '', '', '', {'seconds': 10, 'key': 'upstairs', 'cb': 'bannister_off'})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def kitchen_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
 
@@ -274,7 +274,7 @@ class Motion(Hass):
 
         self.kitchen_motion('', '', '', '', {'seconds': 5})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def utility_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
 
@@ -283,7 +283,7 @@ class Motion(Hass):
 
         self.utility_motion('', '', '', '', {'seconds': 5, 'key': 'utility', 'cb': 'utility_off'})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
 
@@ -294,7 +294,7 @@ class Motion(Hass):
         self.lib.delay(15)
         self.garage_motion('', '', 'on', 'off', {'test': True})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def motion_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
 
@@ -316,4 +316,4 @@ class Motion(Hass):
         self.lib.delay(15)
         self.utility_motion_event('',{},{})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

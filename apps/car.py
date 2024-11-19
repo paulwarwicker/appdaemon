@@ -20,7 +20,7 @@ class Car(Hass):
     SENSOR_ENTITY_ID = 'binary_sensor.skoda_karoq_vehicle_locked'
     DEVICE_TRACKER_ID = 'device_tracker.skoda_karoq_position'
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -35,7 +35,7 @@ class Car(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def check_status(self, kwargs) -> None:
         """check karoq status"""
@@ -85,7 +85,7 @@ class Car(Hass):
             if diff > self.lib.interval(minutes=60):
                 self.announce()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def announce(self) -> None:
         """door announcement"""
@@ -101,10 +101,10 @@ class Car(Hass):
 
         self.call_service('announcer/broadcast', message=message, timestamp='karoq')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def car_door(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
         self.announce()
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

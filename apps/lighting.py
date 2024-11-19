@@ -42,7 +42,7 @@ class Lighting(Hass):
     N_KITCHEN_FLOOR_ENTITIES = 2
     N_HALLWAY_ENTITIES = 3
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -84,7 +84,7 @@ class Lighting(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def welcome_lights_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on welcome lights"""
@@ -126,7 +126,7 @@ class Lighting(Hass):
             timer = self.run_in(callback, seconds, key=key)
             self.set_timer(key, timer)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on front door lights"""
@@ -158,7 +158,7 @@ class Lighting(Hass):
             timer = self.run_in(callback, seconds, key=key)
             self.set_timer(key, timer)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def kitchen_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on utility lights"""
@@ -190,7 +190,7 @@ class Lighting(Hass):
                 timer = self.run_in(callback, seconds, key=key)
                 self.set_timer(key, timer)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def kitchen_floor_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on utility lights"""
@@ -217,7 +217,7 @@ class Lighting(Hass):
             timer = self.run_in(callback, seconds, key=key)
             self.set_timer(key, timer)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def utility_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on utility lights"""
@@ -242,7 +242,7 @@ class Lighting(Hass):
             timer = self.run_in(callback, seconds, key=key)
             self.set_timer(key, timer)
 
-# ------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def lumie_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on utility lights"""
@@ -253,7 +253,7 @@ class Lighting(Hass):
         if self.now_is_between('23:30:00', '03:00:00'):
             self.call_service('light/turn_on', entity_id=self.LUMIE, brightness=10)
 
-# ------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def turn_on_if_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on a light if it off"""
@@ -293,21 +293,21 @@ class Lighting(Hass):
 
         # self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_on_service(self, namespace, domain, service, data) -> None:
         """turn on garage lights"""
 
         self.call_service('light/turn_on', entity_id=self.GARAGE_LIGHTS)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_off_service(self, namespace, domain, service, data) -> None:
         """turn off garage lights"""
 
         self.call_service('light/turn_off', entity_id=self.GARAGE_LIGHTS)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def bannister_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn off garage lights"""
@@ -334,7 +334,7 @@ class Lighting(Hass):
             timer = self.run_in(callback, seconds, key=key)
             self.set_timer(key, timer)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def hallway_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn off garage lights"""
@@ -361,7 +361,7 @@ class Lighting(Hass):
             timer = self.run_in(callback, seconds, key=key)
             self.set_timer(key, timer)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_ding_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on front door/hallway lights"""
@@ -388,58 +388,58 @@ class Lighting(Hass):
             timer = self.run_in(callback, seconds, key=key)
             self.set_timer(key, timer)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def lights_off_event(self, event, data, kwargs:dict) -> None:
         """turn off hallway, garage and front door lights"""
 
         self.call_service('light/turn_off', entity_id=self.HALLWAY_GARAGE_LIGHTS)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     async def status_event(self, event, data, kwargs:dict) -> None:
 
         await self.print_timers()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def cancel_timers_event(self, event, data, kwargs:dict) -> None:
 
         self.cancel_timers()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def welcome_lights_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('lighting/welcome_lights', seconds=10, delay=10, cb='welcome_lights_off', key='welcome_lights')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_on_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('lighting/front_door_on', seconds=10, cb='front_door_off', key='front_door')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_ding_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('lighting/front_door_ding', seconds=20, cb='front_door_hallway_off', key='front_door_ding')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def stairs_on(self, kwargs:dict) -> None:
         """turn on landing light"""
 
         self.call_service('light/turn_on', entity_id=self.LANDING, brightness=5)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def radiator_on(self, kwargs:dict) -> None:
         """turn on radiator light"""
 
         self.call_service('light/turn_on', entity_id=self.RADIATOR)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def living_room_on(self, kwargs:dict) -> None:
         """turn on living room lights"""
@@ -448,7 +448,7 @@ class Lighting(Hass):
             if not self.is_light_on(entity_id):
                 self.call_service('light/turn_on', entity_id=entity_id, brightness=30)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def hallway_on(self, kwargs:dict) -> None:
 
@@ -460,7 +460,7 @@ class Lighting(Hass):
 
             self.call_service('light/turn_on', entity_id=self.HALLWAY, brightness=64, transition=5)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_on(self, kwargs:dict) -> None:
 
@@ -473,7 +473,7 @@ class Lighting(Hass):
             else:
                 self.run_in(self.front_door_light_on, 60)  # respawn self in 60s
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def bannister_off(self, kwargs:dict) -> None:
 
@@ -484,7 +484,7 @@ class Lighting(Hass):
 
         self.call_service('light/turn_off', entity_id=self.NIGHTTIME_LIGHTS)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def kitchen_off(self, kwargs:dict) -> None:
 
@@ -500,7 +500,7 @@ class Lighting(Hass):
         else:
             self.call_service('light/turn_off', entity_id=self.KITCHEN_LIGHTS)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def kitchen_floor_off(self, kwargs:dict) -> None:
 
@@ -511,7 +511,7 @@ class Lighting(Hass):
 
         self.call_service('light/turn_off', entity_id=self.KITCHEN_FLOOR_LIGHTS)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def utility_off(self, kwargs:dict) -> None:
 
@@ -527,7 +527,7 @@ class Lighting(Hass):
         else:
             self.call_service('light/turn_off', entity_id=self.UTILITY)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_off(self, kwargs:dict) -> None:
 
@@ -538,7 +538,7 @@ class Lighting(Hass):
 
         self.call_service('light/turn_off', entity_id=self.FRONT_DOOR, transition=10)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_hallway_off(self, kwargs:dict) -> None:
 
@@ -551,7 +551,7 @@ class Lighting(Hass):
 
         self.call_service('light/turn_off', entity_id=self.HALLWAY_LIGHTS, transition=10)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def outside_off(self, kwargs:dict) -> None:
         """turn off outside lights"""
@@ -563,7 +563,7 @@ class Lighting(Hass):
 
         self.call_service('light/turn_off', entity_id=self.HALLWAY_GARAGE_LIGHTS)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def living_room_off(self, kwargs:dict) -> None:
         """turn off living room lights"""
@@ -571,19 +571,19 @@ class Lighting(Hass):
         self.call_service('light/turn_off', entity_id=self.LIVING_ROOM_LIGHTS)
         self.call_service('light/turn_off', entity_id=self.STANDARD_LAMP) # try again - wasn't switching off
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def downstairs_off(self, kwargs:dict) -> None:
 
         self.call_service('light/turn_off', entity_id=self.UPSTAIRS_DOWNSTAIRS_LIGHTS)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def hallway_off(self, kwargs:dict) -> None:
 
         self.call_service('light/turn_off', entity_id=self.HALLWAY_LIGHTS, transition=10)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def welcome_lights_off(self, kwargs:dict) -> None:
         """turn off welcome lights"""
@@ -599,7 +599,7 @@ class Lighting(Hass):
             self.call_service('light/turn_off', self.STANDARD_LAMP)
             self.call_service('light/turn_off', self.HALLWAY)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_timer(self, name:str, timer:str) -> None:
         """set a timer"""
@@ -621,7 +621,7 @@ class Lighting(Hass):
             # if verbose:
             #     self.print_timers()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def get_timer(self, name:str) -> str:
         """get a timer"""
@@ -638,7 +638,7 @@ class Lighting(Hass):
 
         return timer
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def _cancel_timer(self, name:str) -> None:
         """cancel a timer callback"""
@@ -658,7 +658,7 @@ class Lighting(Hass):
         else:
             self.log(f'_cancel_timer did not find timer name={name}', level='ERROR')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def remove_timer(self, name) -> None:
         """remove timer"""
@@ -675,7 +675,7 @@ class Lighting(Hass):
         else:
             self.log(f'\t\tremove_timer did not find timer name={name}', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def check_timer(self, name, timer) -> bool:
 
@@ -700,7 +700,7 @@ class Lighting(Hass):
 
         return True
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     async def print_timers(self) -> None:
         """print timers"""
@@ -720,7 +720,7 @@ class Lighting(Hass):
 
         self.log(f'{status}')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def cancel_timers(self) -> None:
         """cancel timers"""
@@ -738,7 +738,7 @@ class Lighting(Hass):
                 self.log(f'\t{key} timer is no longer extant or key ({key}) is invalid. pruning', level='WARNING')
                 self.timers.pop(key, None) # ignore value
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def light_entities(self, name, count=1):
         """generate a list of light entity names"""
@@ -750,7 +750,7 @@ class Lighting(Hass):
 
         return entities
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def any_light_on_full(self, entity_ids)  -> bool:
         """is any light on full"""
@@ -762,7 +762,7 @@ class Lighting(Hass):
 
         return False
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def any_light_on(self, entity_ids)  -> bool:
         """is any light on"""
@@ -773,7 +773,7 @@ class Lighting(Hass):
 
         return False
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def is_light_on(self, entity_id)  -> bool:
         """is light on"""
@@ -782,4 +782,4 @@ class Lighting(Hass):
 
         return brightness is not None and brightness >= 5
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

@@ -37,7 +37,7 @@ class Alarms(Hass):
     ATTEMPTS = 10
     PLAY_DELAY = 0.75
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """."""
@@ -63,13 +63,13 @@ class Alarms(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_alarm_state_event(self, event, data, kwargs):
 
         self.set_alarm_state({})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_alarm_state(self, kwargs):
 
@@ -80,14 +80,14 @@ class Alarms(Hass):
         # self.show_alarm_time('backup')
         self.show_alarm_time('normal')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_early_alarm(self):
 
         state, alarm_time, hour, minute = self.get_early_alarm_time()
         self.set_early_alarm_time(state, alarm_time, hour, minute)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def get_early_alarm_time(self, backup=False):
 
@@ -172,7 +172,7 @@ class Alarms(Hass):
 
         return state, alarm_time, hour, minute
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_early_alarm_time(self, state, alarm_time, hour, minute):
 
@@ -187,14 +187,14 @@ class Alarms(Hass):
         else:
             self.set_early_alarm_callback('input_boolean.early_alarm', 'state', 'on', 'off', {'action':'cancel'})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_normal_alarm(self):
 
         state, alarm_time, hour, minute = self.get_normal_alarm_time()
         self.set_normal_alarm_time(state, alarm_time, hour, minute)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def get_normal_alarm_time(self):
 
@@ -221,7 +221,7 @@ class Alarms(Hass):
 
         return state, alarm_time, hour, minute
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_normal_alarm_time(self, state, alarm_time, hour, minute):
 
@@ -236,7 +236,7 @@ class Alarms(Hass):
         else:
             self.set_normal_alarm_callback('input_boolean.normal_alarm', 'state', 'on', 'off', {'action':'cancel'})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def show_alarm_time(self, alarm_type):
 
@@ -261,7 +261,7 @@ class Alarms(Hass):
         message = f'The {_alarm_type} morning alarm is set to {alarm_time}' if state == 'on' else f'The {_alarm_type} morning alarm is cancelled'
         self.call_service("announcer/announce", entity_id=self.STUDY, message=message)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def reset_alarms(self, entity, attribute, old, new, kwargs):
 
@@ -275,27 +275,27 @@ class Alarms(Hass):
 
         self.set_alarm_state({})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def get_alarm_testing(self):
 
         return self.get_state("input_boolean.alarm_testing") == "on"
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_early_alarm_callback(self, entity, attribute, old, new, kwargs):
 
         self._cancel_timer(self.early_alarm_callback, 'early alarm')
         self.early_alarm_callback = self.set_alarm(alarm_type='early', action=kwargs['action'])
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_normal_alarm_callback(self, entity, attribute, old, new, kwargs):
 
         self._cancel_timer(self.normal_alarm_callback, 'normal alarm')
         self.normal_alarm_callback = self.set_alarm(alarm_type='normal', action=kwargs['action'])
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_alarm(self, **kwargs):
 
@@ -369,19 +369,19 @@ class Alarms(Hass):
 
         return alarm
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def alarm(self, kwargs):
 
         self.run_in(self._alarm, 0, **kwargs)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def is_test(self, kwargs):
 
         return kwargs['alarm_type'] == 'test' or self.get_alarm_testing()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def _alarm(self, kwargs):
 
@@ -447,7 +447,7 @@ class Alarms(Hass):
 
         self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def select_alarm(self, **kwargs):
 
@@ -499,7 +499,7 @@ class Alarms(Hass):
 
         return ids[random.randint(0, len(ids) - 1)]  # randomise choice.
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def play_normal_alarm(self, dow=None):
 
@@ -510,7 +510,7 @@ class Alarms(Hass):
 
         return self.get_state(entity_id='input_boolean.normal_alarm') == 'on' and (not bank_holiday) and dow <= 5 and dow != 3
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def lumie_alarm(self, kwargs):
 
@@ -531,7 +531,7 @@ class Alarms(Hass):
         else:
             self.log(f'\tskipping lumie alarm holiday={holiday} enabled={enabled} dow={dow}', level='INFO')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def lumie_phase(self, kwargs):
 
@@ -544,7 +544,7 @@ class Alarms(Hass):
 
         self.call_service('light/turn_on', entity_id='light.lumie', brightness=brightness, transition=transition, rgb_color=rgb_color)
 
-# # ----------------------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
 #     def lumie_phase2(self, kwargs):
 
@@ -557,25 +557,25 @@ class Alarms(Hass):
 
 #         self.call_service('light/turn_on', entity_id='light.lumie', brightness=brightness, transition=transition, rgb_color=rgb_color)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def lumie_phase3(self, kwargs):
 
         self.call_service('light/turn_off', entity_id='light.lumie')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def lumie_off(self, kwargs):
 
         self.call_service('light/turn_off', entity_id='light.lumie')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def lumie_on(self, kwargs):
 
         self.call_service('light/turn_on', entity_id='light.lumie', brightness=64, rgb_color=[255, 180, 10])
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs):
 
@@ -619,7 +619,7 @@ class Alarms(Hass):
 
         self.log(f'{status}')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def generate_rota(self, start_date, num_cycles):
 
@@ -646,7 +646,7 @@ class Alarms(Hass):
 
         return rota
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def check_shift(self, date_to_check):
 
@@ -656,7 +656,7 @@ class Alarms(Hass):
 
         return "Date out of range"
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def _cancel_timer(self, timer, message=None):
 
@@ -666,7 +666,7 @@ class Alarms(Hass):
             if message is not None:
                 self.log(f'\t{message} cancelled', level='DEBUG')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def add_shift_calendar_events(self, kwargs):
 
@@ -677,4 +677,8 @@ class Alarms(Hass):
                 end_date = a_date + timedelta(days=1)
                 self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
+     self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
+
+# -----------------------------------------------------------------------------------
+-----------

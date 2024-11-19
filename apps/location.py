@@ -42,7 +42,7 @@ class Location(Hass):
         'proximity.home': 'Home',
     }
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self):
         """."""
@@ -94,21 +94,21 @@ class Location(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def max_home_service(self, namespace, domain, service, kwargs) -> None:
         """max home"""
 
         self.call_service('lighting/welcome_lights', cb='welcome_lights_off', seconds=5*60, key='welcome_lights')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def paul_home_service(self, namespace, domain, service, kwargs) -> None:
         """max home"""
 
         self.call_service('garage/open')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def max_location_announce(self, entity_id, state, kwargs):
 
@@ -141,7 +141,7 @@ class Location(Hass):
         if village:
             self.call_service('location/max_home')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def max_location_detect(self, entity, attribute, old, new, kwargs):
 
@@ -158,7 +158,7 @@ class Location(Hass):
         elif old == name:
             self.max_location_announce(location, 'leave', kwargs)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def paul_home(self, entity, attribute, old, new, kwargs):
 
@@ -168,28 +168,28 @@ class Location(Hass):
         if old == 'not_home' and new == 'home':
             self.call_service('garage/open')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs):
 
         pass
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def test_max_home_event(self, event, data, kwargs):
 
         self.call_service('location/max_home')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def test_paul_home_event(self, event, data, kwargs):
 
         self.call_service('location/paul_home')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def test_welcome_lights_event(self, event, data, kwargs):
 
         self.call_service('lighting/welcome_lights', cb='welcome_lights_off', seconds=10, key='welcome_lights')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

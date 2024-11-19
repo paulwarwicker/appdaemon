@@ -16,7 +16,7 @@ class FrontDoor(Hass):
 
     lib = None
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -32,7 +32,7 @@ class FrontDoor(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_battery_service(self, namespace, domain, service, kwargs) -> None:
         """open the garage"""
@@ -41,13 +41,13 @@ class FrontDoor(Hass):
 
         self.front_door_battery({})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def test_front_door_battery_event(self, event:str, data:dict, kwargs) -> None:
 
         self.front_door_battery({})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def front_door_battery(self, kwargs) -> None:
 
@@ -72,4 +72,4 @@ class FrontDoor(Hass):
             message=f'Recharge front door battery ({level:d}%{battery})'
             self.call_service('announcer/notification', message=message, type='desktop')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

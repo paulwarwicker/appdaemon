@@ -14,7 +14,7 @@ class Weather(Hass):
     request_kwargs = {}
     lib = None
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self):
 
@@ -55,7 +55,7 @@ class Weather(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     async def get_weather(self, *args):
         """get weather data"""
@@ -73,7 +73,7 @@ class Weather(Hass):
                 else:
                     self.log(f'Error getting weather async: {resp.status}', level='ERROR')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     async def publish_current_temperature(self, json_data):
         """Publish current temperataure"""
@@ -85,7 +85,7 @@ class Weather(Hass):
             device_class='temperature',
         )
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     async def publish_low_forecast(self, json_data):
         """Publish forecasted low over next 12 hours"""
@@ -137,7 +137,7 @@ class Weather(Hass):
             device_class='datetime',
         )
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     async def publish_rain_forecast(self, json_data):
         """Publish forecasted rain outlook"""
@@ -181,7 +181,7 @@ class Weather(Hass):
             device_class='probability',
         )
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def convert_zulu(self, zulu) -> datetime:
 
@@ -189,7 +189,7 @@ class Weather(Hass):
         utc_dt = zulu.replace("Z","UTC")
         return datetime.strptime(utc_dt, "%Y-%m-%dT%H:%M:%S%Z")
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def frost_warning(self, kwargs) -> bool:
 
@@ -206,4 +206,4 @@ class Weather(Hass):
 
         return warning
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

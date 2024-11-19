@@ -20,7 +20,7 @@ class Garage(Hass):
     BROADCAST_ENTITY_ID = ['media_player.kitchen', 'media_player.bathroom', 'media_player.dining_room']
     OTHER_ENTITY_ID = ['media_player.study', 'media_player.bedroom_2']
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -47,21 +47,21 @@ class Garage(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_open_service(self, namespace, domain, service, kwargs) -> None:
         """open the garage"""
 
         self.garage_door_open('','','','',{})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_close_service(self, namespace, domain, service, kwargs) -> None:
         """open the garage"""
 
         self.garage_door_close('','','','',{})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_door_open(self, entity, attribute, old, new, kwargs) -> None:
         """open garage door"""
@@ -71,7 +71,7 @@ class Garage(Hass):
         if self.lib.is_below_horizon():
             self.call_service('lighting/garage_on')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_door_close(self, entity, attribute, old, new, kwargs) -> None:
         """close garage door"""
@@ -81,7 +81,7 @@ class Garage(Hass):
         if self.lib.is_below_horizon():
             self.call_service('lighting/garage_off')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_door(self, entity, attribute, old, new, kwargs) -> None:
         """listener for garage door"""
@@ -97,35 +97,35 @@ class Garage(Hass):
 
         self.garage_door_announce(state=new)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_door_announce_opening(self, entity, attribute, old, new, kwargs) -> None:
         """announce garage door opening"""
 
         self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'closed', 'opening', {})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_door_announce_closing(self, entity, attribute, old, new, kwargs) -> None:
         """announce garage door closing"""
 
         self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'open', 'closing', {})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_door_announce_open(self, entity, attribute, old, new, kwargs) -> None:
         """announce garage door is now open"""
 
         self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'opening', 'open', {})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_door_announce_closed(self, entity, attribute, old, new, kwargs) -> None:
         """announce garage door is now closed"""
 
         self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'closing', 'closed', {})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_door_announce(self, **kwargs) -> None:
         """garage door announcement"""
@@ -148,7 +148,7 @@ class Garage(Hass):
 
         self.call_service('announcer/broadcast', message=message, timestamp='garage')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def is_garage_door_closed(self) -> bool:
         """is garage door closed"""
@@ -157,7 +157,7 @@ class Garage(Hass):
 
         return state == 'closed'
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def is_garage_door_open(self) -> bool:
         """is garage door open"""
@@ -166,7 +166,7 @@ class Garage(Hass):
 
         return state == 'open'
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def check_garage_door(self, kwargs) -> None:
         """check garage door state"""
@@ -177,7 +177,7 @@ class Garage(Hass):
             if diff >= self.lib.interval(minutes=60):
                 self.garage_door_announce(state=state)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def garage_door_debug(self, entity='', attribute='', old='', new='', kwarg={}) -> tuple:
 
@@ -187,16 +187,16 @@ class Garage(Hass):
 
         return state,ts
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def test_garage_open_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('garage/open')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def test_garage_close_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('garage/close')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

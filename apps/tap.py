@@ -22,7 +22,7 @@ class Tap(Hass):
 
     DAILY_WATERING_MINUTES = 30
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -52,7 +52,7 @@ class Tap(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def water_garden_service(self, namespace, domain, service, kwargs) -> None:
         """open the garage"""
@@ -62,7 +62,7 @@ class Tap(Hass):
         if minutes:
             self.water_garden_for('','','','', {'minutes': minutes})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def water_garden_for(self, entity, attribute, old, new, kwargs) -> None:
         """water garden for <minutes> minutes. different switches will set 1, 15, 20, 30 minutes"""
@@ -74,7 +74,7 @@ class Tap(Hass):
         else:
             self.error('no timer set')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def water_garden_for_action(self, event, data, kwargs) -> None:
         """water garden for 15 minutes as an iOS action"""
@@ -84,21 +84,21 @@ class Tap(Hass):
         self.log(f'\twater_garden_for_action for {minutes:d} minutes')
         self.water_garden_for_n_minutes({minutes: minutes})  # was minutes=minutes
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def water_garden_for_n_minutes(self, kwargs) -> None:
         """water garden for <minutes> minutes"""
 
         self.water_garden_for('', '', '', '', kwargs)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def water_garden_stop(self, entity, attribute, old, new, kwargs) -> None:
         """stop watering garden"""
 
         self.tap_off({}) # TODO: stop running thread
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def water_garden_daily(self, kwargs) -> None:
         """water garden daily"""
@@ -109,7 +109,7 @@ class Tap(Hass):
                 self.water_garden_for_n_minutes(kwargs)
                 self.announce(message=f'Watering garden for {self.DAILY_WATERING_MINUTES} minutes')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def tap_on(self, **kwargs) -> None:
         """turn garden tap on for <minutes> minutes"""
@@ -124,7 +124,7 @@ class Tap(Hass):
             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
             self.run_in(self.tap_off, seconds)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def tap_off(self, kwargs) -> None:
         """turn garden tap off"""
@@ -137,7 +137,7 @@ class Tap(Hass):
         self.set_state('input_boolean.water_garden_20', state='off')
         self.set_state('input_boolean.water_garden_30', state='off')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def check_garden_tap(self, kwargs) -> None:
         """check garden tap state"""
@@ -153,7 +153,7 @@ class Tap(Hass):
             if diff1 > 0 and ((diff1 + 1) % 10) == 0:
                 self.announce(message=f'The garden tap has been on for {n} minutes', entity_id=['media_player.kitchen','media_player.study'])
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def water_garden_event(self, event, data, kwargs) -> None:
 
@@ -161,13 +161,13 @@ class Tap(Hass):
         self.water_garden_for_n_minutes({'minutes': minutes})
         self.announce(message=f'Watering garden for {minutes} minutes')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs) -> None:
 
         self.status('','','','',{})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -177,4 +177,4 @@ class Tap(Hass):
 
         self.set_state('input_boolean.status', state='off')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

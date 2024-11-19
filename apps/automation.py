@@ -35,7 +35,7 @@ class Automation(Hass):
 
     MODULES = ["alarms", "timers", "timestamp", "announcer", "location", "sonos", "starling", "motion", "lighting", "tap", "weather", "garage", "car"]
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -101,7 +101,7 @@ class Automation(Hass):
         # self.dummy()
         self.test({})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def test(self, kwargs) -> None:
         """test method"""
@@ -112,7 +112,7 @@ class Automation(Hass):
 
         self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def dummy(self) -> None:
         """dummy"""
@@ -120,7 +120,7 @@ class Automation(Hass):
         self.lib.log_function_name()
         self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_all_state(self, kwargs) -> None:
         """set all state - reset to false and then set_default_state"""
@@ -144,14 +144,14 @@ class Automation(Hass):
 
         self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_console_log_level(self, entity, attribute, old, new, kwargs) -> None:
         """set console log level depending on the debug flag"""
 
         self._set_console_log_level()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def _set_console_log_level(self) -> None:
         """internal method to set console level using the debug flag. set the property log_level and report a change"""
@@ -170,7 +170,7 @@ class Automation(Hass):
                 if a is not None:
                     a.set_log_level(level)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_debug_flag(self, entity, attribute, old, new, kwargs) -> None:
         """set debug flag"""
@@ -179,7 +179,7 @@ class Automation(Hass):
         self.log(f'\tautomation debug now {self.debug}', level='INFO')
         self._set_console_log_level()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_verbose_flag(self, entity, attribute, old, new, kwargs) -> None:
         """set verbose flag"""
@@ -188,7 +188,7 @@ class Automation(Hass):
         self.log(f'\tautomation verbose now {self.verbose}', level='INFO')
         self._set_console_log_level()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_testing_flag(self, entity, attribute, old, new, kwargs) -> None:
         """set testing flag"""
@@ -197,7 +197,7 @@ class Automation(Hass):
         self.log(f'\tautomation testing now {self.testing}', level='INFO')
         self._set_console_log_level()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def reset_test1(self, entity, attribute, old, new, kwargs) -> None:
         """reset test_1 flag"""
@@ -205,7 +205,7 @@ class Automation(Hass):
         self.delay(0.5)
         self.set_state('input_boolean.test_1', state='off')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def reset_test2(self, entity, attribute, old, new, kwargs) -> None:
         """reset test_2 flag"""
@@ -213,7 +213,7 @@ class Automation(Hass):
         self.delay(0.5)
         self.set_state('input_boolean.test_2', state='off')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def reset_test3(self, entity, attribute, old, new, kwargs) -> None:
         """reset test_3 flag"""
@@ -221,7 +221,7 @@ class Automation(Hass):
         self.delay(0.5)
         self.set_state('input_boolean.test_3', state='off')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_default_state(self) -> None:
         """set default values from backstop default values"""
@@ -233,7 +233,7 @@ class Automation(Hass):
         self.set_state('input_boolean.verbose', state=self.get_state('input_boolean.default_verbose_state'))
         self.set_state('input_boolean.testing', state=self.get_state('input_boolean.default_testing_state'))
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def register_test(self, callback, entity_id='input_boolean.test_1', **kwargs) -> None:
         """register test"""
@@ -242,7 +242,7 @@ class Automation(Hass):
         self.log(f'\tcallback {callback.__name__} registered on {entity_id}', level='WARNING')
         self.handlers[entity_id] = handler
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def deregister_test(self, entity_id, **kwargs) -> None:
         """deregister test"""
@@ -252,42 +252,42 @@ class Automation(Hass):
             self.log(f'\tcallback {handler} deregistered on {entity_id}', level='WARNING')
             self.cancel_listen_state(handler, **kwargs)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def register_test_1(self, callback, entity_id='input_boolean.test_1', **kwargs) -> None:
         """register test 1"""
 
         self.register_test(callback, entity_id, **kwargs)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def register_test_2(self, callback, entity_id='input_boolean.test_2', **kwargs) -> None:
         """register test 2"""
 
         self.register_test(callback, entity_id, **kwargs)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def register_test_3(self, callback, entity_id='input_boolean.test_3', **kwargs) -> None:
         """register test 3"""
 
         self.register_test(callback, entity_id, **kwargs)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def deregister_test_1(self, **kwargs) -> None:
         """deregister test 1"""
 
         self.deregister_test('input_boolean.test_1', **kwargs)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def deregister_test_2(self, **kwargs) -> None:
         """deregister test 2"""
 
         self.deregister_test('input_boolean.test_2', **kwargs)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def deregister_test_3(self, **kwargs) -> None:
         """deregister test 3 and unset test_3 flag"""
@@ -295,7 +295,7 @@ class Automation(Hass):
         self.deregister_test('input_boolean.test_3', **kwargs)
         self.set_state('input_boolean.test_3', state='off')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def test_test(self, entity, attribute, old, new, kwargs) -> None:
         """test test"""
@@ -304,7 +304,7 @@ class Automation(Hass):
         self.run_in(self.test, 0)
         self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def reset(self, kwargs) -> None:
         """reset dowstairs motion flag and set default sonos configuration"""
@@ -319,7 +319,7 @@ class Automation(Hass):
         self.set_state('input_boolean.test_3', state='off')
         self.log('\treset', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def notification(self, message, log=False, title='') -> None:
         """send notification to log, tv and discord"""
@@ -330,21 +330,21 @@ class Automation(Hass):
         self.call_service('notify/lg_webos_tv_oled65c7v', message=message)
         self.call_service('notify/disc0rd', title=title, message=message, target="1250932196613685313")
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def desktop_notification(self, message) -> None:
         """send desktop notification to discord using announcer"""
 
         self.call_service('announcer/notification', message=message, type='desktop')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def announce(self, message, entity_id, kwargs) -> None:
         """announce to a single device using announcer"""
 
         self.call_service("announcer/announce", entity_id=entity_id, message=message)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def maxine_travel_time_to_home(self, kwargs) -> None:
         """set travel time to home for maxine. set maxine_driving_status sensor"""
@@ -372,14 +372,14 @@ class Automation(Hass):
         else:
             self.set_state('sensor.maxine_driving_status', state='Not Driving')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_all_state_event(self, event, data, kwargs) -> None:
         """listener for set_all_state event"""
 
         self.set_all_state({})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_bins_test(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -390,7 +390,7 @@ class Automation(Hass):
         elif action == 'cancel':
             self.deregister_test_3()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_notification_test(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -401,7 +401,7 @@ class Automation(Hass):
         elif action == 'cancel':
             self.deregister_test_3()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_announcement_test(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -412,7 +412,7 @@ class Automation(Hass):
         elif action == 'cancel':
             self.deregister_test_3()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_front_door_ding_test(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -423,7 +423,7 @@ class Automation(Hass):
         elif action == 'cancel':
             self.deregister_test_3()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_front_door_light_on_test(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -434,7 +434,7 @@ class Automation(Hass):
         elif action == 'cancel':
             self.deregister_test_3()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def set_test_test(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -445,13 +445,13 @@ class Automation(Hass):
         elif action == 'cancel':
             self.deregister_test_3()
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def backup(self, kwargs) -> None:
 
         self.call_service('hassio/backup_full', compressed=True, homeassistant_exclude_database=True)
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status(self, entity, attribute, old, new, kwargs) -> None:
 
@@ -480,16 +480,16 @@ class Automation(Hass):
 
         self.set_state('input_boolean.status', state='off')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs) -> None:
 
         self.status('','','','',{})
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def fire_status_event(self, entity, attribute, old, new, kwargs) -> None:
 
         self.fire_event("status")
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

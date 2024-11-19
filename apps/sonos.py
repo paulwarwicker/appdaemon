@@ -22,7 +22,7 @@ class Sonos(Hass):
     bedroom_entity_id = 'media_player.bedroom'
     ALL_ENTITIES = ['media_player.kitchen', 'media_player.bathroom', 'media_player.bedroom', 'media_player.bedroom_2', 'media_player.study', 'media_player.dining_room']
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self):
         """."""
@@ -40,13 +40,13 @@ class Sonos(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def mute_all(self, kwargs):
 
         self._configure(self.ALL_ENTITIES, {}, 0, True, False, True, False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def _configure(self, speakers: list, volume: list, delay: int, unjoin: bool, join: bool, mute: bool, check_downstairs_motion: bool):
 
@@ -80,7 +80,7 @@ class Sonos(Hass):
                 self.call_service('media_player/volume_set', entity_id=speaker, volume_level=volume[speaker])
                 self.call_service('media_player/volume_mute', entity_id=speaker, is_volume_muted=False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def configuration_1(self, kwargs):
 
@@ -93,7 +93,7 @@ class Sonos(Hass):
 
         self._configure(speakers, volume, 7, True, True, False, False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def configuration_2(self, kwargs):
         # bedroom with join
@@ -103,7 +103,7 @@ class Sonos(Hass):
 
         self._configure(speakers, volume, 7, True, True, False, False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def configuration_3(self, kwargs):
 
@@ -112,7 +112,7 @@ class Sonos(Hass):
 
         self._configure(speakers, volume, 7, True, True, False, False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def configuration_4(self, kwargs):
         # bedroom no join
@@ -122,7 +122,7 @@ class Sonos(Hass):
 
         self._configure(speakers, volume, 7, True, False, False, False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs):
 
@@ -130,7 +130,7 @@ class Sonos(Hass):
 
         self.log(f'{status}')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     async def join_test_event(self, event, data, kwargs):
 
@@ -154,7 +154,7 @@ class Sonos(Hass):
         await self.unjoin_all('','','',{})
         print(200)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     async def unjoin_all(self, namespace, domain, service, kwargs) -> None:
 
@@ -170,14 +170,14 @@ class Sonos(Hass):
 
         self._configure(speakers, {}, 0, True, False, True, False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     async def unjoin_entity(self, namespace, domain, service, kwargs) -> None:
 
         entity_id = kwargs['entity_id']
         self.call_service('media_player/unjoin', entity_id=entity_id)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     async def set_configuration(self, namespace, domain, service, kwargs) -> None:
 
@@ -192,4 +192,4 @@ class Sonos(Hass):
         elif config == '4':
             self.configuration_4({})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

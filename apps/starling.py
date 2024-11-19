@@ -27,7 +27,7 @@ class Starling(Hass):
     lib = None
     starling = None
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self):
         """."""
@@ -51,7 +51,7 @@ class Starling(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def show_starling_account(self, kwargs):
 
@@ -64,7 +64,7 @@ class Starling(Hass):
 
         # goal = helper.find_savings_goal('Tax')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def add_starling_calendar_events(self, kwargs):
         pass
@@ -135,13 +135,13 @@ class Starling(Hass):
 
         # # self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def check_starling_balance(self, event, data, kwargs):
 
         self._check_starling_balance({})
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def _check_starling_balance(self, kwargs):
 
@@ -256,20 +256,20 @@ class Starling(Hass):
         #     if add:
         #         self.add_starling_so_calendar_event(so)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def check_feed(self, event, data, kwargs):
 
         self._check_feed()
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def _check_feed(self):
 
         self.lib.log_function_name()
         self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def add_starling_dd_calendar_event(self, dd):
         pass
@@ -294,7 +294,7 @@ class Starling(Hass):
         #     self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
         #     self.log('past direct debit added', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def add_starling_so_calendar_event(self, so):
         pass
@@ -309,7 +309,7 @@ class Starling(Hass):
         # self.call_service('calendar/create_event', entity_id='calendar.starling', summary=summary, description=description, start_date=str(start_date), end_date=str(end_date))
         # self.log('future standing order added', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def delete_calendar_events(self, event, data, kwargs):
 
@@ -321,7 +321,7 @@ class Starling(Hass):
 
         self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def add_calendar_events(self, event, data, kwargs):
 
@@ -331,7 +331,7 @@ class Starling(Hass):
 
         self.lib.log_function_name(False)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs):
 
@@ -343,7 +343,7 @@ class Starling(Hass):
 
         self.set_state('input_boolean.status', state='off')
 
-# ---------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 class StarlingHelper:
     """Helper class"""

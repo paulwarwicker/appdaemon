@@ -13,7 +13,7 @@ from apps.announcer import Announcer
     },
 )
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 def announcer() -> Announcer: # pylint: disable=W0212 disable=W0621
     pass
@@ -23,7 +23,7 @@ def announcer() -> Announcer: # pylint: disable=W0212 disable=W0621
 
 #         if hint is False or self.get_state('input_boolean.mute_announcement') == 'on':
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-01-01 21:29:59')
 def test_announceable_1(hass_driver, announcer: Announcer): # pylint: disable=W0212 disable=W0621
@@ -42,7 +42,7 @@ def test_announceable_1(hass_driver, announcer: Announcer): # pylint: disable=W0
     assert not announcer._announceable(False)  # pylint: disable=W0212 disable=W0621
     assert not announcer._announceable(True)  # pylint: disable=W0212 disable=W0621 # FIXME
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-01-01 21:30:01')
 def test_announceable_2(hass_driver, announcer: Announcer): # pylint: disable=W0212 disable=W0621
@@ -56,7 +56,7 @@ def test_announceable_2(hass_driver, announcer: Announcer): # pylint: disable=W0
     assert not announcer._announceable(True) # pylint: disable=W0212 disable=W0621
     assert not announcer._announceable(False) # pylint: disable=W0212 disable=W0621
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-01-01 21:29:59')
 def test_announceable_3(hass_driver, announcer: Announcer): # pylint: disable=W0212 disable=W0621
@@ -75,7 +75,7 @@ def test_announceable_3(hass_driver, announcer: Announcer): # pylint: disable=W0
     assert announcer._announceable(False)  # pylint: disable=W0212 disable=W0621
     assert announcer._announceable(True)  # pylint: disable=W0212 disable=W0621 # FIXME
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 # @freeze_time('2024-01-01 21:29:59')
 # def test_announceable3(hass_driver, announcer: Announcer): # pylint: disable=W0212 disable=W0621

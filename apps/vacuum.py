@@ -20,7 +20,7 @@ class Vacuum(Hass):
 
     lib = None
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
@@ -35,7 +35,7 @@ class Vacuum(Hass):
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def vacuum_debug(self, entity, attribute, old, new, kwargs) -> None:
         """vacuum debug function"""
@@ -43,7 +43,7 @@ class Vacuum(Hass):
         state = self.get_state('vacuum.s7_max_ultra')
         self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} state={state}', level='INFO')  # kwargs={kwargs}
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
     def check_roborock(self, kwargs) -> None:
 
@@ -76,4 +76,4 @@ class Vacuum(Hass):
             self.call_service('announcer/broadcast', message=message, timestamp='vacuum')
             self.call_service('announcer/announce', entity_id='media_player.study', message=message)
 
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------

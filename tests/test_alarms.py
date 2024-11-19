@@ -20,12 +20,12 @@ STUDY_VOLUME = 0.3
     },
 )
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 def alarms() -> Alarms:
     pass
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-04 19:00:00')
 def test_initialised(hass_driver, alarms: Alarms):
@@ -47,7 +47,7 @@ def test_initialised(hass_driver, alarms: Alarms):
         mock.call("announcer/initialised", name='Alarms', announce=False)
     ])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-05 00:00:20')
 def test_set_alarm_state_1(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -73,7 +73,7 @@ def test_set_alarm_state_1(hass_driver, alarms: Alarms):  # pylint: disable=W062
         mock.call('announcer/announce', entity_id=STUDY_ENTITY_ID, message='The normal morning alarm is set to 07:55'),
     ])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-05 00:00:20')
 def test_set_alarm_state_2(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -99,7 +99,7 @@ def test_set_alarm_state_2(hass_driver, alarms: Alarms):  # pylint: disable=W062
         mock.call('announcer/announce', entity_id=STUDY_ENTITY_ID, message='The normal morning alarm is set to 08:55'),
     ])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-05 00:00:20')
 def test_show_alarm_time(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -126,7 +126,7 @@ def test_show_alarm_time(hass_driver, alarms: Alarms):  # pylint: disable=W0621
         mock.call('announcer/announce', entity_id=STUDY_ENTITY_ID, message='The normal morning alarm is set to 08:55', snapshot=False),
     ])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-07 20:30:20') # wednesday -> thursday
 def test_get_early_alarm_time_1(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -148,7 +148,7 @@ def test_get_early_alarm_time_1(hass_driver, alarms: Alarms):  # pylint: disable
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-08 00:00:20') # thursday -> thursday
 def test_get_early_alarm_time_2(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -170,7 +170,7 @@ def test_get_early_alarm_time_2(hass_driver, alarms: Alarms):  # pylint: disable
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-08 20:30:20') # thursday -> friday
 def test_get_early_alarm_time_3(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -192,7 +192,7 @@ def test_get_early_alarm_time_3(hass_driver, alarms: Alarms):  # pylint: disable
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-09 00:00:20') # friday -> friday
 def test_get_early_alarm_time_4(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -214,7 +214,7 @@ def test_get_early_alarm_time_4(hass_driver, alarms: Alarms):  # pylint: disable
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-09 20:30:20') # friday -> saturday
 def test_get_early_alarm_time_5(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -236,7 +236,7 @@ def test_get_early_alarm_time_5(hass_driver, alarms: Alarms):  # pylint: disable
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-10 00:00:20') # saturday -> saturday
 def test_get_early_alarm_time_6(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -258,7 +258,7 @@ def test_get_early_alarm_time_6(hass_driver, alarms: Alarms):  # pylint: disable
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-10 20:30:20') # saturday -> sunday
 def test_get_early_alarm_time_7(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -280,7 +280,7 @@ def test_get_early_alarm_time_7(hass_driver, alarms: Alarms):  # pylint: disable
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-11 00:00:20') # sunday -> sunday
 def test_get_early_alarm_time_8(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -302,7 +302,7 @@ def test_get_early_alarm_time_8(hass_driver, alarms: Alarms):  # pylint: disable
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-11 20:30:20') # sunday -> monday
 def test_get_early_alarm_time_9(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -324,7 +324,7 @@ def test_get_early_alarm_time_9(hass_driver, alarms: Alarms):  # pylint: disable
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-12 00:00:20') # monnday -> monday
 def test_get_early_alarm_time_10(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -346,7 +346,7 @@ def test_get_early_alarm_time_10(hass_driver, alarms: Alarms):  # pylint: disabl
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-08 20:30:20')
 def test_get_normal_alarm_time_1(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -369,7 +369,7 @@ def test_get_normal_alarm_time_1(hass_driver, alarms: Alarms):  # pylint: disabl
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-09 00:00:20')
 def test_get_normal_alarm_time_2(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -393,7 +393,7 @@ def test_get_normal_alarm_time_2(hass_driver, alarms: Alarms):  # pylint: disabl
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-09 20:30:20')
 def test_get_normal_alarm_time_3(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -416,7 +416,7 @@ def test_get_normal_alarm_time_3(hass_driver, alarms: Alarms):  # pylint: disabl
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
 @freeze_time('2024-08-10 00:00:20')
 def test_get_normal_alarm_time_4(hass_driver, alarms: Alarms):  # pylint: disable=W0621
@@ -439,5 +439,5 @@ def test_get_normal_alarm_time_4(hass_driver, alarms: Alarms):  # pylint: disabl
 
     call_service.assert_has_calls([])
 
-# -----------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------
 
