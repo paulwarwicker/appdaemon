@@ -14,7 +14,9 @@ class Sonos(Hass):
     """Documentation for Sonos"""
 
     lib = None
-    ALL_ENTITIES = ['media_player.kitchen', 'media_player.bathroom', 'media_player.bedroom', 'media_player.study', 'media_player.dining_room']
+    STUDY = ['media_player.study']
+    ENTITIES = ['media_player.kitchen', 'media_player.bathroom', 'media_player.bedroom', 'media_player.dining_room']
+    ALL_ENTITIES = ENTITIES + STUDY
 
 # -----------------------------------------------------------------------------------
 
@@ -61,8 +63,9 @@ class Sonos(Hass):
 
         if mute:
             self.log(f"\tmute {speakers}", level='DEBUG')
+            self.call_service('media_player/volume_mute', entity_id=speakers, is_volume_muted=True)
 
-        # assume bank holiday and mute
+        # assume bank holiday and mute anyway
         self.call_service('media_player/volume_mute', entity_id=speakers, is_volume_muted=True)
 
         if mute or is_bank_holiday:
@@ -72,7 +75,6 @@ class Sonos(Hass):
             for speaker in speakers:
                 self.log(f'\tsetting speaker volume to {volume[speaker]} for {speaker}', level='DEBUG')
                 self.call_service('media_player/volume_set', entity_id=speaker, volume_level=volume[speaker])
-                self.call_service('media_player/volume_mute', entity_id=speaker, is_volume_muted=False)
 
 # -----------------------------------------------------------------------------------
 

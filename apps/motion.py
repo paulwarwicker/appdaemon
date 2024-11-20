@@ -97,6 +97,7 @@ class Motion(Hass):
             timer = 10 # but if max has gone to the loo, only 10 seconds
         else:
             timer = 60 # should not hit this
+            self.log(f'\tUnexpected issue setting timer value - diff1={diff1} diff2={diff2}', level='ERROR')
 
         if self.now_is_between('22:00:00', 'sunrise') or self.lib.get_testing():
             kwargs = {**kwargs, 'timer': timer, 'key': 'upstairs'} #  'check_override': False,
@@ -120,8 +121,8 @@ class Motion(Hass):
         self.call_service('timestamp/set', name='downstairs')
         self.stairs_motion(**kwargs)
 
-        if self.lib.is_night():
-            self.call_service('sonos/unjoin_all')
+        if self.now_is_between('05:00:00', '06:30:00'):
+            self.call_service('media_player/volume_mute', entity_id='media_player.bedroom', is_volume_muted=True)
             self.call_service('light/turn_off', entity_id=self.LUMIE_ENTITY_ID)
 
         # self.lib.log_function_name(False)
