@@ -17,8 +17,6 @@ class Garage(Hass):
     lib = None
     PAUL_ENTITY_ID = 'device_tracker.paulw_iphone'
     GARAGE_ENTITY_ID = 'cover.remootio_device_host_192_168_1_13_s_n_30c92235df30xupwfafu_none'
-    BROADCAST_ENTITY_ID = ['media_player.kitchen', 'media_player.bathroom', 'media_player.dining_room']
-    OTHER_ENTITY_ID = ['media_player.study', 'media_player.bedroom_2']
 
 # -----------------------------------------------------------------------------------
 

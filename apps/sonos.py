@@ -14,13 +14,7 @@ class Sonos(Hass):
     """Documentation for Sonos"""
 
     lib = None
-    # FIXME: should be constants
-    broadcast_entity_id = ['media_player.kitchen', 'media_player.bathroom', 'media_player.dining_room']
-    other_entity_id = ['media_player.study', 'media_player.bedroom_2']
-    main_entity_id = ['media_player.bathroom', 'media_player.study', 'media_player.bedroom', 'media_player.bedroom_2']
-    study_entity_id = 'media_player.study'
-    bedroom_entity_id = 'media_player.bedroom'
-    ALL_ENTITIES = ['media_player.kitchen', 'media_player.bathroom', 'media_player.bedroom', 'media_player.bedroom_2', 'media_player.study', 'media_player.dining_room']
+    ALL_ENTITIES = ['media_player.kitchen', 'media_player.bathroom', 'media_player.bedroom', 'media_player.study', 'media_player.dining_room']
 
 # -----------------------------------------------------------------------------------
 
@@ -84,11 +78,10 @@ class Sonos(Hass):
 
     def configuration_1(self, kwargs):
 
-        speakers = ['media_player.bedroom', 'media_player.bathroom', 'media_player.bedroom_2']
+        speakers = ['media_player.bedroom', 'media_player.bathroom']
         volume = {
             'media_player.bedroom': 0.01,
             'media_player.bathroom': 0.3,
-            'media_player.bedroom_2': 0.3
         }
 
         self._configure(speakers, volume, 7, True, True, False, False)
@@ -107,8 +100,8 @@ class Sonos(Hass):
 
     def configuration_3(self, kwargs):
 
-        speakers = ['media_player.kitchen', 'media_player.bedroom', 'media_player.bedroom_2']
-        volume = {'media_player.kitchen': 0.05, 'media_player.bedroom': 0.05, 'media_player.bedroom_2': 0.3}
+        speakers = ['media_player.kitchen', 'media_player.bedroom']
+        volume = {'media_player.kitchen': 0.05, 'media_player.bedroom': 0.05}
 
         self._configure(speakers, volume, 7, True, True, False, False)
 
@@ -158,17 +151,7 @@ class Sonos(Hass):
 
     async def unjoin_all(self, namespace, domain, service, kwargs) -> None:
 
-        speakers = self.ALL_ENTITIES
-        # volume = {
-        #     'media_player.kitchen': 0.0,
-        #     'media_player.bathroom': 0.0,
-        #     'media_player.bedroom': 0.0,
-        #     'media_player.bedroom_2': 0.0,
-        #     'media_player.study': 0.0,
-        #     'media_player.dining_room': 0.0
-        # }
-
-        self._configure(speakers, {}, 0, True, False, True, False)
+        self._configure(self.ALL_ENTITIES, {}, 0, True, False, True, False)
 
 # -----------------------------------------------------------------------------------
 
