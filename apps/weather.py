@@ -43,8 +43,8 @@ class Weather(Hass):
             self.request_kwargs['params']['location'] = loc
             self.log(f'Updated location to {loc}', level='DEBUG')
 
-        self.run_daily(self.frost_warning, "sunset + 00:00:00")
-        self.run_daily(self.frost_warning, "sunset + 01:00:00")
+        self.run_daily(self.frost_warning, 'sunset + 00:00:00')
+        self.run_daily(self.frost_warning, 'sunset + 01:00:00')
 
         interval = timedelta(minutes=10)
         # runtime = datetime(2024, 1, 1, 0, 0, 0)

@@ -44,7 +44,7 @@ class Tap(Hass):
         self.listen_state(self.water_garden_for, 'input_boolean.water_garden_30', new='on', minutes=30)
         self.listen_state(self.water_garden_stop, 'input_boolean.water_garden_30', new='off')
 
-        self.run_daily(self.water_garden_daily, '19:30:00')
+        self.run_daily(self.water_garden_daily, 'sunset + 00:30:00')
 
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.check_garden_tap, runtime)

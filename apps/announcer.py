@@ -68,6 +68,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         self.run_daily(self.bins, '19:30:00', event='preannounce')
         self.run_daily(self.bins, '17:30:00', event='announce')
         self.run_daily(self.bins, '19:30:00', event='followup')
+        self.run_daily(self.vouchers_announce, '19:30:30')
 
         self.announce_lock = threading.Lock()
         announce_thread = threading.Thread(target=self.announce_worker)
@@ -377,7 +378,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             value = 1
             expiry = 'whenever'
 
-        if dow == 2 or force:
+        if dow in (2,5) or force:
             if value > 0:
                 message = ' '.join([str(value), 'pounds', 'of', 'vouchers', 'expiring', 'end', 'of', expiry])
                 entry = self.prepare('broadcast_service', self.BROADCAST_ENTITY_ID, self.OTHER_ENTITY_ID, 0.5, message, True, 'vouchers', True) # force=True

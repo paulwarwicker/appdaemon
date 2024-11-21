@@ -74,11 +74,11 @@ class Lighting(Hass):
         self.listen_event(self.front_door_ding_event, 'front_door_ding_lights')
         self.listen_event(self.lights_off_event, "ios.action_fired", actionName='Lights')
 
-        self.run_daily(self.living_room_on, "sunset + 00:10:00")
-        self.run_daily(self.living_room_off, "23:30:00")
-        self.run_daily(self.outside_off, "21:30:00")
+        self.run_daily(self.living_room_on, 'sunset + 00:10:00')
+        self.run_daily(self.living_room_off, '23:30:00')
+        self.run_daily(self.outside_off, '21:30:00')
         self.run_daily(self.downstairs_off, '02:00:00')
-        self.run_daily(self.stairs_on, "sunset + 00:00:00")
+        self.run_daily(self.stairs_on, 'sunset + 00:10:00')
         # self.run_daily(self.radiator_on, "sunset + 00:10:00")
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)

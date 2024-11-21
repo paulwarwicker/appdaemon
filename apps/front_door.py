@@ -29,7 +29,7 @@ class FrontDoor(Hass):
         self.listen_event(self.front_door_ding_event, 'front_door_ding')
         self.listen_state(self.front_door_ding, 'binary_sensor.front_door_ding', old='off', new='on')
 
-        self.run_daily(self.front_door_battery, '19:30:00')
+        self.run_daily(self.front_door_battery, 'sunset + 00:05:00')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
