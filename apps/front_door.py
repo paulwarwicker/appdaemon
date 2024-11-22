@@ -56,6 +56,7 @@ class FrontDoor(Hass):
         self.front_door_ding('','','','',{})
 
 # -----------------------------------------------------------------------------------
+
     def front_door_battery(self, kwargs) -> None:
 
         message = None

@@ -309,6 +309,9 @@ class Automation(Hass):
     def reset(self, kwargs) -> None:
         """reset dowstairs motion flag and set default sonos configuration"""
 
+        if self.lib.get_alarm_testing():
+            self.call_service('alarm/reset')
+
         self.call_service('motion/reset_downstairs_motion_flag')
         self.call_service('sonos/unjoin_all')
 

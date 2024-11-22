@@ -44,6 +44,8 @@ class Alarms(Hass):
 
         self.lib = AutomationLib(self)
 
+        self.register_service('alarms/reset', self.reset_service)
+
         self.rota = self.generate_rota(datetime(2024, 5, 16).date(), 12)
 
         self.listen_event(self.set_alarm_state_event, 'set_alarm_state')
@@ -62,6 +64,13 @@ class Alarms(Hass):
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
+
+# -----------------------------------------------------------------------------------
+
+    def reset_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+        """reset alarms"""
+
+        self.reset_alarms('','','','',{})
 
 # -----------------------------------------------------------------------------------
 
@@ -277,12 +286,6 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def get_alarm_testing(self):
-
-        return self.get_state("input_boolean.alarm_testing") == "on"
-
-# -----------------------------------------------------------------------------------
-
     def set_early_alarm_callback(self, entity, attribute, old, new, kwargs):
 
         self._cancel_timer(self.early_alarm_callback, 'early alarm')
@@ -316,7 +319,7 @@ class Alarms(Hass):
         bool_entity_id = f'input_boolean.{alarm_type}_alarm'
         time_entity_id = f'input_datetime.{alarm_type}_alarm'
 
-        debug = self.get_alarm_testing()
+        debug = self.lib.get_alarm_testing()
 
         if action == 'set':
             state = self.get_state(time_entity_id, attribute="attributes")
@@ -379,7 +382,7 @@ class Alarms(Hass):
 
     def is_test(self, kwargs):
 
-        return kwargs['alarm_type'] == 'test' or self.get_alarm_testing()
+        return kwargs['alarm_type'] == 'test' or self.lib.get_alarm_testing()
 
 # -----------------------------------------------------------------------------------
 
