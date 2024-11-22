@@ -73,8 +73,9 @@ class Sonos(Hass):
 
         if not is_bank_holiday:
             for speaker in speakers:
-                self.log(f'\tsetting speaker volume to {volume[speaker]} for {speaker}', level='DEBUG')
-                self.call_service('media_player/volume_set', entity_id=speaker, volume_level=volume[speaker])
+                if volume is not None:
+                    self.log(f'\tsetting speaker volume to {volume[speaker]} for {speaker}', level='DEBUG')
+                    self.call_service('media_player/volume_set', entity_id=speaker, volume_level=volume[speaker])
 
 # -----------------------------------------------------------------------------------
 
@@ -153,7 +154,7 @@ class Sonos(Hass):
 
     async def unjoin_all(self, namespace, domain, service, kwargs) -> None:
 
-        self._configure(self.ALL_ENTITIES, {}, 0, True, False, True, False)
+        self._configure(self.ALL_ENTITIES, {}, None, True, False, True, False)
 
 # -----------------------------------------------------------------------------------
 
