@@ -15,10 +15,15 @@ class Car(Hass):
     """Documentation for Car"""
 
     lib = None
-    count = 0
     LOCK_ENTITY_ID = 'lock.skoda_karoq_door_lock'
     SENSOR_ENTITY_ID = 'binary_sensor.skoda_karoq_vehicle_locked'
+    SENSOR_ENTITY_LIST = [
+        'binary_sensor.skoda_karoq_doors_locked','binary_sensor.skoda_karoq_bonnet',
+        'binary_sensor.skoda_karoq_vehicle_locked','binary_sensor.skoda_karoq_doors_open',
+        'binary_sensor.skoda_karoq_windows','binary_sensor.skoda_karoq_trunk'
+        ]
     DEVICE_TRACKER_ID = 'device_tracker.skoda_karoq_position'
+
 
 # -----------------------------------------------------------------------------------
 
@@ -53,10 +58,7 @@ class Car(Hass):
         state = self.get_state(self.SENSOR_ENTITY_ID)
 
         if state == 'unavailable':
-            self.count += 1
-            if self.count >= 10:
-                self.log(f'\tstate={state} (probably away)', level='ERROR')
-                self.count = 0
+            self.call_service('homeassistant/update_entity', entity_id=self.KAROQ_ENTITY_LIST)
             return
 
         verbose = self.lib.get_verbose_debug()
