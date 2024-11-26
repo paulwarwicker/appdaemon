@@ -88,7 +88,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             self.log(f'namespace={namespace}, domain={domain}, service={service}, kwargs={kwargs}', level='DEBUG')
 
         entity_id = kwargs['entity_id']
-        other_id = list(set(self.ALL_ENTITY_ID) - set(entity_id))
+        other_id = list(set(self.ALL_ENTITY_ID) - set([entity_id]))
         message = kwargs['message']
         volume = kwargs.get('volume', 0.15)
         announce = kwargs.get('announce', True)
@@ -229,9 +229,9 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
             entity_id = entity_list[0]
 
-            if len(entity_list) > 1:
-                self.call_service('sonos/snapshot', entity_id='all', with_group=True)
+            self.call_service('sonos/snapshot', entity_id='all', with_group=True)
 
+            if len(entity_list) > 1:
                 for entity in entity_list:
                     self.call_service('media_player/unjoin',
                                     entity_id=entity)
@@ -266,17 +266,16 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
                             announce=True,
                             extra={'volume': volume})
 
-            time.sleep(8.0)
+            time.sleep(10)
 
-            if len(entity_list) > 1:
-                self.call_service('sonos/restore',
-                                entity_id='all',
-                                with_group=True)
+            # if len(entity_list) > 1:
+            self.call_service('sonos/restore', entity_id='all', with_group=True)
 
             if timestamp:
                 self.call_service('timestamp/set', name=timestamp)
-        else:
-            self.notification('desktop', message)
+
+        # else:
+        self.notification('desktop', message)
 
 # -----------------------------------------------------------------------------------
 
