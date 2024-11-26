@@ -58,7 +58,8 @@ class Car(Hass):
         state = self.get_state(self.SENSOR_ENTITY_ID)
 
         if state == 'unavailable':
-            self.call_service('homeassistant/update_entity', entity_id=self.KAROQ_ENTITY_LIST)
+            self.log(f'\tupdate entities {self.SENSOR_ENTITY_LIST}')
+            self.call_service('homeassistant/update_entity', entity_id=self.SENSOR_ENTITY_LIST)
             return
 
         verbose = self.lib.get_verbose_debug()
