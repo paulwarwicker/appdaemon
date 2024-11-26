@@ -121,7 +121,7 @@ class Location(Hass):
         verbose = self.lib.get_verbose_debug()
 
         if verbose:
-            self.log(f'\tentity_id={entity_id} state={state} name={name} direction={direction} village={village}', level='DEBUG')
+            self.log(f'\tentity_id={entity_id} state={state} name={name} direction={direction} village={village} home={home}', level='DEBUG')
 
         if village:
             message = "Max is in the village"
@@ -136,7 +136,7 @@ class Location(Hass):
                 message = f'Max has left {name}'
 
         if announce:
-            self.call_service('announcer/announce', entity_id='media_player.study', message=message)
+            self.call_service('announcer/announce', entity_id='media_player.study', message=message, force=True)
 
         if village:
             self.call_service('location/max_home')

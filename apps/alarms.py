@@ -421,8 +421,6 @@ class Alarms(Hass):
                 self.run_sequence(
                     [
                         {'media_player/volume_mute': {'entity_id': entity_id, 'is_volume_muted': False}},
-                        # {'media_player/volume_set': {'entity_id': entity_id, 'volume_level': 0.05}}, # was initial # 0.05
-                        # {'media_player/repeat_set': {'entity_id': entity_id, 'repeat': 'off'}},
                         {'media_player/play_media': {'entity_id': entity_id, 'media_content_type': "music", 'media_content_id': media}}
                     ]
                 )
