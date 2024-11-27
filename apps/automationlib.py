@@ -222,7 +222,10 @@ class AutomationLib():
         if entity_id is None:
             (entity_id, volume) = self.get_entity_id()
 
+        self.adapi.call_service('homeassistant/update_entity', entity_id=entity_id)
+        attributes = self.adapi.get_state(entity_id=entity_id, attribute="attributes")
         state = self.adapi.get_state(entity_id=entity_id, attribute="state")
+        # self.adapi.log(f'entity_id={entity_id} state={state} attributes={attributes}', level='ERROR')
 
         return state == 'playing'
 
