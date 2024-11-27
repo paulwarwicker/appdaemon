@@ -10,6 +10,7 @@
 from datetime import datetime
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# import myconstants as const
 
 class Car(Hass):
     """Documentation for Car"""
@@ -45,9 +46,14 @@ class Car(Hass):
     def check_status(self, kwargs) -> None:
         """check karoq status"""
 
-        location = self.get_state(self.DEVICE_TRACKER_ID)
-        latitude = self.get_state(self.DEVICE_TRACKER_ID, 'latitude')
-        longitude = self.get_state(self.DEVICE_TRACKER_ID, 'longitude')
+        self.call_service('homeassistant/update_entity', entity_id=self.DEVICE_TRACKER_ID)
+
+        state = self.get_state(self.DEVICE_TRACKER_ID, attribute='all')
+        location = state['state']
+        latitude = state['attributes']['latitude']
+        longitude = state['attributes']['longitude']
+
+        # self.log(f'\tlocation={location} latitude={latitude} longitude={longitude} state={state}')
 
         self.set_state('sensor.karoq_latitude', state=latitude)
         self.set_state('sensor.karoq_longitude', state=longitude)
