@@ -34,7 +34,7 @@ class Alarms(Hass):
     BEDROOM = 'media_player.bedroom'
     BACKUP_STREAM = 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1'
     TARGET_VOLUME = 50
-    ATTEMPTS = 10
+    ATTEMPTS = 5
     PLAY_DELAY = 0.75
 
 # -----------------------------------------------------------------------------------
@@ -410,8 +410,6 @@ class Alarms(Hass):
 
         if verbose:
             self.log(f'\talarm_type={_alarm_type} test={test} entity_id={entity_id} media_content_id={media_content_id}', level='DEBUG')
-
-        self.ATTEMPTS = 5
 
         for attempt in range(self.ATTEMPTS):
             state = self.get_state(entity_id, attribute="attributes")
