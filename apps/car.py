@@ -16,6 +16,8 @@ class Car(Hass):
     """Documentation for Car"""
 
     lib = None
+    _latitude = -180
+    _longitude = -180
     LOCK_ENTITY_ID = 'lock.skoda_karoq_door_lock'
     SENSOR_ENTITY_ID = 'binary_sensor.skoda_karoq_vehicle_locked'
     SENSOR_ENTITY_LIST = [
@@ -38,6 +40,7 @@ class Car(Hass):
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.check_status, runtime)
 
+        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
@@ -48,22 +51,26 @@ class Car(Hass):
 
         self.call_service('homeassistant/update_entity', entity_id=self.DEVICE_TRACKER_ID)
 
-        state = self.get_state(self.DEVICE_TRACKER_ID, attribute='all')
-        location = state['state']
-        latitude = state['attributes']['latitude']
-        longitude = state['attributes']['longitude']
+        state = self.get_state(self.SENSOR_ENTITY_ID)
+        tracker = self.get_state(self.DEVICE_TRACKER_ID, attribute='all')
+        location = tracker['state']
 
-        # self.log(f'\tlocation={location} latitude={latitude} longitude={longitude} state={state}')
+        # self.log(f'\nstate={state}\nlocation={location}\nattributes={attributes}')
 
-        self.set_state('sensor.karoq_latitude', state=latitude)
-        self.set_state('sensor.karoq_longitude', state=longitude)
+        if not location in ('unavailable','unknown'):
+            latitude = tracker['attributes']['latitude']
+            longitude = tracker['attributes']['longitude']
+            # self.log(f'\tlatitude={latitude} longitude={longitude}')
+            if latitude != self._latitude or longitude != self._longitude:
+                self.set_state('sensor.karoq_latitude', state=latitude)
+                self.set_state('sensor.karoq_longitude', state=longitude)
+                self._latitude = latitude
+                self._longitude = longitude
 
         if location != "home":
             return
 
-        state = self.get_state(self.SENSOR_ENTITY_ID)
-
-        if state == 'unavailable':
+        if state in ('unavailable','unknown'):
             self.log(f'\tupdate entities {self.SENSOR_ENTITY_LIST}')
             self.call_service('homeassistant/update_entity', entity_id=self.SENSOR_ENTITY_LIST)
             return
@@ -100,15 +107,21 @@ class Car(Hass):
         """door announcement"""
 
         state = self.get_state(self.SENSOR_ENTITY_ID)
+        self.log(f'\tstate={state}', level='DEBUG')
+        message = None
 
         if state == 'off':
             message = 'The car door is locked'
         elif state == 'on':
             message = 'The car door is unlocked'
         else:
-            message = 'The car door state is unknown'
+            self.call_service('homeassistant/update_entity', entity_id=self.SENSOR_ENTITY_LIST)
+            # message = 'The car door state is unknown'
+            # self.call_service('announcer/notification', message=message, type='desktop')
+            # message = None
 
-        self.call_service('announcer/broadcast', message=message, timestamp='karoq')
+        if message:
+            self.call_service('announcer/broadcast', message=message, timestamp='karoq')
 
 # -----------------------------------------------------------------------------------
 
