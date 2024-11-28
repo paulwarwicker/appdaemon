@@ -49,6 +49,7 @@ class Tap(Hass):
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.check_garden_tap, runtime)
 
+        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 

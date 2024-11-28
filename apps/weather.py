@@ -52,6 +52,7 @@ class Weather(Hass):
         self.run_every(self.get_weather, 'now', interval.total_seconds()) # FIXME: would be nice if on 10 minutes exactly
         self.log(f'Getting weather every {interval}', level='DEBUG')
 
+        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 

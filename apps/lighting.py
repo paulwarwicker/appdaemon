@@ -81,6 +81,7 @@ class Lighting(Hass):
         self.run_daily(self.stairs_on, 'sunset + 00:10:00')
         # self.run_daily(self.radiator_on, "sunset + 00:10:00")
 
+        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 

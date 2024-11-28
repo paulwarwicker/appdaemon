@@ -48,6 +48,7 @@ class Motion(Hass):
         self.listen_state(self.upstairs_motion, 'binary_sensor.upstairs_sensor_motion', old='off', new='on', seconds=10*60, key='upstairs', cb='bannister_off')
         self.listen_state(self.front_door_motion, 'binary_sensor.front_door_motion')
 
+        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 

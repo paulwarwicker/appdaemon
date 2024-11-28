@@ -31,6 +31,7 @@ class FrontDoor(Hass):
 
         self.run_daily(self.front_door_battery, 'sunset + 00:05:00')
 
+        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 

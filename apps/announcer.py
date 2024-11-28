@@ -78,6 +78,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         notify_thread.daemon = True
         notify_thread.start()
 
+        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.log('initialised', level='WARNING')
 
 # -----------------------------------------------------------------------------------

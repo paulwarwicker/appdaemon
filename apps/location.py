@@ -90,6 +90,7 @@ class Location(Hass):
         self.listen_event(self.test_paul_home_event, 'paul_home')
         self.listen_event(self.test_welcome_lights_event, 'welcome_lights')
 
+        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 

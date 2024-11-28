@@ -32,6 +32,7 @@ class Vacuum(Hass):
         runtime = datetime(2024, 1, 1, 0, 0, 0)
         self.run_hourly(self.check_roborock, runtime)
 
+        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
