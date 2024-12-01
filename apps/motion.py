@@ -11,6 +11,8 @@
 from datetime import datetime
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
 
 class Motion(Hass):
     """Documentation for Motion"""
@@ -18,8 +20,7 @@ class Motion(Hass):
     override = False
     downstairs_motion_flag = False
     lib = None
-    UTILITY_ENTITY_ID = 'light.utility_room_1'
-    LUMIE_ENTITY_ID = 'light.lumie'
+    const = None
 
 # -----------------------------------------------------------------------------------
 
@@ -27,6 +28,7 @@ class Motion(Hass):
         """initialise"""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.register_service('motion/set_downstairs_motion_flag', self.set_downstairs_motion_flag)
         self.register_service('motion/reset_downstairs_motion_flag', self.reset_downstairs_motion_flag)
@@ -124,7 +126,7 @@ class Motion(Hass):
 
         if self.now_is_between('05:00:00', '06:30:00'):
             self.call_service('media_player/volume_mute', entity_id='media_player.bedroom', is_volume_muted=True)
-            self.call_service('light/turn_off', entity_id=self.LUMIE_ENTITY_ID)
+            self.call_service('light/turn_off', entity_id=self.const.LUMIE)
 
         # self.lib.log_function_name(False)
 
@@ -153,7 +155,7 @@ class Motion(Hass):
         brightness = kwargs.get('brightness', 64)
 
         if self.now_is_between('sunset + 00:15:00', 'sunrise'):
-            self.call_service('lighting/turn_on_if_off', entity_id=self.UTILITY_ENTITY_ID, brightness=brightness, seconds=seconds, cb=cb, key=key)
+            self.call_service('lighting/turn_on_if_off', entity_id=self.const.UTILITY, brightness=brightness, seconds=seconds, cb=cb, key=key)
 
         # self.lib.log_function_name(False)
 

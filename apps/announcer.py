@@ -22,23 +22,21 @@ from ics import Calendar # type: ignore # pylint: disable=E0401
 
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 # app_lock decorator
 import adbase as ad # type: ignore pylint: disable=E0401 disable=W0611
+# import myconstants as const # type: ignore # pylint: disable=E0401
 
 class Announcer(Hass): # pylint: disable=W0212 disable=W0621
     """This is the documentation for Announcer"""
 
     lib = None
+    const = None
     queue = None
     announce_queue = None
     notify_queue = None
     announce_lock = None
     cache = True
-    START = 8 # :30
-    END = 22 # :30
-    BROADCAST_ENTITY_ID = ['media_player.kitchen', 'media_player.bathroom']
-    OTHER_ENTITY_ID = ['media_player.study', 'media_player.bedroom', 'media_player.dining_room']
-    ALL_ENTITY_ID = BROADCAST_ENTITY_ID + OTHER_ENTITY_ID
 
 # -----------------------------------------------------------------------------------
 
@@ -46,6 +44,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         """Documentation for Announcer"""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.queue = Queue(maxsize = 0)
         self.notify_queue = Queue(maxsize = 0)
@@ -78,6 +77,8 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         notify_thread.daemon = True
         notify_thread.start()
 
+        print(self.const.ANNOUNCE_VOLUME)
+
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.log('initialised', level='WARNING')
 
@@ -89,9 +90,9 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             self.log(f'namespace={namespace}, domain={domain}, service={service}, kwargs={kwargs}', level='DEBUG')
 
         entity_id = kwargs['entity_id']
-        other_id = list(set(self.ALL_ENTITY_ID) - set([entity_id]))
+        other_id = list(set(self.const.ALL_ENTITY_ID) - set([entity_id]))
         message = kwargs['message']
-        volume = kwargs.get('volume', 0.15)
+        volume = kwargs.get('volume', self.const.ANNOUNCE_VOLUME)
         announce = kwargs.get('announce', True)
         timestamp = kwargs.get('timestamp', None)
 
@@ -106,8 +107,8 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         if self.lib.get_verbose_debug():
             self.log(f'namespace={namespace}, domain={domain}, service={service}, kwargs={kwargs}', level='DEBUG')
 
-        entity_id = kwargs.get('broadcast_entity_id', self.BROADCAST_ENTITY_ID)
-        other_id = kwargs.get('other_entity_id', self.OTHER_ENTITY_ID)
+        entity_id = kwargs.get('broadcast_entity_id', self.const.BROADCAST_ENTITY_ID)
+        other_id = kwargs.get('other_entity_id', self.const.OTHER_ENTITY_ID)
         volume = kwargs.get('volume', 0.5)
         message = kwargs['message']
         announce = kwargs.get('announce', True)
@@ -116,7 +117,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         if self.lib.get_testing():
             entity_id = 'media_player.study'
             other_id = []
-            volume = 0.15
+            volume = self.const.ANNOUNCE_VOLUME
 
         entry = self.prepare('broadcast_service', entity_id, other_id, volume, message, announce, timestamp, True) # force=True
         with self.announce_lock:
@@ -155,7 +156,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             self.call_service('announcer/announce',
                               entity_id='media_player.study',
                               message=message,
-                              volume=0.15,
+                            #   volume=self.const.ANNOUNCE_VOLUME,
                               announce=True,
                               timestamp=None)
             time.sleep(2.0)
@@ -164,8 +165,8 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
     def broadcast_event(self, event, data, kwargs) -> None:
 
-        entity_id = self.BROADCAST_ENTITY_ID
-        other_id = self.OTHER_ENTITY_ID
+        entity_id = self.const.BROADCAST_ENTITY_ID
+        other_id = self.const.OTHER_ENTITY_ID
         volume = 0.5
 
         message = 'first broadcast message'
@@ -181,7 +182,6 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
                               other_id=other_id,
                               message=message,
                               volume=volume,
-                              announce=True,
                               timestamp=None)
             time.sleep(2.0)
 
@@ -208,7 +208,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
     @ad.app_lock
     def announce(self, entry) -> None: # pylint: disable=R0914
 
-        (uu_id, entity_list, other_id, volume, message, announce, timestamp, force) = entry
+        (uu_id, method_id, entity_list, other_id, volume, message, announce, timestamp, force) = entry
 
         verbose = self.lib.get_verbose_debug()
 
@@ -219,6 +219,9 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         entity_list = [entity_list] if isinstance(entity_list, str) else entity_list
 
+        if self.lib.get_testing():
+            entity_list = [self.const.STUDY]
+
         if self.announceable(announce) or force:
             if verbose:
                 status = f'\n\n\tin announce\t{uu_id} entity_id={entity_list} volume={volume} message="{message}" announce={announce} force={force}\n'
@@ -228,54 +231,45 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
             media_content_id = f'media-source://tts/cloud?message="{message}"'
 
-            entity_id = entity_list[0]
+            # entity_id = entity_list[0]
 
-            self.call_service('sonos/snapshot', entity_id='all', with_group=True)
+            # self.call_service('sonos/snapshot', entity_id='all', with_group=True)
 
-            if len(entity_list) > 1:
-                for entity in entity_list:
-                    self.call_service('media_player/unjoin',
-                                    entity_id=entity)
-                    self.call_service('media_player/repeat_set',
-                                    entity_id=entity,
-                                    repeat='off')
-                    self.call_service('media_player/volume_set',
-                                    entity_id=entity,
-                                    volume_level=volume)
-                    self.call_service('media_player/volume_mute',
-                                    entity_id=entity,
-                                    is_volume_muted=False)
+            # if len(entity_list) > 1:
+            #     for entity in entity_list:
+            #         self.call_service('media_player/unjoin', entity_id=entity)
+            #         self.call_service('media_player/repeat_set', entity_id=entity, repeat='off')
+            #         self.call_service('media_player/volume_set', entity_id=entity, volume_level=volume)
+            #         self.call_service('media_player/volume_mute', entity_id=entity, is_volume_muted=False)
 
-                self.call_service('media_player/join',
-                                entity_id=entity_id,
-                                group_members=entity_list[1:])
+            #     self.call_service('media_player/join', entity_id=entity_id, group_members=entity_list[1:])
 
-                for entity in other_id:
-                    self.call_service('media_player/volume_mute',
-                                    entity_id=entity,
-                                    is_volume_muted=True)
+            #     for entity in other_id:
+            #         self.call_service('media_player/volume_mute', entity_id=entity, is_volume_muted=True)
 
-                for entity in entity_list:
-                    self.call_service('media_player/volume_mute',
-                                    entity_id=entity,
-                                    is_volume_muted=False)
+            #     for entity in entity_list:
+            #         self.call_service('media_player/volume_mute', entity_id=entity, is_volume_muted=False)
+
+            entity_id = entity_list if method_id == "announce_service" else self.const.ALL_ENTITY_ID
 
             self.call_service('media_player/play_media',
                             entity_id=entity_id,
                             media_content_type="music",
                             media_content_id=media_content_id,
-                            announce=True,
-                            extra={'volume': volume})
+                            announce=True)
 
-            time.sleep(10)
+            time.sleep(max(len(message) * self.const.SECONDS_PER_CHARACTER, self.const.MINIMUM_MESSAGE_LENGTH))
 
-            # if len(entity_list) > 1:
-            self.call_service('sonos/restore', entity_id='all', with_group=True)
+            # if method_id == "broadcast_service":
+            #     time.sleep(5)
+
+            # self.call_service('sonos/restore', entity_id='all', with_group=True)
+
+            # time.sleep(0 if method_id == "announce_service" else 10)
 
             if timestamp:
                 self.call_service('timestamp/set', name=timestamp)
 
-        # else:
         self.notification('desktop', message)
 
 # -----------------------------------------------------------------------------------
@@ -353,7 +347,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             else:
                 phrase = 'An error has occured in bins announce'
 
-            entry = self.prepare('broadcast_service', self.BROADCAST_ENTITY_ID, self.OTHER_ENTITY_ID, 0.5, phrase, True, f'bins_{event}', True) # force=True
+            entry = self.prepare('broadcast_service', self.const.BROADCAST_ENTITY_ID, self.const.OTHER_ENTITY_ID, 0.5, phrase, True, f'bins_{event}', True) # force=True
             with self.announce_lock:
                 self.announce(entry)
 
@@ -381,7 +375,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         if dow in (2,5) or force:
             if value > 0:
                 message = ' '.join([str(value), 'pounds', 'of', 'vouchers', 'expiring', 'end', 'of', expiry])
-                entry = self.prepare('broadcast_service', self.BROADCAST_ENTITY_ID, self.OTHER_ENTITY_ID, 0.5, message, True, 'vouchers', True) # force=True
+                entry = self.prepare('broadcast_service', self.const.BROADCAST_ENTITY_ID, self.const.OTHER_ENTITY_ID, 0.5, message, True, 'vouchers', True) # force=True
                 with self.announce_lock:
                     self.announce(entry)
             else:
@@ -416,15 +410,15 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         uu_id = uuid.uuid4()
 
         if self.lib.get_testing():
-            volume = 0.15
+            volume = self.const.ANNOUNCE_VOLUME
             entity_id = ['media_player.study']
-            other_id = list(set(self.ALL_ENTITY_ID) - set(entity_id))
+            other_id = list(set(self.const.ALL_ENTITY_ID) - set(entity_id))
 
         if self.lib.get_verbose_debug():
             status = f'\n\n\tin {method_id} put {uu_id} entity_id={entity_id} volume={volume} message="{message}" announce={announce} timestamp={timestamp} delay={delay}\n'
             status += f'\t\t\t{uu_id} other_id={other_id}\n'
 
-        return [uu_id, entity_id, other_id, volume, message, announce, timestamp, delay]
+        return [uu_id, method_id, entity_id, other_id, volume, message, announce, timestamp, delay]
 
 # -----------------------------------------------------------------------------------
 
@@ -481,7 +475,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         dow = self.lib.dow()
 
-        announceable1 = self.now_is_between(f'{self.START:02d}:30:00', f'{self.END:02d}:30:00')
+        announceable1 = self.now_is_between(f'{self.const.START_HOUR:02d}:30:00', f'{self.const.END_HOUR:02d}:30:00')
         announceable2 = (dow in (2,4) and self.now_is_between('09:27:00', '09:58:00')) or (dow in (1,5) and self.now_is_between('16:27:00', '16:58:00'))
 
         if self.lib.get_verbose_debug():

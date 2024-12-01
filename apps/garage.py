@@ -10,13 +10,13 @@
 from datetime import datetime
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 
 class Garage(Hass):
     """Documentation for Garage"""
 
     lib = None
-    PAUL_ENTITY_ID = 'device_tracker.paulw_iphone'
-    GARAGE_ENTITY_ID = 'cover.remootio_device_host_192_168_1_13_s_n_30c92235df30xupwfafu_none'
+    const = None
 
 # -----------------------------------------------------------------------------------
 
@@ -24,20 +24,24 @@ class Garage(Hass):
         """initialise"""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.register_service('garage/open', self.garage_open_service)
         self.register_service('garage/close', self.garage_close_service)
 
-        self.listen_state(self.garage_door_open, self.PAUL_ENTITY_ID, old='not_home', new='home')
-        self.listen_state(self.garage_door_close, self.PAUL_ENTITY_ID, old='home', new='not_home')
-        self.listen_state(self.garage_door_announce_open, self.GARAGE_ENTITY_ID, new='open')
-        self.listen_state(self.garage_door_announce_opening, self.GARAGE_ENTITY_ID, new='opening')
-        self.listen_state(self.garage_door_announce_closing, self.GARAGE_ENTITY_ID, new='closing')
-        self.listen_state(self.garage_door_announce_closed, self.GARAGE_ENTITY_ID, new='closed')
-        self.listen_state(self.garage_door_debug, self.GARAGE_ENTITY_ID)
+        self.listen_state(self.garage_door_open, self.const.PAUL_ENTITY_ID, old='not_home', new='home')
+        self.listen_state(self.garage_door_close, self.const.PAUL_ENTITY_ID, old='home', new='not_home')
+        self.listen_state(self.garage_door_announce_open, self.const.GARAGE_ENTITY_ID, new='open')
+        self.listen_state(self.garage_door_announce_opening, self.const.GARAGE_ENTITY_ID, new='opening')
+        self.listen_state(self.garage_door_announce_closing, self.const.GARAGE_ENTITY_ID, new='closing')
+        self.listen_state(self.garage_door_announce_closed, self.const.GARAGE_ENTITY_ID, new='closed')
+        self.listen_state(self.garage_door_debug, self.const.GARAGE_ENTITY_ID)
 
         self.listen_event(self.test_garage_open_event, 'test_garage_open')
         self.listen_event(self.test_garage_close_event, 'test_garage_close')
+
+        runtime = datetime(2024, 1, 1, 0, 0, 0)
+        self.run_hourly(self.close_garage_door, runtime)
 
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.check_garage_door, runtime)
@@ -65,7 +69,7 @@ class Garage(Hass):
     def garage_door_open(self, entity, attribute, old, new, kwargs) -> None:
         """open garage door"""
 
-        self.call_service('cover/open_cover', entity_id=self.GARAGE_ENTITY_ID)
+        self.call_service('cover/open_cover', entity_id=self.const.GARAGE_ENTITY_ID)
 
         if self.lib.is_below_horizon():
             self.call_service('lighting/garage_on')
@@ -75,7 +79,7 @@ class Garage(Hass):
     def garage_door_close(self, entity, attribute, old, new, kwargs) -> None:
         """close garage door"""
 
-        self.call_service('cover/close_cover', entity_id=self.GARAGE_ENTITY_ID)
+        self.call_service('cover/close_cover', entity_id=self.const.GARAGE_ENTITY_ID)
 
         if self.lib.is_below_horizon():
             self.call_service('lighting/garage_off')
@@ -101,28 +105,28 @@ class Garage(Hass):
     def garage_door_announce_opening(self, entity, attribute, old, new, kwargs) -> None:
         """announce garage door opening"""
 
-        self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'closed', 'opening', {})
+        self.garage_door(self.const.GARAGE_ENTITY_ID, 'state', 'closed', 'opening', {})
 
 # -----------------------------------------------------------------------------------
 
     def garage_door_announce_closing(self, entity, attribute, old, new, kwargs) -> None:
         """announce garage door closing"""
 
-        self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'open', 'closing', {})
+        self.garage_door(self.const.GARAGE_ENTITY_ID, 'state', 'open', 'closing', {})
 
 # -----------------------------------------------------------------------------------
 
     def garage_door_announce_open(self, entity, attribute, old, new, kwargs) -> None:
         """announce garage door is now open"""
 
-        self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'opening', 'open', {})
+        self.garage_door(self.const.GARAGE_ENTITY_ID, 'state', 'opening', 'open', {})
 
 # -----------------------------------------------------------------------------------
 
     def garage_door_announce_closed(self, entity, attribute, old, new, kwargs) -> None:
         """announce garage door is now closed"""
 
-        self.garage_door(self.GARAGE_ENTITY_ID, 'state', 'closing', 'closed', {})
+        self.garage_door(self.const.GARAGE_ENTITY_ID, 'state', 'closing', 'closed', {})
 
 # -----------------------------------------------------------------------------------
 
@@ -142,7 +146,7 @@ class Garage(Hass):
         elif state == 'unavailable':
             return
         else:
-            state = self.get_state(self.GARAGE_ENTITY_ID)
+            state = self.get_state(self.const.GARAGE_ENTITY_ID)
             message = f'The garage door is {state}'
 
         self.call_service('announcer/broadcast', message=message, timestamp='garage')
@@ -152,7 +156,7 @@ class Garage(Hass):
     def is_garage_door_closed(self) -> bool:
         """is garage door closed"""
 
-        state = self.get_state(self.GARAGE_ENTITY_ID)
+        state = self.get_state(self.const.GARAGE_ENTITY_ID)
 
         return state == 'closed'
 
@@ -161,7 +165,7 @@ class Garage(Hass):
     def is_garage_door_open(self) -> bool:
         """is garage door open"""
 
-        state = self.get_state(self.GARAGE_ENTITY_ID)
+        state = self.get_state(self.const.GARAGE_ENTITY_ID)
 
         return state == 'open'
 
@@ -173,14 +177,23 @@ class Garage(Hass):
         if self.is_garage_door_open():
             (state, ts) = self.garage_door_debug()
             diff = (datetime.now() - ts).seconds
+
             if diff >= self.lib.interval(minutes=60):
                 self.garage_door_announce(state=state)
 
 # -----------------------------------------------------------------------------------
 
+    def close_garage_door(self, kwargs) -> None:
+        """close garage door automatically"""
+
+        if self.is_garage_door_open() and self.now_is_between('21:00:00', '06:30:00'):
+            self.garage_door_close('','','','',{})
+
+# -----------------------------------------------------------------------------------
+
     def garage_door_debug(self, entity='', attribute='', old='', new='', kwarg={}) -> tuple:
 
-        state = self.get_state(self.GARAGE_ENTITY_ID)
+        state = self.get_state(self.const.GARAGE_ENTITY_ID)
         ts = self.call_service('timestamp/get', name='garage', return_result=True)
         self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwarg} state={state} ts={ts}', level='INFO')
 

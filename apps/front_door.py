@@ -9,12 +9,14 @@
 
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
 
 class FrontDoor(Hass):
     """Documentation for Front Door"""
 
     lib = None
-    APP_THREADS = 20
+    const = None
 
 # -----------------------------------------------------------------------------------
 
@@ -22,6 +24,7 @@ class FrontDoor(Hass):
         """initialise"""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.register_service('front_door/battery', self.front_door_battery_service)
 
@@ -31,9 +34,13 @@ class FrontDoor(Hass):
 
         self.run_daily(self.front_door_battery, 'sunset + 00:05:00')
 
+        print(self.const.ANNOUNCE_VOLUME)
+        print(self.const.ALL_LIGHTS)
+
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
+        # self.call_service('announcer/announce', entity_id='media_player.study', message="DS Smith Fordem")
 
 # -----------------------------------------------------------------------------------
 
@@ -86,8 +93,8 @@ class FrontDoor(Hass):
 
     def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
 
-        self.run_in_thread(self.siren_on, self.APP_THREADS - 1)
-        self.run_in_thread(self.front_door_announce, self.APP_THREADS - 2)
+        self.run_in_thread(self.siren_on, self.const.APP_THREADS - 1)
+        self.run_in_thread(self.front_door_announce, self.const.APP_THREADS - 2)
         if self.lib.is_night():
             self.call_service('lighting/front_door_ding', seconds=300, cb='front_door_hallway_off', key='front_door_ding')
 

@@ -9,38 +9,15 @@
 
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
 
 class Lighting(Hass):
     """Documentation for Lighting"""
 
     lib = None
+    const = None
     timers = {}
-
-    RADIATOR = ['light.radiator']
-    TABLE_LAMP = ['light.table_lamp_1']
-    STANDARD_LAMP = ['light.standard_lamp_1']
-    BANNISTER = ['light.bannister']
-    HALLWAY = ['light.hallway_1']
-    FRONT_DOOR = ['light.front_door_1']
-    UTILITY = ['light.utility_room_1']
-    LANDING = ['light.hallway_3']
-    LUMIE = ['light.lumie']
-
-    GARAGE_LIGHTS = ['light.garage'] # group
-    KITCHEN_LIGHTS = ['light.kitchen'] # group
-    KITCHEN_FLOOR_LIGHTS = ['light.kitchen_floor'] # group
-    UPSTAIRS_DOWNSTAIRS_LIGHTS = ['light.upstairs', 'light.downstairs']
-
-    OUTSIDE_LIGHTS = GARAGE_LIGHTS + FRONT_DOOR
-    WELCOME_LIGHTS = HALLWAY + FRONT_DOOR + STANDARD_LAMP
-    NIGHTTIME_LIGHTS = HALLWAY + BANNISTER
-    LIVING_ROOM_LIGHTS = RADIATOR + TABLE_LAMP + STANDARD_LAMP
-    HALLWAY_GARAGE_LIGHTS = HALLWAY + GARAGE_LIGHTS + FRONT_DOOR
-    FRONT_DOOR_DING_LIGHTS = HALLWAY + FRONT_DOOR
-
-    N_KITCHEN_ENTITIES = 6
-    N_KITCHEN_FLOOR_ENTITIES = 2
-    N_HALLWAY_ENTITIES = 3
 
 # -----------------------------------------------------------------------------------
 
@@ -48,10 +25,7 @@ class Lighting(Hass):
         """initialise"""
 
         self.lib = AutomationLib(self)
-
-        self.HALLWAY_LIGHTS = self.light_entities('hallway', self.N_HALLWAY_ENTITIES) # pylint: disable=C0103 disable=W0201
-        # self.KITCHEN_LIGHTS = self.light_entities('kitchen', self.N_KITCHEN_ENTITIES) # pylint: disable=C0103 disable=W0201
-        # self.KITCHEN_FLOOR_LIGHTS = self.light_entities('kitchen_floor', self.N_KITCHEN_FLOOR_ENTITIES) # pylint: disable=C0103 disable=W0201
+        self.const = ConstantsManagement(self)
 
         self.register_service('lighting/garage_on', self.garage_on_service)
         self.register_service('lighting/garage_off', self.garage_off_service)
@@ -65,6 +39,7 @@ class Lighting(Hass):
         self.register_service('lighting/hallway_off', self.hallway_off_service)
         self.register_service('lighting/lumie_on', self.lumie_on_service)
         self.register_service('lighting/front_door_ding', self.front_door_ding_service)
+        self.register_service('lighting/all_off', self.all_off_service)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.status_event, 'timers')
@@ -78,12 +53,24 @@ class Lighting(Hass):
         self.run_daily(self.living_room_off, '23:30:00')
         self.run_daily(self.outside_off, '21:30:00')
         self.run_daily(self.downstairs_off, '02:00:00')
-        self.run_daily(self.stairs_on, 'sunset + 00:10:00')
+        # self.run_daily(self.stairs_on, 'sunset + 00:10:00')
         # self.run_daily(self.radiator_on, "sunset + 00:10:00")
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
+
+# -----------------------------------------------------------------------------------
+
+    def all_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
+        """all off service"""
+
+        verbose = self.lib.get_verbose_debug()
+
+        if verbose:
+            self.log(f'namespace={namespace}, domain={domain}, service={service}, data={data}', level='DEBUG')
+
+        self.call_service('light/turn_off', entity_id=self.const.ALL_LIGHTS)
 
 # -----------------------------------------------------------------------------------
 
@@ -102,7 +89,7 @@ class Lighting(Hass):
         cb = data.get('cb', None)
         key = data.get('key', None)
         seconds = int(data.get('seconds', 0))
-        delay = int(data.get('delay', 0))
+        delay = int(data.get('xdelay', 0))
 
         if cb:
             callback = getattr(self, cb)
@@ -112,19 +99,19 @@ class Lighting(Hass):
 
         self.run_sequence(
             [
-                {'light/turn_on': {'entity_id': self.WELCOME_LIGHTS, 'brightness': 128}},
-                {'light/turn_on': {'entity_id': self.HALLWAY, 'brightness': 64}},
+                {'light/turn_on': {'entity_id': self.const.WELCOME_LIGHTS, 'brightness': 128}},
+                {'light/turn_on': {'entity_id': self.const.HALLWAY1, 'brightness': 64}},
             ]
         )
 
         if self.now_is_between('05:00:00', '06:30:00'):
-            self.call_service('light/turn_off', entity_id=self.STANDARD_LAMP)
+            self.call_service('light/turn_off', entity_id=self.const.STANDARD_LAMP)
 
         if callback and seconds and key:
             if verbose:
                 self.log(f'welcome_lights_service data={data}', level='DEBUG')
 
-            timer = self.run_in(callback, seconds, key=key)
+            timer = self.run_in(callback, seconds, key=key, xdelay=delay)
             self.set_timer(key, timer)
 
 # -----------------------------------------------------------------------------------
@@ -150,8 +137,8 @@ class Lighting(Hass):
 
         self.run_sequence(
             [
-                {'light/turn_on': {'entity_id': self.FRONT_DOOR, 'brightness': 128}},
-                {'light/turn_on': {'entity_id': self.HALLWAY, 'brightness': 64}},
+                {'light/turn_on': {'entity_id': self.const.FRONT_DOOR, 'brightness': 128}},
+                {'light/turn_on': {'entity_id': self.const.HALLWAY1, 'brightness': 64}},
             ]
         )
 
@@ -178,14 +165,14 @@ class Lighting(Hass):
             self.log(f'cb={cb} interval={seconds} key={key} callback={callback}', level='DEBUG')
             self.log(f'namespace={namespace}, domain={domain}, service={service}, data={data}', level='DEBUG')
 
-        entity_ids = self.light_entities('kitchen', self.N_KITCHEN_ENTITIES)
+        entity_ids = self.light_entities('kitchen', self.const.N_KITCHEN_ENTITIES)
 
         if self.any_light_on_full(entity_ids):
             self.log('\tdeferring - kitchen lights on', level='DEBUG')
         else:
             brightness = 128 if self.now_is_between('sunrise', 'sunset') else 64
 
-            self.call_service('light/turn_on', entity_id=self.KITCHEN_LIGHTS, brightness=brightness)
+            self.call_service('light/turn_on', entity_id=self.const.KITCHEN, brightness=brightness)
 
             if callback and seconds and key:
                 timer = self.run_in(callback, seconds, key=key)
@@ -212,7 +199,7 @@ class Lighting(Hass):
 
         brightness = 255 if self.now_is_between('sunrise', 'sunset') else 128
 
-        self.call_service('light/turn_on', entity_id=self.KITCHEN_FLOOR_LIGHTS, brightness=brightness)
+        self.call_service('light/turn_on', entity_id=self.const.KITCHEN_FLOOR, brightness=brightness)
 
         if callback and seconds and key:
             timer = self.run_in(callback, seconds, key=key)
@@ -237,7 +224,7 @@ class Lighting(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'cb={cb} interval={seconds} key={key} callback={callback}', level='DEBUG')
 
-        self.call_service('light/turn_on', entity_id=self.UTILITY_LIGHTS)
+        self.call_service('light/turn_on', entity_id=self.const.UTILITY_LIGHTS)
 
         if callback and seconds and key:
             timer = self.run_in(callback, seconds, key=key)
@@ -252,7 +239,7 @@ class Lighting(Hass):
             self.log(f'namespace={namespace}, domain={domain}, service={service}, data={data}', level='DEBUG')
 
         if self.now_is_between('23:30:00', '03:00:00'):
-            self.call_service('light/turn_on', entity_id=self.LUMIE, brightness=10)
+            self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=10)
 
 # -----------------------------------------------------------------------------------
 
@@ -299,14 +286,14 @@ class Lighting(Hass):
     def garage_on_service(self, namespace, domain, service, data) -> None:
         """turn on garage lights"""
 
-        self.call_service('light/turn_on', entity_id=self.GARAGE_LIGHTS)
+        self.call_service('light/turn_on', entity_id=self.const.GARAGE)
 
 # -----------------------------------------------------------------------------------
 
     def garage_off_service(self, namespace, domain, service, data) -> None:
         """turn off garage lights"""
 
-        self.call_service('light/turn_off', entity_id=self.GARAGE_LIGHTS)
+        self.call_service('light/turn_off', entity_id=self.const.GARAGE)
 
 # -----------------------------------------------------------------------------------
 
@@ -329,7 +316,7 @@ class Lighting(Hass):
         if verbose:
             self.log(f'cb={cb} interval={seconds} callback={callback}', level='DEBUG')
 
-        self.call_service('light/turn_on', entity_id=self.NIGHTTIME_LIGHTS)
+        self.call_service('light/turn_on', entity_id=self.const.NIGHTTIME_LIGHTS)
 
         if callback and seconds and key:
             timer = self.run_in(callback, seconds, key=key)
@@ -382,8 +369,8 @@ class Lighting(Hass):
             self.log(f'namespace={namespace}, domain={domain}, service={service}, data={data}', level='DEBUG')
 
         self.call_service('hue/activate_scene', entity_id='scene.front_door_hallway_front_door_ding', transition=10)
-        # self.call_service('light/turn_on', entity_id=self.FRONT_DOOR, brightness=200, transition=transition)
-        # self.call_service('light/turn_on', entity_id=self.HALLWAY, brightness=64, transition=transition)
+        # self.call_service('light/turn_on', entity_id=self.const.FRONT_DOOR, brightness=200, transition=transition)
+        # self.call_service('light/turn_on', entity_id=self.const.HALLWAY1, brightness=64, transition=transition)
 
         if callback and seconds and key:
             timer = self.run_in(callback, seconds, key=key)
@@ -394,7 +381,10 @@ class Lighting(Hass):
     def lights_off_event(self, event, data, kwargs:dict) -> None:
         """turn off hallway, garage and front door lights"""
 
-        self.call_service('light/turn_off', entity_id=self.HALLWAY_GARAGE_LIGHTS)
+        print('here')
+        print(self.const.ALL_LIGHTS)
+        # self.call_service('light/turn_off', entity_id=self.const.HALLWAY_GARAGE_LIGHTS)
+        self.call_service('light/turn_off', entity_id=self.const.ALL_LIGHTS)
 
 # -----------------------------------------------------------------------------------
 
@@ -412,7 +402,7 @@ class Lighting(Hass):
 
     def welcome_lights_event(self, event, data, kwargs:dict) -> None:
 
-        self.call_service('lighting/welcome_lights', seconds=10, delay=10, cb='welcome_lights_off', key='welcome_lights')
+        self.call_service('lighting/welcome_lights', seconds=10, xdelay=10, cb='welcome_lights_off', key='welcome_lights')
 
 # -----------------------------------------------------------------------------------
 
@@ -431,21 +421,21 @@ class Lighting(Hass):
     def stairs_on(self, kwargs:dict) -> None:
         """turn on landing light"""
 
-        self.call_service('light/turn_on', entity_id=self.LANDING, brightness=5)
+        self.call_service('light/turn_on', entity_id=self.const.LANDING, brightness=5)
 
 # -----------------------------------------------------------------------------------
 
     def radiator_on(self, kwargs:dict) -> None:
         """turn on radiator light"""
 
-        self.call_service('light/turn_on', entity_id=self.RADIATOR)
+        self.call_service('light/turn_on', entity_id=self.const.RADIATOR)
 
 # -----------------------------------------------------------------------------------
 
     def living_room_on(self, kwargs:dict) -> None:
         """turn on living room lights"""
 
-        for entity_id in self.LIVING_ROOM_LIGHTS:
+        for entity_id in self.const.LIVING_ROOM_LIGHTS:
             if not self.is_light_on(entity_id):
                 self.call_service('light/turn_on', entity_id=entity_id, brightness=30)
 
@@ -459,7 +449,7 @@ class Lighting(Hass):
             if verbose:
                 self.log('\tturn on hallway light', level='DEBUG')
 
-            self.call_service('light/turn_on', entity_id=self.HALLWAY, brightness=64, transition=5)
+            self.call_service('light/turn_on', entity_id=self.const.HALLWAY1, brightness=64, transition=5)
 
 # -----------------------------------------------------------------------------------
 
@@ -469,8 +459,8 @@ class Lighting(Hass):
             if self.lib.is_below_horizon():
 #             brightness = self.get_state('light.front_door_1', attribute='brightness')
 #             state = self.get_state('light.front_door_1')
-                self.call_service('light/turn_on', entity_id=self.FRONT_DOOR, brightness=5)
-                self.call_service('light/turn_on', entity_id=self.FRONT_DOOR, brightness=128, transition=10)
+                self.call_service('light/turn_on', entity_id=self.const.FRONT_DOOR, brightness=5)
+                self.call_service('light/turn_on', entity_id=self.const.FRONT_DOOR, brightness=128, transition=10)
             else:
                 self.run_in(self.front_door_light_on, 60)  # respawn self in 60s
 
@@ -483,7 +473,7 @@ class Lighting(Hass):
         if key is not None:
             self.log(f'\tturn off bannister - {key}', level='WARNING')
 
-        self.call_service('light/turn_off', entity_id=self.NIGHTTIME_LIGHTS)
+        self.call_service('light/turn_off', entity_id=self.const.NIGHTTIME_LIGHTS)
 
 # -----------------------------------------------------------------------------------
 
@@ -494,12 +484,12 @@ class Lighting(Hass):
         if key is not None:
             self.log(f'\tturn off kitchen - {key}', level='WARNING')
 
-        entity_ids = self.light_entities('kitchen', self.N_KITCHEN_ENTITIES)
+        entity_ids = self.light_entities('kitchen', self.const.N_KITCHEN_ENTITIES)
 
         if self.any_light_on_full(entity_ids):
             self.log('\tdeferring - kitchen lights high', level='DEBUG')
         else:
-            self.call_service('light/turn_off', entity_id=self.KITCHEN_LIGHTS)
+            self.call_service('light/turn_off', entity_id=self.const.KITCHEN)
 
 # -----------------------------------------------------------------------------------
 
@@ -510,7 +500,7 @@ class Lighting(Hass):
         if key is not None:
             self.log(f'\tturn off kitchen floor lights - {key}', level='WARNING')
 
-        self.call_service('light/turn_off', entity_id=self.KITCHEN_FLOOR_LIGHTS)
+        self.call_service('light/turn_off', entity_id=self.const.KITCHEN_FLOOR)
 
 # -----------------------------------------------------------------------------------
 
@@ -526,7 +516,7 @@ class Lighting(Hass):
         if self.any_light_on_full(entity_ids):
             self.log('\tdeferring - utiltity lights high', level='DEBUG')
         else:
-            self.call_service('light/turn_off', entity_id=self.UTILITY)
+            self.call_service('light/turn_off', entity_id=self.const.UTILITY)
 
 # -----------------------------------------------------------------------------------
 
@@ -537,7 +527,7 @@ class Lighting(Hass):
         if key is not None:
             self.log(f'\tturn off front door - {key}', level='WARNING')
 
-        self.call_service('light/turn_off', entity_id=self.FRONT_DOOR, transition=10)
+        self.call_service('light/turn_off', entity_id=self.const.FRONT_DOOR, transition=10)
 
 # -----------------------------------------------------------------------------------
 
@@ -545,12 +535,14 @@ class Lighting(Hass):
 
         key = kwargs.get('key', None)
 
+        hallway_lights = self.light_entities('hallway', self.const.N_HALLWAY_ENTITIES - 1) # pylint: disable=C0103 disable=W0201
+
         self.front_door_off(kwargs)
 
         if key is not None:
             self.log(f'\tturn off hallway - {key}', level='WARNING')
 
-        self.call_service('light/turn_off', entity_id=self.HALLWAY_LIGHTS, transition=10)
+        self.call_service('light/turn_off', entity_id=hallway_lights, transition=10)
 
 # -----------------------------------------------------------------------------------
 
@@ -562,43 +554,43 @@ class Lighting(Hass):
         if key is not None:
             self.log(f'\tturn off outside - {key}', level='WARNING')
 
-        self.call_service('light/turn_off', entity_id=self.HALLWAY_GARAGE_LIGHTS)
+        self.call_service('light/turn_off', entity_id=self.const.HALLWAY_GARAGE_LIGHTS)
 
 # -----------------------------------------------------------------------------------
 
     def living_room_off(self, kwargs:dict) -> None:
         """turn off living room lights"""
 
-        self.call_service('light/turn_off', entity_id=self.LIVING_ROOM_LIGHTS)
-        self.call_service('light/turn_off', entity_id=self.STANDARD_LAMP) # try again - wasn't switching off
+        self.call_service('light/turn_off', entity_id=self.const.LIVING_ROOM_LIGHTS)
+        self.call_service('light/turn_off', entity_id=self.const.STANDARD_LAMP) # try again - wasn't switching off
 
 # -----------------------------------------------------------------------------------
 
     def downstairs_off(self, kwargs:dict) -> None:
 
-        self.call_service('light/turn_off', entity_id=self.UPSTAIRS_DOWNSTAIRS_LIGHTS)
+        self.call_service('light/turn_off', entity_id=self.const.UPDOWNSTAIRS_LIGHTS)
 
 # -----------------------------------------------------------------------------------
 
     def hallway_off(self, kwargs:dict) -> None:
 
-        self.call_service('light/turn_off', entity_id=self.HALLWAY_LIGHTS, transition=10)
+        self.call_service('light/turn_off', entity_id=self.const.HALLWAY_LIGHTS, transition=10)
 
 # -----------------------------------------------------------------------------------
 
     def welcome_lights_off(self, kwargs:dict) -> None:
         """turn off welcome lights"""
 
-        delay = kwargs.get('delay', 5*60)
+        delay = kwargs.get('xdelay', 5*60)
 
-        self.call_service('light/turn_off', entity_id=self.OUTSIDE_LIGHTS)
+        self.call_service('light/turn_off', entity_id=self.const.OUTSIDE_LIGHTS)
 
         # delay turning off hallway
-        # self.call_service('lighting/hallway_off', seconds=delay, cb='hallway_off', key='hallway')
+        self.call_service('lighting/hallway_off', seconds=delay, cb='hallway_off', key='hallway')
 
         if self.now_is_between('05:00:00', '06:30:00'):
-            self.call_service('light/turn_off', self.STANDARD_LAMP)
-            self.call_service('light/turn_off', self.HALLWAY)
+            self.call_service('light/turn_off', self.const.STANDARD_LAMP)
+            self.call_service('light/turn_off', self.const.HALLWAY1)
 
 # -----------------------------------------------------------------------------------
 

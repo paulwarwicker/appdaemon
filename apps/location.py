@@ -10,37 +10,14 @@
 # from datetime import datetime, timedelta
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
 
 class Location(Hass):
     """This is the documentation for Location"""
 
     lib = None
-
-    MAX_ENTITY_ID = 'device_tracker.maxine_iphone'
-    PAUL_ENTITY_ID = 'device_tracker.paulw_iphone'
-
-    LOCATIONS = {
-        'proximity.ds_smith_fordham': 'DS Smith Fordham',
-        'proximity.ds_smith_warboys': 'DS Smith Warboys',
-        'proximity.pilates': 'Pilates Longstanton',
-        'proximity.pilates2': 'Pilates Bar Hill',
-        'proximity.pilates3': 'Pilates Northstowe',
-        'proximity.pilates4': 'Pilates Northstowe',
-        'proximity.karen_wax': 'Karen waxing',
-        'proximity.karen_smith': 'Karen Smith',
-        'proximity.karen_nail': 'Karen nails',
-        'proximity.indian_ocean': 'Indian Ocean',
-        'proximity.newmarket': 'Newmarket junction',
-        'proximity.bar_hill': 'Bar Hill junction',
-        'proximity.village': 'Max is in the village',
-        'proximity.sainsburys_eddington': 'Sainsburys Eddington',
-        'proximity.waitrose_trumpington': 'Waitrose Trumpington',
-        'proximity.morrisons_stives': 'Morrisons St Ives',
-        'proximity.gay_kellaway_racing': 'Gay Kellaway Racing',
-        'proximity.martyn_tracey': 'Martyn and Tracey',
-        'proximity.papworth': 'Papworh',
-        'proximity.home': 'Home',
-    }
+    const = None
 
 # -----------------------------------------------------------------------------------
 
@@ -48,43 +25,43 @@ class Location(Hass):
         """."""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.register_service('location/max_home', self.max_home_service)
         # self.register_service('location/paul_home', self.paul_home_service)
 
         # arrive
-        self.listen_state(self.paul_home, self.PAUL_ENTITY_ID)
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Home', location='proximity.home')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Village', location='proximity.village')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Pilates', location='proximity.pilates')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Pilates2', location='proximity.pilates2')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Pilates3', location='proximity.pilates3')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Pilates4', location='proximity.pilates4')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Indian_Ocean', location='proximity.indian_ocean', duration=10)
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Karen_Wax', location='proximity.karen_wax', duration=10)
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Karen_Smith', location='proximity.karen_smith')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Gay_Kellaway_Racing', location='proximity.gay_kellaway_racing')
-        # self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Bar_Hill', location='proximity.bar_hill')
-        # self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, new='Newmarket', location='proximity.newmarket')
+        self.listen_state(self.paul_home, self.const.PAUL_ENTITY_ID)
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Home', location='proximity.home')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Village', location='proximity.village')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Pilates', location='proximity.pilates')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Pilates2', location='proximity.pilates2')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Pilates3', location='proximity.pilates3')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Pilates4', location='proximity.pilates4')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Indian_Ocean', location='proximity.indian_ocean', duration=10)
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Karen_Wax', location='proximity.karen_wax', duration=10)
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Karen_Smith', location='proximity.karen_smith')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Gay_Kellaway_Racing', location='proximity.gay_kellaway_racing')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Bar_Hill', location='proximity.bar_hill')
+        # self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Newmarket', location='proximity.newmarket')
 
         # leave
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='DS_Smith_Fordham', location='proximity.ds_smith_fordham')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='DS_Smith_Warboys', location='proximity.ds_smith_warboys')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Pilates', location='proximity.pilates')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Pilates2', location='proximity.pilates2')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Pilates3', location='proximity.pilates3')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Pilates4', location='proximity.pilates4')
-        # self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Pilates_Class', location='proximity.pilates_class')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Indian_Ocean', location='proximity.indian_ocean', duration=10)
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Karen_Wax', location='proximity.karen_wax', duration=10)
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Karen_Nails', location='proximity.karen_nails')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Karen_Smith', location='proximity.karen_smith')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Martyn_Tracey', location='proximity.martyn_tracey')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Papworth', location='proximity.papworth')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Gay_Kellaway_Racing', location='proximity.gay_kellaway_racing')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Morrisons_StIves', location='proximity.morrisons_stives')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Sainsburys_Eddington', location='proximity.sainsburys_eddington')
-        self.listen_state(self.max_location_detect, self.MAX_ENTITY_ID, old='Waitrose_Trumpington', location='proximity.waitrose_trumpington')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='DS_Smith_Fordham', location='proximity.ds_smith_fordham')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='DS_Smith_Warboys', location='proximity.ds_smith_warboys')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Pilates', location='proximity.pilates')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Pilates2', location='proximity.pilates2')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Pilates3', location='proximity.pilates3')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Pilates4', location='proximity.pilates4')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Indian_Ocean', location='proximity.indian_ocean', duration=10)
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Karen_Wax', location='proximity.karen_wax', duration=10)
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Karen_Nails', location='proximity.karen_nails')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Karen_Smith', location='proximity.karen_smith')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Martyn_Tracey', location='proximity.martyn_tracey')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Papworth', location='proximity.papworth')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Gay_Kellaway_Racing', location='proximity.gay_kellaway_racing')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Morrisons_StIves', location='proximity.morrisons_stives')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Sainsburys_Eddington', location='proximity.sainsburys_eddington')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Waitrose_Trumpington', location='proximity.waitrose_trumpington')
 
         self.listen_event(self.test_max_home_event, 'max_home')
         self.listen_event(self.test_paul_home_event, 'paul_home')
@@ -116,7 +93,7 @@ class Location(Hass):
         village = entity_id == 'proximity.village'
         home = entity_id == 'proximity.home'
         direction = self.get_state('sensor.home_maxine_direction_of_travel')
-        name = self.LOCATIONS[entity_id]
+        name = self.const.LOCATIONS[entity_id][1]
 
         verbose = self.lib.get_verbose_debug()
 
@@ -146,16 +123,17 @@ class Location(Hass):
     def max_location_detect(self, entity, attribute, old, new, kwargs):
 
         location = kwargs['location']
-        name = self.LOCATIONS[location]
+        entity_id = self.const.LOCATIONS[location][0]
 
         verbose = self.lib.get_verbose_debug()
 
         if verbose:
-            self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} name={name} location={location}', level='INFO')
+            # 2024-11-29 17:59:07.465115 INFO location:       entity=device_tracker.maxine_iphone attribute=state old=DS_Smith_Fordham new=not_home location=proximity.ds_smith_fordham
+            self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} location={location} entity_id={entity_id}', level='INFO')
 
-        if new == name:
+        if new.lower() == entity_id.lower():
             self.max_location_announce(location, 'arrive', kwargs)
-        elif old == name:
+        elif old.lower() == entity_id.lower():
             self.max_location_announce(location, 'leave', kwargs)
 
 # -----------------------------------------------------------------------------------

@@ -15,27 +15,23 @@ import time
 from datetime import datetime, timedelta
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
 
 class Alarms(Hass):
     """Documentation for Alarms"""
     override = False
     default_early_alarm_schedule = 'daily'  # weekday|daily|none
     early_alarm_callback = None
-    backup_alarm_callback = None
     normal_alarm_callback = None
     test_alarm_callback = None
     rota = None
     lib = None
+    const = None
     night_deliver = [5, 5]
     night_collect = [5, 25]
-    default = [8, 0]
+    default = [11, 0]
     callbacks = [None, None, None]
-    STUDY = 'media_player.study'
-    BEDROOM = 'media_player.bedroom'
-    BACKUP_STREAM = 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1'
-    TARGET_VOLUME = 50
-    ATTEMPTS = 5
-    PLAY_DELAY = 0.75
 
 # -----------------------------------------------------------------------------------
 
@@ -43,6 +39,7 @@ class Alarms(Hass):
         """."""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.register_service('alarms/reset', self.reset_service)
 
@@ -56,6 +53,7 @@ class Alarms(Hass):
         self.listen_state(self.set_normal_alarm_callback, 'input_boolean.normal_alarm', new='on', action='set')
         self.listen_state(self.set_normal_alarm_callback, 'input_boolean.normal_alarm', new='off', action='cancel')
         self.listen_state(self.reset_alarms, 'input_boolean.reset_alarms', new='on')
+        self.listen_state(self.reset_alarms, 'input_boolean.alarm_testing', new='off')
 
         # also can fire event set_alarm_state
         self.run_daily(self.set_alarm_state, '20:30:00') # make sure before max goes to bed
@@ -83,10 +81,8 @@ class Alarms(Hass):
     def set_alarm_state(self, kwargs):
 
         self.set_early_alarm()
-        # self.set_backup_alarm()
         self.set_normal_alarm()
         self.show_alarm_time('early')
-        # self.show_alarm_time('backup')
         self.show_alarm_time('normal')
 
 # -----------------------------------------------------------------------------------
@@ -156,11 +152,15 @@ class Alarms(Hass):
                 state = 'off'
                 hour = self.default[0]
                 minute = self.default[1]
-            elif shift1 == shift0 == 'Night' and shift1 == 'Night':
+            elif shift1 == shift0 == 'Night':
                 state = 'on'
                 hour = self.night_collect[0]
                 minute = self.night_collect[1]
-            elif shift0 == 'Day' and shift1 == 'Day':
+            elif shift1 == shift0 == 'Day': # elif shift0 == 'Day' and shift1 == 'Day':
+                state = 'on'
+                hour = self.night_deliver[0]
+                minute = self.night_deliver[1]
+            elif shift0 == 'Off' and shift1 == 'Day':
                 state = 'on'
                 hour = self.night_deliver[0]
                 minute = self.night_deliver[1]
@@ -171,12 +171,13 @@ class Alarms(Hass):
             else:
                 # just use tomorrows shift
                 state = 'off' if shift1 == 'Off' else 'on'
-                # hour = self.default[0]
-                # minute = self.default[1]
-                # alarm_time = f'{hour:02d}:{minute:02d}'
+                self.log(f'defaukt time would be wrong if shift was \'on\'. shift={state}')
+                hour = self.default[0]
+                minute = self.default[1]
 
             if backup:
                 minute += 1
+
             alarm_time = f'{hour:02d}:{minute:02d}'
 
         return state, alarm_time, hour, minute
@@ -209,8 +210,8 @@ class Alarms(Hass):
 
         dow = self.lib.dow()
 
-        # (18-00 on tuesday or friday/saturday) or (00-06 on wednesday or saturday/sunday) -> set alarm later
-        later = (self.now_is_between('18:00:00', '23:59:59') and ((dow == 2) or (5 <= dow <= 6))) or (self.now_is_between('00:00:00', '06:00:00') and ((dow == 3) or (6 <= dow <= 7)))
+        # (06-00 on tuesday or friday/saturday) or (00-06 on wednesday or saturday/sunday) -> set alarm later
+        later = (self.now_is_between('06:00:00', '23:59:59') and ((dow == 2) or (5 <= dow <= 6))) or (self.now_is_between('00:00:00', '05:59:59') and ((dow == 3) or (6 <= dow <= 7)))
 
         if later:
             hour = 10
@@ -268,7 +269,7 @@ class Alarms(Hass):
         alarm_time = f"{t.hour:02d}:{t.minute:02d}"
         state = self.get_state(bool_entity_id)
         message = f'The {_alarm_type} morning alarm is set to {alarm_time}' if state == 'on' else f'The {_alarm_type} morning alarm is cancelled'
-        self.call_service("announcer/announce", entity_id=self.STUDY, message=message)
+        self.call_service("announcer/announce", entity_id=self.const.STUDY, message=message)
 
 # -----------------------------------------------------------------------------------
 
@@ -394,7 +395,7 @@ class Alarms(Hass):
         _alarm_type = alarm_type
         backup = alarm_type == 'backup'
         test = self.is_test(kwargs)
-        entity_id = self.STUDY if test else self.BEDROOM
+        entity_id = self.const.STUDY if test else self.const.BEDROOM
 
         if self.lib.is_night():
             self.lumie_on({})
@@ -411,10 +412,10 @@ class Alarms(Hass):
         if verbose:
             self.log(f'\talarm_type={_alarm_type} test={test} entity_id={entity_id} media_content_id={media_content_id}', level='DEBUG')
 
-        for attempt in range(self.ATTEMPTS):
+        for attempt in range(self.const.ATTEMPTS):
             state = self.get_state(entity_id, attribute="attributes")
             if not self.lib.is_playing(entity_id):
-                media = media_content_id if attempt < 5 else self.BACKUP_STREAM
+                media = media_content_id if attempt < 5 else self.const.BACKUP_STREAM
                 if verbose:
                     self.log(f'attempt={attempt} media={media} entity_id={entity_id} isplaying={self.lib.is_playing(entity_id)}', level='DEBUG')
                     self.log(f'state={state}', level='DEBUG')
@@ -424,13 +425,13 @@ class Alarms(Hass):
                         {'media_player/play_media': {'entity_id': entity_id, 'media_content_type': "music", 'media_content_id': media}},
                     ]
                 )
-                # time.sleep(self.PLAY_DELAY)
+                # time.sleep(const.PLAY_DELAY)
             else:
                 break
 
         if not backup:
             divisor = 100
-            target_volume = self.TARGET_VOLUME  # deal in integers for convenience
+            target_volume = self.const.TARGET_VOLUME  # deal in integers for convenience
 
             if test:
                 span = 1 * divisor # 1s increments
@@ -455,48 +456,11 @@ class Alarms(Hass):
         alarm_type = kwargs['alarm_type']
 
         if alarm_type == 'normal':
-            ids = [
-                # 'x-rincon-mp3radio://http://prem2.di.fm:80/melodicprogressive_hi?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-            ]
+            ids = self.const.NORMAL_ALARM
         elif alarm_type == 'test':
-            ids = [
-                'aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-            ]
+            ids = self.const.NORMAL_ALARM
         else:
-            ids = [
-                # birdsong spring morning
-                # 'x-sonos-spotify:spotify%3atrack%3a5VFk26TzgwqX18dFhRmbSM?sid=9&flags=8224&sn=1',
-                # birdsong garden morning
-                # 'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1',
-                # a gentle thunderstorm
-                # 'x-sonos-spotify:spotify%3atrack%3a1r4QKeqpv1ov8FkrgKDxQ7?sid=9&flags=8224&sn=1',
-
-                'aac://http://prem2.zenradio.com:80/zroceansounds_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrnativeamericanflute_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrsoundsofrain_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrrelaxation_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrrelaxingspanmassage_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrshamanicmusic_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrnature_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrtibetanmusic_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrsleeprelaxation_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrchillout_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zratmosphericdreams_aac?5fba91be81f6da5b573f89c1',
-                'aac://http://prem2.zenradio.com:80/zrspacedreams_aac?5fba91be81f6da5b573f89c1',
-
-                # 'x-sonos-spotify:spotify%3atrack%3a2T5Lipk1QTtvt76Xjcwrxc?sid=9&flags=8224&sn=1', # heavy thunderstorm sounds
-                # 'x-sonos-spotify:spotify%3atrack%3a1E0jvxVMYcnZbjvrs03Yay?sid=9&flags=8224&sn=1', # thunderstorm sounds with rain and loud claps of thunder for all isomniacs
-                # 'x-sonos-spotify:spotify%3atrack%3a49kbhMUlsVPp0fOdTOCgNM?sid=9&flags=8224&sn=1', # extreme thunderstorm soubnds with torrential rain & very loud thunder claps
-                #
-                # 'x-sonos-spotify:spotify%3atrack%3a2cwKtKEhPn6ZnJmlzbmpLQ?sid=9&flags=8224&sn=1', # the early morning rain
-                #
-                # 'x-sonos-spotify:spotify%3atrack%3a4G6Lz9Et6dhLKydPyY4N9a?sid=9&flags=8224&sn=1', # rain drops dancing on a tin roof
-                # 'x-sonos-spotify:spotify%3atrack%3a16D3zoIJWuEbXFfkzXSIqs?sid=9&flags=8224&sn=1', # an angry thunderstorm
-                # 'x-sonos-spotify:spotify%3atrack%3a6H5aGE9xZEPkpeEAn4f7b8?sid=9&flags=8224&sn=1', # thunderstorm
-                # 'x-sonos-spotify:spotify%3atrack%3a3UdClX9rDMiYUOIl6JWaRo?sid=9&flags=8224&sn=1', # heavy thunderstorm
-            ]
+            ids = self.const.EARLY_ALARM
 
         return ids[random.randint(0, len(ids) - 1)]  # randomise choice.
 

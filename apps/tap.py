@@ -12,15 +12,15 @@ import math
 from datetime import datetime
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
 
 class Tap(Hass):
     """Documentation for Tap"""
 
     lib = None
-    # tap_ts = None
+    const = None
     tap_ts = datetime.now()
-
-    DAILY_WATERING_MINUTES = 30
 
 # -----------------------------------------------------------------------------------
 
@@ -28,6 +28,7 @@ class Tap(Hass):
         """initialise"""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.register_service('tap/water_for', self.water_garden_service)
 
@@ -106,9 +107,9 @@ class Tap(Hass):
 
         if self.lib.is_summer():
             if self.lib.no_rain():
-                kwargs = {**kwargs, 'minutes': self.DAILY_WATERING_MINUTES}
+                kwargs = {**kwargs, 'minutes': self.const.DAILY_WATERING_MINUTES}
                 self.water_garden_for_n_minutes(kwargs)
-                self.announce(message=f'Watering garden for {self.DAILY_WATERING_MINUTES} minutes')
+                self.announce(message=f'Watering garden for {self.const.DAILY_WATERING_MINUTES} minutes')
 
 # -----------------------------------------------------------------------------------
 

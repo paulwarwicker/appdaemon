@@ -9,16 +9,12 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-# import inspect
-# import traceback
-# import asyncio
-# from typing import Dict
 from datetime import datetime, timedelta
-# from pprint import pprint
 import pprint
 from io import StringIO
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 
 class Automation(Hass):
     """Documentation for Automation"""
@@ -29,11 +25,10 @@ class Automation(Hass):
     override = False
 
     lib = None
+    const = None
     log_level = None
 
     handlers = {}
-
-    MODULES = ["alarms", "timers", "timestamp", "announcer", "location", "sonos", "starling", "motion", "lighting", "tap", "weather", "garage", "car"]
 
 # -----------------------------------------------------------------------------------
 
@@ -41,15 +36,13 @@ class Automation(Hass):
         """initialise"""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.call_service('scene/reload')
 
         self.debug = self.get_state('input_boolean.default_debug_state') == 'on'
         self.verbose = self.get_state('input_boolean.default_verbose_state') == 'on'
         self.testing = self.get_state('input_boolean.default_testing_state') == 'on'
-
-        # self.listen_state(self.set_front_door_ding_test, 'input_boolean.test_front_door_ding', new='on', action='set')
-        # self.listen_state(self.set_front_door_ding_test, 'input_boolean.test_front_door_ding', new='off', action='cancel')
 
         self.listen_event(self.set_all_state_event, 'set_all_state')
         self.listen_event(self.status_event, 'status')
@@ -164,11 +157,11 @@ class Automation(Hass):
             self.set_log_level(level)
             self.log_level = level
 
-            for app in self.MODULES:
-                self.log(f'setting log level {prefix}{level} on app {app}')
-                a = self.get_app(app)
-                if a is not None:
-                    a.set_log_level(level)
+            for module in self.const.MODULES:
+                self.log(f'setting log level {prefix}{level} on app {module}')
+                app = self.get_app(module)
+                if app is not None:
+                    app.set_log_level(level)
 
 # -----------------------------------------------------------------------------------
 

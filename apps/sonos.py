@@ -11,14 +11,14 @@ import pprint
 from io import StringIO
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
 
 class Sonos(Hass):
     """Documentation for Sonos"""
 
     lib = None
-    STUDY = ['media_player.study']
-    ENTITIES = ['media_player.kitchen', 'media_player.bathroom', 'media_player.bedroom', 'media_player.dining_room']
-    ALL_ENTITIES = ENTITIES + STUDY
+    const = None
 
 # -----------------------------------------------------------------------------------
 
@@ -26,6 +26,7 @@ class Sonos(Hass):
         """."""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.join_test_event, 'join_test')
@@ -35,20 +36,22 @@ class Sonos(Hass):
         self.register_service('sonos/unjoin_entity', self.unjoin_entity)
         self.register_service('sonos/set_configuration', self.set_configuration)
 
+        self.listen_event(self.test_sonos, 'sonos')
+
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
-        self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
+        self.call_service('announcer/initialised',
+                          name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
 
 # -----------------------------------------------------------------------------------
 
     def mute_all(self, kwargs):
 
-        self._configure(self.ALL_ENTITIES, {}, 0, True, False, True, False)
+        self._configure(self.const.ALL_ENTITIES, {}, 0, True, False, True, False)
 
 # -----------------------------------------------------------------------------------
 
     def _configure(self, speakers: list, volume: list, delay: int, unjoin: bool, join: bool, mute: bool, check_downstairs_motion: bool):
-
 
         # is_not_bank_holiday = not self.lib.is_bank_holiday()
         is_bank_holiday = self.lib.is_bank_holiday()
@@ -62,14 +65,17 @@ class Sonos(Hass):
 
         if join:
             self.log(f"\tjoin {speakers}", level='DEBUG')
-            self.call_service('media_player/join', entity_id=speakers[0], group_members=speakers[1:])
+            self.call_service('media_player/join',
+                              entity_id=speakers[0], group_members=speakers[1:])
 
         if mute:
             self.log(f"\tmute {speakers}", level='DEBUG')
-            self.call_service('media_player/volume_mute', entity_id=speakers, is_volume_muted=True)
+            self.call_service('media_player/volume_mute',
+                              entity_id=speakers, is_volume_muted=True)
 
         # assume bank holiday and mute anyway
-        self.call_service('media_player/volume_mute', entity_id=speakers, is_volume_muted=True)
+        self.call_service('media_player/volume_mute',
+                          entity_id=speakers, is_volume_muted=True)
 
         if mute or is_bank_holiday:
             return
@@ -78,13 +84,14 @@ class Sonos(Hass):
             for speaker in speakers:
                 if volume is not None:
                     self.log(f'\tsetting speaker volume to {volume[speaker]} for {speaker}', level='DEBUG')
-                    self.call_service('media_player/volume_set', entity_id=speaker, volume_level=volume[speaker])
+                    self.call_service(
+                        'media_player/volume_set', entity_id=speaker, volume_level=volume[speaker])
 
 # -----------------------------------------------------------------------------------
 
     def configuration_1(self, kwargs):
 
-        speakers = ['media_player.bedroom', 'media_player.bathroom']
+        speakers = [self.const.BEDROOM, self.const.BATHROOM]
         volume = {
             'media_player.bedroom': 0.01,
             'media_player.bathroom': 0.3,
@@ -97,8 +104,8 @@ class Sonos(Hass):
     def configuration_2(self, kwargs):
         # bedroom with join
 
-        speakers = ['media_player.bedroom']
-        volume = { 'media_player.bedroom': 0.01 }
+        speakers = [self.const.BEDROOM]
+        volume = {self.const.BEDROOM: 0.01}
 
         self._configure(speakers, volume, 7, True, True, False, False)
 
@@ -106,8 +113,8 @@ class Sonos(Hass):
 
     def configuration_3(self, kwargs):
 
-        speakers = ['media_player.kitchen', 'media_player.bedroom']
-        volume = {'media_player.kitchen': 0.05, 'media_player.bedroom': 0.05}
+        speakers = [self.const.KITCHEN, self.const.BEDROOM]
+        volume = {self.const.KITCHEN: 0.05, self.const.BEDROOM: 0.05}
 
         self._configure(speakers, volume, 7, True, True, False, False)
 
@@ -116,8 +123,8 @@ class Sonos(Hass):
     def configuration_4(self, kwargs):
         # bedroom no join
 
-        speakers = ['media_player.bedroom']
-        volume = { 'media_player.bedroom': 0.01 }
+        speakers = [self.const.BEDROOM]
+        volume = {self.const.BEDROOM: 0.01}
 
         self._configure(speakers, volume, 7, True, False, False, False)
 
@@ -127,7 +134,7 @@ class Sonos(Hass):
 
         status = '\n\n'
 
-        for entity_id in self.ALL_ENTITIES:
+        for entity_id in self.const.ALL_ENTITIES:
             playing = self.lib.is_playing(entity_id)
             status += f'entity_id={entity_id} is_playing={playing}\n'
             attributes = self.get_state(entity_id=entity_id, attribute="all")
@@ -142,30 +149,30 @@ class Sonos(Hass):
     async def join_test_event(self, event, data, kwargs):
 
         print(100)
-        await self.unjoin_all('','','',{})
+        await self.unjoin_all('', '', '', {})
         self.lib.delay(2)
         self.configuration_1({})
         self.lib.delay(2)
-        await self.unjoin_all('','','',{})
+        await self.unjoin_all('', '', '', {})
         self.lib.delay(2)
         self.configuration_2({})
         self.lib.delay(2)
-        await self.unjoin_all('','','',{})
+        await self.unjoin_all('', '', '', {})
         self.lib.delay(2)
         self.configuration_3({})
         self.lib.delay(2)
-        await self.unjoin_all('','','',{})
+        await self.unjoin_all('', '', '', {})
         self.lib.delay(2)
         self.configuration_4({})
         self.lib.delay(2)
-        await self.unjoin_all('','','',{})
+        await self.unjoin_all('', '', '', {})
         print(200)
 
 # -----------------------------------------------------------------------------------
 
     async def unjoin_all(self, namespace, domain, service, kwargs) -> None:
 
-        self._configure(self.ALL_ENTITIES, {}, None, True, False, True, False)
+        self._configure(self.const.ALL_ENTITIES, {}, None, True, False, True, False)
 
 # -----------------------------------------------------------------------------------
 
@@ -188,5 +195,16 @@ class Sonos(Hass):
             self.configuration_3({})
         elif config == '4':
             self.configuration_4({})
+
+# -----------------------------------------------------------------------------------
+
+    def test_sonos(self, event, data, kwargs):
+
+        self.call_service('media_player/play_media',
+                # entity_id=['media_player.study','media_player.dining_room','media_player.kitchen'],
+                entity_id=self.const.ALL_ENTITY_ID,
+                media_content_type="music",
+                media_content_id='media-source://tts/cloud?message="Test message"',
+                announce=True)
 
 # -----------------------------------------------------------------------------------

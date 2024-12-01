@@ -1,77 +1,103 @@
 automationlib:
   module: automationlib
   global: true
+
+const:
+  module: const
+  global: true
+
 announcer:
   module: announcer
   class: Announcer
   log_level: DEBUG
   dependencies:
     - automationlib
+    - const
+
 automation:
   module: automation
   class: Automation
   # log_level: DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
     - timestamp
+
 timestamp:
   module: timestamp
   class: Timestamp
   # log_level: DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
+
 location:
   module: location
   class: Location
   # log_level: DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
     - timestamp
+    - lighting
+
 alarms:
   module: alarms
   class: Alarms
   log_level: DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
+
 sonos:
   module: sonos
   class: Sonos
   # log_level: DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
+
 timers:
   module: timers
   class: Timers
   # log_level: DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
+
 motion:
   module: motion
   class: Motion
   # log_level: DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
+
 lighting:
   module: lighting
   class: Lighting
   # log_level: DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
+
 front_door:
   module: front_door
   class: FrontDoor
   # log_level: DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
+
 # --
 garage:
   module: garage
@@ -79,7 +105,9 @@ garage:
   log_level: INFO # DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
+
 weather:
   module: weather
   class: Weather
@@ -87,29 +115,37 @@ weather:
   # location: 78704 US
   dependencies:
     # - automationlib
+    - const
     - announcer
+
 tap:
   module: tap
   class: Tap
   log_level: INFO # DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
+
 car:
   module: car
   class: Car
   log_level: INFO # DEBUG
   dependencies:
     - automationlib
+    - const
     - announcer
+
+vacuum:
+  module: vacuum
+  class: Vacuum
+  # log_level: DEBUG
+  dependencies:
+    - automationlib
+    - const
+    - announcer
+
 # --
-# vacuum:
-#   module: vacuum
-#   class: Vacuum
-#   # log_level: DEBUG
-#   dependencies:
-#     - automationlib
-#     - announcer
 # doorbell:
 #   module: doorbell
 #   class: DoorBell
