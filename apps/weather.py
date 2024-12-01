@@ -6,19 +6,24 @@ import json # keep for debug
 import yaml
 import aiohttp  # type: ignore # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+# import myconstants as const  # type: ignore # pylint: disable=E0401
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
+
 class Weather(Hass):
     """Weather app using tomorrow.io data"""
 
-    request_kwargs = {}
     lib = None
+    const = None
+    request_kwargs = {}
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self):
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         path = Path(f'{self.AD.config_dir}/secrets.yaml')
         path = path if path.is_file() else Path('/homeassistant/secrets.yaml') # HAOS

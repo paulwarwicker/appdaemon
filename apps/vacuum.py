@@ -13,12 +13,14 @@
 from datetime import datetime
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-# import Hass  # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
 
 class Vacuum(Hass):
     """Documentation for Vacuum"""
 
     lib = None
+    const = None
 
 # -----------------------------------------------------------------------------------
 
@@ -26,6 +28,7 @@ class Vacuum(Hass):
         """initialise"""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.listen_state(self.vacuum_debug, 'vacuum.s7_max_ultra')
 
