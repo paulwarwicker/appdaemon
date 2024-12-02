@@ -28,9 +28,6 @@ class Alarms(Hass):
     rota = None
     lib = None
     const = None
-    night_deliver = [5, 5]
-    night_collect = [5, 25]
-    default = [11, 0]
     callbacks = [None, None, None]
 
 # -----------------------------------------------------------------------------------
@@ -122,11 +119,11 @@ class Alarms(Hass):
             minute = self.get_state('input_datetime.early_alarm', attribute='minute')
             alarm_time = f'{hour:02d}:{minute:02d}'
         else:
-            hour = self.night_deliver[0]
-            minute = self.night_deliver[1]
+            hour = self.const.NIGHT_DELIVER[0]
+            minute = self.const.NIGHT_DELIVER[1]
             if shift1 == 'Night' and shift0 == 'Night':
-                hour = self.night_collect[0]
-                minute = self.night_collect[1]
+                hour = self.const.NIGHT_COLLECT[0]
+                minute = self.const.NIGHT_COLLECT[1]
             if backup:
                 minute += 1
             alarm_time = f'{hour:02d}:{minute:02d}'
@@ -138,42 +135,42 @@ class Alarms(Hass):
             if shift0 == 'Off' and shift1 == 'Night':
                 # transition shift
                 state = 'off'
-                hour = self.default[0]
-                minute = self.default[1]
+                hour = self.const.DEFAULT[0]
+                minute = self.const.DEFAULT[1]
                 self.log('\tdisabling due to transition shift off->night', level='WARNING')
             elif shift0 == 'Night' and shift1 == 'Off':
                 # transition shift
                 state = 'on'
-                hour = self.night_collect[0]
-                minute = self.night_collect[1]
+                hour = self.const.NIGHT_COLLECT[0]
+                minute = self.const.NIGHT_COLLECT[1]
                 self.log('\tenabling due to transition shift night->off', level='WARNING')
             elif shift0 == 'Off' and shift1 == 'Off':
                 # transition shift
                 state = 'off'
-                hour = self.default[0]
-                minute = self.default[1]
+                hour = self.const.DEFAULT[0]
+                minute = self.const.DEFAULT[1]
             elif shift1 == shift0 == 'Night':
                 state = 'on'
-                hour = self.night_collect[0]
-                minute = self.night_collect[1]
+                hour = self.const.NIGHT_COLLECT[0]
+                minute = self.const.NIGHT_COLLECT[1]
             elif shift1 == shift0 == 'Day': # elif shift0 == 'Day' and shift1 == 'Day':
                 state = 'on'
-                hour = self.night_deliver[0]
-                minute = self.night_deliver[1]
+                hour = self.const.NIGHT_DELIVER[0]
+                minute = self.const.NIGHT_DELIVER[1]
             elif shift0 == 'Off' and shift1 == 'Day':
                 state = 'on'
-                hour = self.night_deliver[0]
-                minute = self.night_deliver[1]
+                hour = self.const.NIGHT_DELIVER[0]
+                minute = self.const.NIGHT_DELIVER[1]
             elif shift0 == 'Day' and shift1 == 'Off':
                 state = 'off'
-                hour = self.night_deliver[0]
-                minute = self.night_deliver[1]
+                hour = self.const.NIGHT_DELIVER[0]
+                minute = self.const.NIGHT_DELIVER[1]
             else:
                 # just use tomorrows shift
                 state = 'off' if shift1 == 'Off' else 'on'
                 self.log(f'defaukt time would be wrong if shift was \'on\'. shift={state}')
-                hour = self.default[0]
-                minute = self.default[1]
+                hour = self.const.DEFAULT[0]
+                minute = self.const.DEFAULT[1]
 
             if backup:
                 minute += 1
@@ -269,7 +266,7 @@ class Alarms(Hass):
         alarm_time = f"{t.hour:02d}:{t.minute:02d}"
         state = self.get_state(bool_entity_id)
         message = f'The {_alarm_type} morning alarm is set to {alarm_time}' if state == 'on' else f'The {_alarm_type} morning alarm is cancelled'
-        self.call_service("announcer/announce", entity_id=self.const.STUDY, message=message)
+        self.call_service("announcer/announce", entity_id=self.const.STUDY_SPEAKER, message=message)
 
 # -----------------------------------------------------------------------------------
 
@@ -395,7 +392,7 @@ class Alarms(Hass):
         _alarm_type = alarm_type
         backup = alarm_type == 'backup'
         test = self.is_test(kwargs)
-        entity_id = self.const.STUDY if test else self.const.BEDROOM
+        entity_id = self.const.STUDY_SPEAKER if test else self.const.BEDROOM_SPEAKER
 
         if self.lib.is_night():
             self.lumie_on({})
