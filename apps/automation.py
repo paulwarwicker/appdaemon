@@ -26,6 +26,7 @@ class Automation(Hass):
 
     lib = None
     const = None
+    state = 'Not Driving'
     log_level = None
 
     handlers = {}
@@ -171,6 +172,7 @@ class Automation(Hass):
         self.debug = new == 'on'
         self.log(f'\tautomation debug now {self.debug}', level='INFO')
         self._set_console_log_level()
+        self.lib.set_debug(self.debug)
 
 # -----------------------------------------------------------------------------------
 
@@ -180,6 +182,7 @@ class Automation(Hass):
         self.verbose = new == 'on'
         self.log(f'\tautomation verbose now {self.verbose}', level='INFO')
         self._set_console_log_level()
+        self.lib.set_verbose(self.verbose)
 
 # -----------------------------------------------------------------------------------
 
@@ -189,6 +192,7 @@ class Automation(Hass):
         self.testing = new == 'on'
         self.log(f'\tautomation testing now {self.testing}', level='INFO')
         self._set_console_log_level()
+        self.lib.set_testing(self.testing)
 
 # -----------------------------------------------------------------------------------
 
@@ -354,9 +358,13 @@ class Automation(Hass):
             state = self.get_state('sensor.maxine_iphone_activity')
 
             if state == "Automotive":
-                self.set_state('sensor.maxine_driving_status', state='Driving')
+                if self.state != 'Driving':
+                    self.state = 'Driving'
+                    self.set_state('sensor.maxine_driving_status', state=self.state)
             else:
-                self.set_state('sensor.maxine_driving_status', state='Not Driving')
+                if self.state != 'Not Driving':
+                    self.state = 'Not Driving'
+                    self.set_state('sensor.maxine_driving_status', state=self.state)
 
             ts = self.call_service('timestamp/get', name='travel', return_result=True)
             diff = (datetime.now() - ts).seconds
@@ -366,7 +374,8 @@ class Automation(Hass):
                 self.log(f'\tmessage={message} ts={ts.ctime()} ({ts.timestamp():6.3f})', level='DEBUG')
                 self.call_service('announcer/announce', entity_id='media_player.study', message=message, timestamp='travel')
         else:
-            self.set_state('sensor.maxine_driving_status', state='Not Driving')
+            if self.state != 'Not Driving':
+                self.set_state('sensor.maxine_driving_status', state=self.state)
 
 # -----------------------------------------------------------------------------------
 

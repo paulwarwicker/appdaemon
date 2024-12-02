@@ -50,6 +50,7 @@ class Weather(Hass):
 
         self.run_daily(self.frost_warning, 'sunset + 00:00:00')
         self.run_daily(self.frost_warning, 'sunset + 01:00:00')
+        self.run_daily(self.frost_warning, '20:00:00')
 
         interval = timedelta(minutes=10)
         # runtime = datetime(2024, 1, 1, 0, 0, 0)
@@ -157,18 +158,19 @@ class Weather(Hass):
         data[2] = json_data['timelines']['hourly'][index + 2] # hour after
         data[3] = json_data['timelines']['hourly'][index + 3] # hour after
 
-        if self.lib.get_verbose_debug():
-            print(json.dumps(data[0], indent=2))
-            print(json.dumps(data[1], indent=2))
-            print(json.dumps(data[2], indent=2))
-            print(json.dumps(data[3], indent=2))
+        # if self.lib.get_verbose_debug():
+        #     print(json.dumps(data[0], indent=2))
+        #     print(json.dumps(data[1], indent=2))
+        #     print(json.dumps(data[2], indent=2))
+        #     print(json.dumps(data[3], indent=2))
 
         code = data[0]['values']['weatherCode']
         cum_prob_1h = math.ceil((data[0]['values']['precipitationProbability'] + data[1]['values']['precipitationProbability']) / 2)
         cum_prob_3h = math.ceil((data[0]['values']['precipitationProbability'] + data[1]['values']['precipitationProbability'] +
                                  data[2]['values']['precipitationProbability'] + data[3]['values']['precipitationProbability'] ) / 4)
 
-        self.log(f'\tprobability of rain1h={cum_prob_1h}, rain3h={cum_prob_3h}', level='DEBUG')
+        if cum_prob_1h != 0 and cum_prob_3h != 0:
+            self.log(f'\tprobability of rain1h={cum_prob_1h}, rain3h={cum_prob_3h}', level='DEBUG')
 
         await self.set_state(
             'sensor.weather_tomorrowio_forecast_rain_probability_1h',

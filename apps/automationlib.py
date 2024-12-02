@@ -155,14 +155,16 @@ class AutomationLib():
     def get_debug(self) -> bool:
         """get debug setting"""
 
-        return self.adapi.get_state('input_boolean.debug') == 'on'
+        # return self.adapi.get_state('input_boolean.debug') == 'on'
+        return self.debug
 
 # -----------------------------------------------------------------------------------
 
     def get_verbose(self) -> bool:
         """get verbose setting"""
 
-        return self.adapi.get_state('input_boolean.verbose') == 'on'
+        # return self.adapi.get_state('input_boolean.verbose') == 'on'
+        return self.verbose
 
 # -----------------------------------------------------------------------------------
 
@@ -176,7 +178,8 @@ class AutomationLib():
     def get_testing(self) -> bool:
         """get testing setting"""
 
-        return self.adapi.get_state('input_boolean.testing') == 'on'
+        # return self.adapi.get_state('input_boolean.testing') == 'on'
+        return self.testing
 
 # -----------------------------------------------------------------------------------
 
@@ -195,13 +198,23 @@ class AutomationLib():
 # -----------------------------------------------------------------------------------
 
     def set_debug(self, torf: bool) -> bool:
-        """set debug setting"""
+        """set cached debug setting"""
 
-        old_state = self.adapi.get_state("input_boolean.debug")
-        new_state = 'on' if torf else 'off'
-        self.adapi.set_state("input_boolean.debug", state=new_state)
+        self.debug = torf
 
-        return old_state == 'on'
+# -----------------------------------------------------------------------------------
+
+    def set_verbose(self, torf: bool) -> bool:
+        """set cached verbose setting"""
+
+        self.debug = torf
+
+# -----------------------------------------------------------------------------------
+
+    def set_testing(self, torf: bool) -> bool:
+        """set cached testing setting"""
+
+        self.debug = torf
 
 # -----------------------------------------------------------------------------------
 

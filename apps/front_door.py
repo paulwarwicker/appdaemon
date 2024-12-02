@@ -34,9 +34,6 @@ class FrontDoor(Hass):
 
         self.run_daily(self.front_door_battery, 'sunset + 00:05:00')
 
-        print(self.const.ANNOUNCE_VOLUME)
-        print(self.const.ALL_LIGHTS)
-
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised', level='WARNING')
@@ -84,7 +81,7 @@ class FrontDoor(Hass):
             else:
                 message = 'Please charge the second front door battery'
 
-            self.call_service('announcer/broadcast', message=message)
+            self.call_service('announcer/announce', message=message)
 
             message=f'Recharge front door battery ({level:d}%{battery})'
             self.call_service('announcer/notification', message=message)

@@ -53,6 +53,7 @@ class Car(Hass):
 
         tracker = self.get_state(self.const.DEVICE_TRACKER_ID, attribute='all') # device_tracker.skoda_karoq_position
         location = tracker['state']
+        home = location == 'home'
 
         if location in ('unknown', 'available'):
             self.log(f'\tupdate tracker {self.const.DEVICE_TRACKER_ID}')
@@ -75,7 +76,7 @@ class Car(Hass):
         locked = state == 'off'
         lock_state = 'locked' if locked else 'unlocked'
 
-        if verbose:
+        if verbose and not locked and not home:
             ts = self.call_service('timestamp/get', name='karoq', return_result=True)
             level = 'ERROR' if (state in ('unavailable', 'unknown')) or (location in ('unavailable', 'unknown')) else 'DEBUG'
             self.log(f'\tstate={state} location={location} locked={locked} lock_state={lock_state} tracker={tracker} ts={ts}', level=level)
