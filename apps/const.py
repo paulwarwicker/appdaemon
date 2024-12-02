@@ -8,13 +8,9 @@ class AutomationConstants:
     # announcer
     START_HOUR = 8
     END_HOUR = 22
-    # BROADCAST_ENTITY_ID = ['media_player.kitchen', 'media_player.bathroom']
-    BROADCAST_ENTITY_ID = ['media_player.kitchen']
-    ANNOUNCE_ENTITY_ID = ['media_player.study']
-    OTHER_ENTITY_ID = ['media_player.bedroom', 'media_player.study', 'media_player.dining_room']
-    ALL_ENTITY_ID = BROADCAST_ENTITY_ID + OTHER_ENTITY_ID
-    SECONDS_PER_CHARACTER = 0.35
-    MINIMUM_MESSAGE_LENGTH = 8
+    ALL_ENTITY_ID = ['media_player.bedroom', 'media_player.study', 'media_player.dining_room', 'media_player.kitchen']
+    SECONDS_PER_CHARACTER = 0.15
+    MINIMUM_MESSAGE_LENGTH = 5
 
     # car
     LOCK_ENTITY_ID = 'lock.skoda_karoq_door_lock'
@@ -73,17 +69,21 @@ class AutomationConstants:
     N_KITCHEN_FLOOR_ENTITIES = 2
 
     # alarms
-    STUDY = 'media_player.study'
-    BEDROOM = 'media_player.bedroom'
-    KITCHEN = 'media_player.kitchen'
-    BATHROOM = 'media_player.bathroom'
+    NIGHT_DELIVER = [5, 3]
+    NIGHT_COLLECT = [5, 23]
+    DEFAULT = [11, 0]
+    STUDY_SPEAKER = 'media_player.study'
+    KITCHEN_SPEAKER = 'media_player.kitchen'
+    BEDROOM_SPEAKER = 'media_player.bedroom'
+    BEDROOM2_SPEAKER = 'media_player.bedroom2'
+    BATHROOM_SPEAKER = 'media_player.bathroom'
+    SOUNDBAR_SPEAKER = 'media_player.living_room'
+
     BACKUP_STREAM = 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1'
     TARGET_VOLUME = 50
     ATTEMPTS = 5
     PLAY_DELAY = 0.75
     NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1']
-    ANNOUNCE_VOLUME = 0.1
-    BROADCAST_VOLUME = 0.5
 
     # 'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1', # birdsong garden morning
     # 'x-sonos-spotify:spotify%3atrack%3a1r4QKeqpv1ov8FkrgKDxQ7?sid=9&flags=8224&sn=1', # a gentle thunderstorm
