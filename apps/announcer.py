@@ -351,3 +351,9 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         return announceable1 and not announceable2
 
 # -----------------------------------------------------------------------------------
+
+    def status(self):
+
+        self.log('\n\n')
+
+        return
