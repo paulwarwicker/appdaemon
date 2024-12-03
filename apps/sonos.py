@@ -47,7 +47,7 @@ class Sonos(Hass):
 
     def mute_all(self, kwargs):
 
-        self._configure(self.const.ALL_ENTITIES, {}, 0, True, False, True, False)
+        self._configure(self.const.ALL_ENTITY_ID, {}, 0, True, False, True, False)
 
 # -----------------------------------------------------------------------------------
 
@@ -134,9 +134,9 @@ class Sonos(Hass):
 
         status = '\n\n'
 
-        for entity_id in self.const.ALL_ENTITIES:
+        for entity_id in self.const.ALL_ENTITY_ID:
             playing = self.lib.is_playing(entity_id)
-            status += f'entity_id={entity_id} is_playing={playing}\n'
+            status += f'\tentity_id={entity_id} is_playing={playing}\n'
             attributes = self.get_state(entity_id=entity_id, attribute="all")
             s = StringIO()
             pprint.pprint(attributes, s, indent=3, width=1, compact=True)
@@ -172,7 +172,7 @@ class Sonos(Hass):
 
     async def unjoin_all(self, namespace, domain, service, kwargs) -> None:
 
-        self._configure(self.const.ALL_ENTITIES, {}, None, True, False, True, False)
+        self._configure(self.const.ALL_ENTITY_ID, {}, None, True, False, True, False)
 
 # -----------------------------------------------------------------------------------
 

@@ -173,7 +173,7 @@ class Tap(Hass):
 
     def status(self, entity, attribute, old, new, kwargs) -> None:
 
-        status = f'\n\ntap_ts={self.tap_ts}\n'
+        status = f'\n\n\ttap_ts={self.tap_ts}\n'
 
         self.log(f'{status}')
 

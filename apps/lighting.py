@@ -50,9 +50,9 @@ class Lighting(Hass):
         self.listen_event(self.lights_off_event, "ios.action_fired", actionName='Lights')
 
         self.run_daily(self.living_room_on, 'sunset + 00:10:00')
-        self.run_daily(self.living_room_off, '23:30:00')
+        self.run_daily(self.downstairs_off, '23:30:00')
         self.run_daily(self.outside_off, '21:30:00')
-        self.run_daily(self.downstairs_off, '02:00:00')
+        self.run_daily(self.all_off, '02:00:00')
         # self.run_daily(self.stairs_on, 'sunset + 00:10:00')
         # self.run_daily(self.radiator_on, "sunset + 00:10:00")
 
@@ -558,17 +558,19 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def living_room_off(self, kwargs:dict) -> None:
-        """turn off living room lights"""
+    def downstairs_off(self, kwargs:dict) -> None:
+        """turn off downstairslights"""
 
         self.call_service('light/turn_off', entity_id=self.const.LIVING_ROOM_LIGHTS)
         self.call_service('light/turn_off', entity_id=self.const.STANDARD_LAMP) # try again - wasn't switching off
+        self.call_service('light/turn_off', entity_id=self.const.UTILITY)
+        self.call_service('switch/turn_off', entity_id=self.const.COOKER_LIGHTS)
 
 # -----------------------------------------------------------------------------------
 
-    def downstairs_off(self, kwargs:dict) -> None:
+    def all_off(self, kwargs:dict) -> None:
 
-        self.call_service('light/turn_off', entity_id=self.const.UPDOWNSTAIRS_LIGHTS)
+        self.call_service('light/turn_off', entity_id=self.const.ALL_LIGHTS)
 
 # -----------------------------------------------------------------------------------
 
