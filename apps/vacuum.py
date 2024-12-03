@@ -32,6 +32,8 @@ class Vacuum(Hass):
 
         self.listen_state(self.vacuum_debug, 'vacuum.s7_max_ultra')
 
+        self.call_service('timestamp/set', name='vacuum')
+
         runtime = datetime(2024, 1, 1, 0, 0, 0)
         self.run_hourly(self.check_roborock, runtime)
 
@@ -74,10 +76,12 @@ class Vacuum(Hass):
             self.desktop_notification(f'Roborock has an unknown error {state}')
             return
 
-        diff = (datetime.now() - self.vacuum_announce_ts).seconds
+        ts = self.call_service('timestamp/get', name='vacuum', return_result=True)
+        diff = (datetime.now() - ts).seconds
+
+        self.call_service('announcer/announce', entity_id=self.const.STUDY_SPEAKER, message=message)
 
         if diff > ( 3 * 60 ):
             self.call_service('announcer/broadcast', message=message, timestamp='vacuum')
-            self.call_service('announcer/announce', entity_id='media_player.study', message=message)
 
 # -----------------------------------------------------------------------------------

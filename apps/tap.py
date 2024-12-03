@@ -20,7 +20,6 @@ class Tap(Hass):
 
     lib = None
     const = None
-    tap_ts = datetime.now()
 
 # -----------------------------------------------------------------------------------
 
@@ -148,7 +147,8 @@ class Tap(Hass):
 
         if state == 'on':
             self.log(f'\tGarden tap is {state}', level='WARNING')
-            seconds = (datetime.now() - self.tap_ts).seconds
+            ts = self.call_service('timestamp/get', name='tap', return_result=True)
+            seconds = (datetime.now() - ts).seconds
             n = math.ceil(seconds / 60)
             diff1,diff2 = divmod(seconds, 60)
             self.log(f'\t\t{diff1} {diff2}')
@@ -173,7 +173,7 @@ class Tap(Hass):
 
     def status(self, entity, attribute, old, new, kwargs) -> None:
 
-        status = f'\n\n\ttap_ts={self.tap_ts}\n'
+        status = '\n\n'
 
         self.log(f'{status}')
 
