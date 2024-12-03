@@ -11,6 +11,7 @@
 
 from datetime import datetime, timedelta
 import pprint
+import textwrap
 from io import StringIO
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
@@ -460,26 +461,23 @@ class Automation(Hass):
 
     def status(self, entity, attribute, old, new, kwargs) -> None:
 
-        status = ''
+        status = '\n\n'
         state = self.get_state('input_boolean.default_debug_state')
-        status += f'\n\n\tdefault_debug_state={state}\n'
+        status += f'\tdefault_debug_state={state}\n'
         state = self.get_state('input_boolean.default_verbose_state')
         status += f'\tdefault_verbose_state={state}\n'
         state = self.get_state('input_boolean.default_testing_state')
-        status += f'\tdefault_testing_state={state}\n'
-        status += f'\n\tdebug={self.debug}\n'
+        status += f'\tdefault_testing_state={state}\n\n'
+        status += f'\tdebug={self.debug}\n'
         status += f'\tverbose={self.verbose}\n'
-        status += f'\ttesting={self.testing}\n'
+        status += f'\ttesting={self.testing}\n\n'
 
-        # callbacks = self.get_callback_entries()
-        # # pprint(callbacks, indent=3, width=1, compact=True)
         scheduler = self.get_scheduler_entries()
-        # # pprint.pprint(scheduler['alarms'], indent=3, width=1, compact=True)
 
         # https://stackoverflow.com/questions/521532/how-do-i-get-pythons-pprint-to-return-a-string-instead-of-printing
         s = StringIO()
-        pprint.pprint(scheduler['alarms'], s, indent=3, width=1, compact=True)
-        status += s.getvalue()
+        pprint.pprint(scheduler['alarms'], s, indent=2, width=1, compact=True)
+        status += textwrap.indent(s.getvalue(), '        ')
 
         self.log(f'{status}')
 

@@ -8,6 +8,7 @@
 # https://github.com/nickw444/appdaemon-testing
 
 import pprint
+import textwrap
 from io import StringIO
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
@@ -132,15 +133,15 @@ class Sonos(Hass):
 
     def status_event(self, event, data, kwargs):
 
-        status = '\n\n'
+        status = '\n'
 
         for entity_id in self.const.ALL_ENTITY_ID:
             playing = self.lib.is_playing(entity_id)
-            status += f'\tentity_id={entity_id} is_playing={playing}\n'
+            status += f'\n\tentity_id={entity_id} is_playing={playing}\n\n'
             attributes = self.get_state(entity_id=entity_id, attribute="all")
             s = StringIO()
             pprint.pprint(attributes, s, indent=3, width=1, compact=True)
-            status += s.getvalue()
+            status += textwrap.indent(s.getvalue(), '        ')
 
         self.log(f'{status}')
 
