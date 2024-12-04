@@ -238,7 +238,7 @@ class Lighting(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'namespace={namespace}, domain={domain}, service={service}, data={data}', level='DEBUG')
 
-        if self.now_is_between('23:30:00', '03:00:00'):
+        if self.now_is_between('23:30:00', '04:00:00'):
             self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=10)
 
 # -----------------------------------------------------------------------------------

@@ -84,8 +84,6 @@ class Motion(Hass):
         self.call_service('timestamp/set', name='prev_upstairs', value=prev_upstairs_ts)
         self.call_service('timestamp/set', name='upstairs', value=upstairs_ts)
 
-        # self.fire_event("timestamps")
-
         diff1 = (upstairs_ts - downstairs_ts).seconds
         diff2 = (upstairs_ts - prev_upstairs_ts).seconds
 
@@ -95,12 +93,11 @@ class Motion(Hass):
 
         if diff1 <= 300:
             timer = 600 # 10m timer for bannister if less than 300 seconds difference
-            self.call_service('lighting/lumie_on')
+            self.call_service('lighting/lumie_on') # lumie_on will check time of day
         elif diff1 > 300 and diff2 <= 120:
             timer = 10 # but if max has gone to the loo, only 10 seconds
         else:
-            timer = 60 # should not hit this
-            self.log(f'\tUnexpected issue setting timer value - diff1={diff1} diff2={diff2}', level='ERROR')
+            timer = 60
 
         if self.now_is_between('22:00:00', 'sunrise') or self.lib.get_testing():
             kwargs = {**kwargs, 'timer': timer, 'key': 'upstairs'} #  'check_override': False,
