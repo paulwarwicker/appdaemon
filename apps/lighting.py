@@ -111,7 +111,7 @@ class Lighting(Hass):
             if verbose:
                 self.log(f'welcome_lights_service data={data}', level='DEBUG')
 
-            timer = self.run_in(callback, seconds, key=key, xdelay=delay)
+            timer = self.run_in(callback, seconds, key=key) # , xdelay=delay)
             self.set_timer(key, timer)
 
 # -----------------------------------------------------------------------------------
@@ -705,7 +705,9 @@ class Lighting(Hass):
         keys = list(self.timers)
 
         for key in keys:
+            print(key)
             timer = self.timers.get(key, None)
+            print(timer)
             if timer is not None and self.timer_running(timer):
                 time, interval, kwargs = await self.info_timer(timer)
                 status += f'\tname={key} timer={timer} time={time} interval={interval} kwargs={kwargs} isrunning={self.timer_running(timer)}\n'
