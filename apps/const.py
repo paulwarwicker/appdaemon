@@ -6,8 +6,8 @@ class AutomationConstants:
     """Documentation for AutomationConstants"""
 
     # announcer
-    START_HOUR = 8
-    END_HOUR = 22
+    START_HOUR = 8 # :30
+    END_HOUR = 21 # :30
     ALL_ENTITY_ID = ['media_player.bedroom', 'media_player.study', 'media_player.dining_room', 'media_player.kitchen']
     SECONDS_PER_CHARACTER = 0.15
     MINIMUM_MESSAGE_LENGTH = 5
