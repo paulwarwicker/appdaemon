@@ -238,7 +238,7 @@ class AutomationLib():
         self.adapi.call_service('homeassistant/update_entity', entity_id=entity_id)
         attributes = self.adapi.get_state(entity_id=entity_id, attribute="attributes")
         state = self.adapi.get_state(entity_id=entity_id, attribute="state")
-        # self.adapi.log(f'entity_id={entity_id} state={state} attributes={attributes}', level='ERROR')
+        self.adapi.log(f'entity_id={entity_id} state={state} attributes={attributes}', level='DEBUG')
 
         return state == 'playing'
 
