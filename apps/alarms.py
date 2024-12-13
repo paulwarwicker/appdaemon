@@ -412,17 +412,12 @@ class Alarms(Hass):
         for attempt in range(self.const.ATTEMPTS):
             state = self.get_state(entity_id, attribute="attributes")
             if not self.lib.is_playing(entity_id):
-                media = media_content_id if attempt < 5 else self.const.BACKUP_STREAM
+                media = media_content_id if attempt < 10 else self.const.BACKUP_STREAM
                 if verbose:
                     self.log(f'attempt={attempt} media={media} entity_id={entity_id} isplaying={self.lib.is_playing(entity_id)}', level='DEBUG')
                     self.log(f'state={state}', level='DEBUG')
-                self.run_sequence(
-                    [
-                        {'media_player/volume_mute': {'entity_id': entity_id, 'is_volume_muted': False}},
-                        {'media_player/play_media': {'entity_id': entity_id, 'media_content_type': "music", 'media_content_id': media}},
-                    ]
-                )
-                # time.sleep(const.PLAY_DELAY)
+                self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
+                self.call_service('media_player/play_media', entity_id=entity_id, media_content_type="music", media_content_id=media)
             else:
                 break
 
