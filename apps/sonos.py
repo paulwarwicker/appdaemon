@@ -7,6 +7,7 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
+import time
 import pprint
 import textwrap
 from io import StringIO
@@ -37,7 +38,12 @@ class Sonos(Hass):
         self.register_service('sonos/unjoin_entity', self.unjoin_entity)
         self.register_service('sonos/set_configuration', self.set_configuration)
 
-        self.listen_event(self.test_sonos, 'sonos')
+        self.listen_event(self.test_event, 'test')
+        self.listen_event(self.test_sonos_event, 'sonos')
+
+        self.run_daily(self.play_christmas, '07:45:00')
+        # self.run_daily(self.play_christmas, '12:39:00')
+        self.run_daily(self.stop_bedroom2, '21:00:00')
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised',
@@ -199,13 +205,58 @@ class Sonos(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def test_sonos(self, event, data, kwargs):
+    def test_sonos_event(self, event, data, kwargs):
 
+        # self.call_service('media_player/play_media',
+        #         entity_id=self.const.ALL_ENTITY_ID,
+        #         media_content_type='music',
+        #         media_content_id='media-source://tts/cloud?message="Test message"',
+        #         announce=True)
+
+        entity_id = self.const.BEDROOM_SPEAKER
+
+        self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=True)
+        time.sleep(2)
+
+        self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
+        self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=0.01)
+        self.call_service('media_player/repeat_set', entity_id=entity_id, repeat='off')
         self.call_service('media_player/play_media',
-                # entity_id=['media_player.study','media_player.dining_room','media_player.kitchen'],
-                entity_id=self.const.ALL_ENTITY_ID,
-                media_content_type="music",
-                media_content_id='media-source://tts/cloud?message="Test message"',
-                announce=True)
+                            entity_id=entity_id,
+                            media_content_type='music',
+                            # media_content_id='aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1',
+                            media_content_id='aac://http://prem2.zenradio.com:80/zrsoundsofrain_aac?5fba91be81f6da5b573f89c1',
+                        )
+
+# -----------------------------------------------------------------------------------
+
+    def test_event(self, event, data, kwargs):
+
+        self.log(f'study_playing={self.lib.is_playing(self.const.STUDY_SPEAKER)}')
+        self.log(f'bedroom_playing={self.lib.is_playing(self.const.BEDROOM_SPEAKER)}')
+        self.log(f'bedroom2_playing={self.lib.is_playing(self.const.BEDROOM2_SPEAKER)}')
+
+# -----------------------------------------------------------------------------------
+    def play_christmas(self, kwargs):
+
+        entity_id = 'media_player.bedroom_2'
+
+        for _ in range(5):
+            self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
+            self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=0.05)
+            self.call_service('media_player/repeat_set', entity_id=entity_id, repeat='off')
+            self.call_service('media_player/play_media',
+                            entity_id=entity_id,
+                            media_content_type='music',
+                            media_content_id='aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1',
+                        )
+
+# -----------------------------------------------------------------------------------
+
+    def stop_bedroom2(self, kwargs):
+
+        entity_id = 'media_player.bedroom_2'
+
+        self.call_service('media_player/media_stop', entity_id=entity_id)
 
 # -----------------------------------------------------------------------------------
