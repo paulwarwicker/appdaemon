@@ -78,7 +78,7 @@ class AutomationConstants:
     STUDY_SPEAKER = 'media_player.study'
     KITCHEN_SPEAKER = 'media_player.kitchen'
     BEDROOM_SPEAKER = 'media_player.bedroom'
-    BEDROOM2_SPEAKER = 'media_player.bedroom2'
+    BEDROOM2_SPEAKER = 'media_player.bedroom_2'
     BATHROOM_SPEAKER = 'media_player.bathroom'
     SOUNDBAR_SPEAKER = 'media_player.living_room'
 
@@ -123,7 +123,7 @@ class AutomationConstants:
     PAUL_ENTITY_ID = 'device_tracker.paulw_iphone'
 
     LOCATIONS = {
-        'proximity.ds_smith_fordham': ['ds_smith_fordham','DS Smith Fordhem'],
+        'proximity.ds_smith_fordham': ['ds_smith_fordham','DS Smith Fordem'], # get announcement to sound vaguely right
         'proximity.ds_smith_warboys': ['ds_smith_warboys','DS Smith Warboys'],
         'proximity.pilates': ['pilates','Pilates Longstanton'],
         'proximity.pilates2': ['pilates2','Pilates Bar Hill'],
@@ -143,6 +143,7 @@ class AutomationConstants:
         'proximity.martyn_tracey': ['martyn_tracey','Martyn and Tracey'],
         'proximity.papworth': ['papworth','Papworh Hospital'],
         'proximity.home': ['home', 'Max is home'],
+        'proximity.jollop_place': ['jollop_place', 'Jollop Place'],
     }
 
     # tap
