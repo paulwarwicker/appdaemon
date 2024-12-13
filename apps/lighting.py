@@ -98,12 +98,8 @@ class Lighting(Hass):
         if verbose:
             self.log(f'cb={cb} key={key} interval={seconds} callback={callback} delay={delay}', level='DEBUG')
 
-        self.run_sequence(
-            [
-                {'light/turn_on': {'entity_id': self.const.WELCOME_LIGHTS, 'brightness': 128}},
-                {'light/turn_on': {'entity_id': self.const.HALLWAY1, 'brightness': 64}},
-            ]
-        )
+        self.call_service('light/turn_on', entity_id=self.const.WELCOME_LIGHTS, brightness=128)
+        self.call_service('light/turn_on', entity_id=self.const.HALLWAY1, brightness=64)
 
         if self.now_is_between('05:00:00', '06:30:00'):
             self.call_service('light/turn_off', entity_id=self.const.STANDARD_LAMP)
@@ -136,12 +132,8 @@ class Lighting(Hass):
         if verbose:
             self.log(f'cb={cb} interval={seconds} callback={callback}', level='DEBUG')
 
-        self.run_sequence(
-            [
-                {'light/turn_on': {'entity_id': self.const.FRONT_DOOR, 'brightness': 128}},
-                {'light/turn_on': {'entity_id': self.const.HALLWAY1, 'brightness': 64}},
-            ]
-        )
+        self.call_service('light/turn_on', entity_id=self.const.FRONT_DOOR, brightness=128)
+        self.call_service('light/turn_on', entity_id=self.const.HALLWAY1, brightness=64)
 
         if callback and seconds and key:
             timer = self.run_in(callback, seconds, key=key)
