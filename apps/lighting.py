@@ -83,6 +83,7 @@ class Lighting(Hass):
             self.log(f'namespace={namespace}, domain={domain}, service={service}, data={data}', level='DEBUG')
 
         if not self.lib.is_night():
+            self.log('\ttoo early for welcome lights', level='DEBUG')
             return
 
         callback = None
@@ -298,7 +299,7 @@ class Lighting(Hass):
 # -----------------------------------------------------------------------------------
 
     def bannister_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
-        """turn off garage lights"""
+        """turn on bannister and hallway lights"""
 
         verbose = self.lib.get_verbose_debug()
 
@@ -316,7 +317,8 @@ class Lighting(Hass):
         if verbose:
             self.log(f'cb={cb} interval={seconds} callback={callback}', level='DEBUG')
 
-        self.call_service('light/turn_on', entity_id=self.const.NIGHTTIME_LIGHTS)
+        self.call_service('light/turn_on', entity_id=self.const.HALLWAY1, brightness=64)
+        self.call_service('light/turn_on', entity_id=self.const.BANNISTER, brightness=30)
 
         if callback and seconds and key:
             timer = self.run_in(callback, seconds, key=key)
@@ -325,7 +327,7 @@ class Lighting(Hass):
 # -----------------------------------------------------------------------------------
 
     def hallway_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
-        """turn off garage lights"""
+        """turn off bannister and hallway lights"""
 
         verbose = self.lib.get_verbose_debug()
 
@@ -342,8 +344,6 @@ class Lighting(Hass):
 
         if verbose:
             self.log(f'cb={cb} interval={seconds} callback={callback}', level='DEBUG')
-
-        # just call callback
 
         if callback and seconds and key:
             timer = self.run_in(callback, seconds, key=key)
@@ -379,11 +379,8 @@ class Lighting(Hass):
 # -----------------------------------------------------------------------------------
 
     def lights_off_event(self, event, data, kwargs:dict) -> None:
-        """turn off hallway, garage and front door lights"""
+        """turn off all lights"""
 
-        print('here')
-        print(self.const.ALL_LIGHTS)
-        # self.call_service('light/turn_off', entity_id=self.const.HALLWAY_GARAGE_LIGHTS)
         self.call_service('light/turn_off', entity_id=self.const.ALL_LIGHTS)
 
 # -----------------------------------------------------------------------------------
