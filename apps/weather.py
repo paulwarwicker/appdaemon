@@ -2,14 +2,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import math
-# import json # keep for debug
+import json # keep enabled for debug. DO NOT COMMENT OUT
 import yaml
 import aiohttp  # type: ignore # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-# import myconstants as const  # type: ignore # pylint: disable=E0401
 from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
-
 
 class Weather(Hass):
     """Weather app using tomorrow.io data"""
@@ -158,16 +156,21 @@ class Weather(Hass):
         data[2] = json_data['timelines']['hourly'][index + 2] # hour after
         data[3] = json_data['timelines']['hourly'][index + 3] # hour after
 
-        # if self.lib.get_verbose_debug():
-        #     print(json.dumps(data[0], indent=2))
-        #     print(json.dumps(data[1], indent=2))
-        #     print(json.dumps(data[2], indent=2))
-        #     print(json.dumps(data[3], indent=2))
+        if self.lib.get_verbose_debug():
+            print(json.dumps(data[0], indent=2))
+            print(json.dumps(data[1], indent=2))
+            print(json.dumps(data[2], indent=2))
+            print(json.dumps(data[3], indent=2))
 
-        code = data[0]['values']['weatherCode']
-        cum_prob_1h = math.ceil((data[0]['values']['precipitationProbability'] + data[1]['values']['precipitationProbability']) / 2)
-        cum_prob_3h = math.ceil((data[0]['values']['precipitationProbability'] + data[1]['values']['precipitationProbability'] +
-                                 data[2]['values']['precipitationProbability'] + data[3]['values']['precipitationProbability'] ) / 4)
+        code  = data[0]['values']['weatherCode']
+        # code  = data[1]['values']['weatherCode']
+        self.log(f'\tcode={code}', level='WARNING')
+        # cum_prob_1h = math.ceil((data[0]['values']['precipitationProbability'] + data[1]['values']['precipitationProbability']) / 2)
+        cum_prob_1h = math.ceil(data[1]['values']['precipitationProbability'])
+        # cum_prob_3h = math.ceil((data[0]['values']['precipitationProbability'] + data[1]['values']['precipitationProbability'] +
+        #                          data[2]['values']['precipitationProbability'] + data[3]['values']['precipitationProbability'] ) / 4)
+        cum_prob_3h = math.ceil((data[1]['values']['precipitationProbability'] +
+                                 data[2]['values']['precipitationProbability'] + data[3]['values']['precipitationProbability'] ) / 3)
 
         if cum_prob_1h != 0 and cum_prob_3h != 0:
             self.log(f'\tprobability of rain1h={cum_prob_1h}, rain3h={cum_prob_3h}', level='DEBUG')

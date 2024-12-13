@@ -40,6 +40,8 @@ class Garage(Hass):
         self.listen_event(self.test_garage_open_event, 'test_garage_open')
         self.listen_event(self.test_garage_close_event, 'test_garage_close')
 
+        # self.listen_state(self.test, '', new='on')
+
         runtime = datetime(2024, 1, 1, 0, 0, 0)
         self.run_hourly(self.close_garage_door, runtime)
 
