@@ -48,6 +48,7 @@ class Automation(Hass):
 
         self.listen_event(self.set_all_state_event, 'set_all_state')
         self.listen_event(self.status_event, 'status')
+        self.listen_event(self.test_event, 'test')
 
         self.listen_state(self.set_console_log_level, 'input_boolean.debug')
         self.listen_state(self.set_console_log_level, 'input_boolean.verbose')
@@ -70,6 +71,7 @@ class Automation(Hass):
 
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.maxine_travel_time_to_home, runtime)
+        self.run_minutely(self.fix_audio_delay, runtime)
 
         runtime = datetime(2024, 1, 1, 0, 0, 0)
         # self.run_hourly(...)
@@ -347,6 +349,14 @@ class Automation(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def fix_audio_delay(self, kwargs) -> None:
+
+        delay = self.get_state('number.living_room_audio_delay')
+        if delay != 3:
+            self.set_state('number.living_room_audio_delay', state=3)
+
+# -----------------------------------------------------------------------------------
+
     def maxine_travel_time_to_home(self, kwargs) -> None:
         """set travel time to home for maxine. set maxine_driving_status sensor"""
 
@@ -488,6 +498,12 @@ class Automation(Hass):
     def status_event(self, event, data, kwargs) -> None:
 
         self.status('','','','',{})
+
+# -----------------------------------------------------------------------------------
+
+    def test_event(self, event, data, kwargs) -> None:
+
+        print(self.lib.is_playing('media_player.study'))
 
 # -----------------------------------------------------------------------------------
 
