@@ -312,7 +312,7 @@ class Automation(Hass):
         if self.lib.get_alarm_testing():
             self.call_service('alarm/reset')
 
-        self.call_service('motion/reset_downstairs_motion_flag')
+        self.call_service('motion/reset_motion_flag')
         self.call_service('sonos/unjoin_all')
 
         self.set_state('input_boolean.override', state='off')
