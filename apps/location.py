@@ -28,10 +28,11 @@ class Location(Hass):
         self.const = ConstantsManagement(self)
 
         self.register_service('location/max_home', self.max_home_service)
-        # self.register_service('location/paul_home', self.paul_home_service)
+        self.register_service('location/paul_home', self.paul_home_service)
+
+        self.listen_state(self.paul_location_detect, self.const.PAUL_ENTITY_ID)
 
         # arrive
-        self.listen_state(self.paul_home, self.const.PAUL_ENTITY_ID)
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Home', location='proximity.home')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Village', location='proximity.village')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Pilates', location='proximity.pilates')
@@ -82,7 +83,7 @@ class Location(Hass):
 # -----------------------------------------------------------------------------------
 
     def paul_home_service(self, namespace, domain, service, kwargs) -> None:
-        """max home"""
+        """paul home"""
 
         self.call_service('garage/open')
 
@@ -121,7 +122,7 @@ class Location(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def max_location_detect(self, entity, attribute, old, new, kwargs):
+    def max_location_detect(self, entity_id, attribute, old, new, kwargs):
 
         location = kwargs['location']
         entity_id = self.const.LOCATIONS[location][0]
@@ -130,7 +131,7 @@ class Location(Hass):
 
         if verbose:
             # 2024-11-29 17:59:07.465115 INFO location:       entity=device_tracker.maxine_iphone attribute=state old=DS_Smith_Fordham new=not_home location=proximity.ds_smith_fordham
-            self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} location={location} entity_id={entity_id}', level='INFO')
+            self.log(f'\tmax location location={location} entity_id={entity_id} attribute={attribute} old={old} new={new}', level='INFO')
 
         if new.lower() == entity_id.lower():
             self.max_location_announce(location, 'arrive', kwargs)
@@ -139,13 +140,16 @@ class Location(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def paul_home(self, entity, attribute, old, new, kwargs):
+    def paul_location_detect(self, entity_id, attribute, old, new, kwargs):
 
         if self.lib.get_verbose_debug():
-            self.log(f'\tpaul_home entity={entity} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
+            self.log(f'\tpaul location entity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
 
-        if old == 'not_home' and new == 'home':
+        if new == 'home':
             self.call_service('garage/open')
+
+        if new == 'not_home':
+            self.call_service('garage/close')
 
 # -----------------------------------------------------------------------------------
 
