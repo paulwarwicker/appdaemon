@@ -30,8 +30,9 @@ class Motion(Hass):
         self.lib = AutomationLib(self)
         self.const = ConstantsManagement(self)
 
-        self.register_service('motion/set_downstairs_motion_flag', self.set_downstairs_motion_flag)
-        self.register_service('motion/reset_downstairs_motion_flag', self.reset_downstairs_motion_flag)
+        self.register_service('motion/set_motion_flag', self.set_motion_flag_service)
+        self.register_service('motion/reset_motion_flag', self.reset_motion_flag_service)
+        self.register_service('motion/garage', self.garage_motion_service)
 
         self.listen_event(self.stairs_motion_event, 'stairs_motion')
         self.listen_event(self.upstairs_motion_event, 'upstairs_motion')
@@ -39,7 +40,7 @@ class Motion(Hass):
         self.listen_event(self.front_door_motion_event, 'front_door_motion')
         self.listen_event(self.kitchen_motion_event, 'kitchen_motion')
         self.listen_event(self.utility_motion_event, 'utility_motion')
-        self.listen_event(self.garage_motion_event, 'utility_motion')
+        self.listen_event(self.garage_motion_event, 'garage_motion')
         self.listen_event(self.motion_motion_event, 'motion_motion')
 
         self.listen_state(self.kitchen_motion, 'binary_sensor.kitchen_sensor_motion', old='off', new='on', seconds=5*60, key='kitchen', cb='kitchen_off')
@@ -56,7 +57,7 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def set_downstairs_motion_flag(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+    def set_motion_flag_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
         """set downstairs motion flag"""
 
         value = kwargs.get('value', None)
@@ -66,10 +67,17 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def reset_downstairs_motion_flag(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+    def reset_motion_flag_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
         """reset downstairs motion flag"""
 
         self.downstairs_motion_flag = False
+
+# -----------------------------------------------------------------------------------
+
+    def garage_motion_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+        """reset downstairs motion flag"""
+
+        self.call_service('light/turn_on', entity_id=self.const.GARAGE2)
 
 # -----------------------------------------------------------------------------------
 
