@@ -32,6 +32,8 @@ class AutomationConstants:
     STUDY = 'light.study'
     GARDEN = 'light.garden_light'
     GARAGE = 'light.garage'  # group
+    GARAGE1 = 'light.garage_1'
+    GARAGE2 = 'light.garage_2'
     DINING1 = 'light.dining_room_1'
     DINING2 = 'light.dining_room_2'
     UTILITY = 'light.utility_room_1'
@@ -86,6 +88,7 @@ class AutomationConstants:
     TARGET_VOLUME = 50
     ATTEMPTS = 5
     PLAY_DELAY = 0.75
+    DEFAULT_VOLUME = 0.15
     NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1']
 
     # 'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1', # birdsong garden morning
