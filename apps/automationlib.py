@@ -218,8 +218,16 @@ class AutomationLib():
 
 # -----------------------------------------------------------------------------------
 
-    def log_function_name(self, start: bool=True) -> None:
+    def log_function_name(self, start: bool=True, separator: bool=False) -> None:
         """log function name as log message"""
+
+        name = inspect.currentframe().f_back.f_code.co_name
+
+        if separator:
+            prefix = '>>>' if start else '<<<'
+            dashes = '-' * (80 - len(name))
+            self.adapi.log(f'{prefix} {name} {dashes}',level='WARNING')
+            return
 
         if self.get_verbose_debug():
             # print(inspect.currentframe())
