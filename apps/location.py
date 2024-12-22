@@ -30,9 +30,8 @@ class Location(Hass):
         self.register_service('location/max_home', self.max_home_service)
         self.register_service('location/paul_home', self.paul_home_service)
 
-        self.listen_state(self.paul_location_detect, self.const.PAUL_ENTITY_ID)
-
         # arrive
+        self.listen_state(self.paul_location_detect, self.const.PAUL_ENTITY_ID, new='home')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Home', location='proximity.home')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Village', location='proximity.village')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Pilates', location='proximity.pilates')
@@ -43,10 +42,11 @@ class Location(Hass):
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Karen_Wax', location='proximity.karen_wax', duration=10)
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Karen_Smith', location='proximity.karen_smith')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Gay_Kellaway_Racing', location='proximity.gay_kellaway_racing')
-        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Bar_Hill', location='proximity.bar_hill')
+        # self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Bar_Hill', location='proximity.bar_hill')
         # self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Newmarket', location='proximity.newmarket')
 
         # leave
+        self.listen_state(self.paul_location_detect, self.const.PAUL_ENTITY_ID, new='not_home')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='DS_Smith_Fordham', location='proximity.ds_smith_fordham')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='DS_Smith_Warboys', location='proximity.ds_smith_warboys')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Pilates', location='proximity.pilates')
@@ -78,14 +78,22 @@ class Location(Hass):
     def max_home_service(self, namespace, domain, service, kwargs) -> None:
         """max home"""
 
+        self.lib.log_function_name(True, True)
+
         self.call_service('lighting/welcome_lights', cb='welcome_lights_off', seconds=5*60, key='welcome_lights')
+
+        self.lib.log_function_name(False, True)
 
 # -----------------------------------------------------------------------------------
 
     def paul_home_service(self, namespace, domain, service, kwargs) -> None:
         """paul home"""
 
+        self.lib.log_function_name(True, True)
+
         self.call_service('garage/open')
+
+        self.lib.log_function_name(False, True)
 
 # -----------------------------------------------------------------------------------
 
@@ -124,23 +132,29 @@ class Location(Hass):
 
     def max_location_detect(self, entity_id, attribute, old, new, kwargs):
 
+        self.lib.log_function_name(True, True)
+
         location = kwargs['location']
-        entity_id = self.const.LOCATIONS[location][0]
+        location_entity_id = (self.const.LOCATIONS[location][0]).lower()
 
         verbose = self.lib.get_verbose_debug()
 
         if verbose:
             # 2024-11-29 17:59:07.465115 INFO location:       entity=device_tracker.maxine_iphone attribute=state old=DS_Smith_Fordham new=not_home location=proximity.ds_smith_fordham
-            self.log(f'\tmax location location={location} entity_id={entity_id} attribute={attribute} old={old} new={new}', level='INFO')
+            self.log(f'\tmax location location={location} location_entity_id={location_entity_id} attribute={attribute} old={old} new={new}', level='INFO')
 
-        if new.lower() == entity_id.lower():
+        if new.lower() == location_entity_id:
             self.max_location_announce(location, 'arrive', kwargs)
-        elif old.lower() == entity_id.lower():
+        elif old.lower() == location_entity_id:
             self.max_location_announce(location, 'leave', kwargs)
+
+        self.lib.log_function_name(False, True)
 
 # -----------------------------------------------------------------------------------
 
     def paul_location_detect(self, entity_id, attribute, old, new, kwargs):
+
+        self.lib.log_function_name(True, True)
 
         if self.lib.get_verbose_debug():
             self.log(f'\tpaul location entity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
@@ -150,6 +164,8 @@ class Location(Hass):
 
         if new == 'not_home':
             self.call_service('garage/close')
+
+        self.lib.log_function_name(False, True)
 
 # -----------------------------------------------------------------------------------
 
