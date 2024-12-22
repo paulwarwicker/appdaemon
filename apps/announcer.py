@@ -178,12 +178,12 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         #     traceback.print_stack()
         #     return
 
-        # entity_id = [entity_id] if isinstance(entity_list, str) else self.const.ALL_ENTITY_ID
+        # entity_id = [entity_id] if isinstance(entity_list, str) else self.const.ALL_SPEAKER_ENTITY_ID
 
         if self.lib.get_testing():
             entity_ids = [self.const.STUDY_SPEAKER]
         else:
-            entity_ids = self.const.ALL_ENTITY_ID if entity_id is None else [entity_id]
+            entity_ids = self.const.ALL_SPEAKER_ENTITY_ID if entity_id is None else [entity_id]
 
         if self.announceable(announce) or force:
             if verbose:

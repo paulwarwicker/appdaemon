@@ -8,7 +8,6 @@ class AutomationConstants:
     # announcer
     START_HOUR = 8 # :30
     END_HOUR = 21 # :30
-    ALL_ENTITY_ID = ['media_player.bedroom', 'media_player.study', 'media_player.dining_room', 'media_player.kitchen']
     SECONDS_PER_CHARACTER = 0.15
     MINIMUM_MESSAGE_LENGTH = 5
 
@@ -83,6 +82,7 @@ class AutomationConstants:
     BEDROOM2_SPEAKER = 'media_player.bedroom_2'
     BATHROOM_SPEAKER = 'media_player.bathroom'
     SOUNDBAR_SPEAKER = 'media_player.living_room'
+    ALL_SPEAKER_ENTITY_ID = [STUDY_SPEAKER, KITCHEN_SPEAKER, BEDROOM_SPEAKER, BEDROOM2_SPEAKER, BATHROOM_SPEAKER]
 
     BACKUP_STREAM = 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1'
     TARGET_VOLUME = 50
