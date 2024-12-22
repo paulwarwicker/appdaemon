@@ -29,16 +29,14 @@ class Garage(Hass):
         self.register_service('garage/open', self.garage_open_service)
         self.register_service('garage/close', self.garage_close_service)
 
-        self.listen_state(self.garage_door_open, self.const.PAUL_ENTITY_ID, old='not_home', new='home')
-        self.listen_state(self.garage_door_close, self.const.PAUL_ENTITY_ID, old='home', new='not_home')
         self.listen_state(self.garage_door_announce_open, self.const.GARAGE_ENTITY_ID, new='open')
         self.listen_state(self.garage_door_announce_opening, self.const.GARAGE_ENTITY_ID, new='opening')
         self.listen_state(self.garage_door_announce_closing, self.const.GARAGE_ENTITY_ID, new='closing')
         self.listen_state(self.garage_door_announce_closed, self.const.GARAGE_ENTITY_ID, new='closed')
         self.listen_state(self.garage_door_debug, self.const.GARAGE_ENTITY_ID)
 
-        self.listen_event(self.test_garage_open_event, 'test_garage_open')
-        self.listen_event(self.test_garage_close_event, 'test_garage_close')
+        self.listen_event(self.garage_open_event, 'garage_open')
+        self.listen_event(self.garage_close_event, 'garage_close')
 
         runtime = datetime(2024, 1, 1, 0, 0, 0)
         self.run_hourly(self.close_garage_door, runtime)
@@ -63,6 +61,22 @@ class Garage(Hass):
         """open the garage"""
 
         self.garage_door_close('','','','',{})
+
+# -----------------------------------------------------------------------------------
+
+    def garage_open_event(self, event, data, kwargs:dict) -> None:
+
+        self.lib.log_function_name(True, True)
+
+        self.call_service('garage/open')
+
+# -----------------------------------------------------------------------------------
+
+    def garage_close_event(self, event, data, kwargs:dict) -> None:
+
+        self.lib.log_function_name(True, True)
+
+        self.call_service('garage/close')
 
 # -----------------------------------------------------------------------------------
 
@@ -198,17 +212,5 @@ class Garage(Hass):
         self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwarg} state={state} ts={ts}', level='INFO')
 
         return state,ts
-
-# -----------------------------------------------------------------------------------
-
-    def test_garage_open_event(self, event, data, kwargs:dict) -> None:
-
-        self.call_service('garage/open')
-
-# -----------------------------------------------------------------------------------
-
-    def test_garage_close_event(self, event, data, kwargs:dict) -> None:
-
-        self.call_service('garage/close')
 
 # -----------------------------------------------------------------------------------
