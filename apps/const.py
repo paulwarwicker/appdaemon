@@ -152,6 +152,7 @@ class AutomationConstants:
     # tap
     DAILY_WATERING_MINUTES = 30
 
+    TIMESTAMPS = ('upstairs','downstairs','prev_upstairs','karoq_announce','karoq_notification','garage','vacuum','general','travel', 'tap')
 # ConstantsManagement class
 class ConstantsManagement:
     """Documentation for ConstantsManagement"""
