@@ -36,7 +36,7 @@ class Car(Hass):
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised', level='WARNING')
+        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -83,30 +83,46 @@ class Car(Hass):
 
         if not locked:
             if self.lib.is_after(16):
-                message='The car door is unlocked'
-                ts = self.call_service('timestamp/get', name='karoq', return_result=True)
+                # message='The car door is unlocked'
+                message='The car door is unlocked. A lock request has been sent'
+                self.call_service('lock/lock', entity_id=self.const.LOCK_ENTITY_ID)
+
+                ts = self.call_service('timestamp/get', name='karoq_notification', return_result=True)
+                diff = (datetime.now() - ts).seconds
+
+                if diff > self.lib.interval(minutes=10):
+                    self.call_service('announcer/notification', message=message, type='desktop', timestamp='karoq_notification')
+                    return
+
+                ts = self.call_service('timestamp/get', name='karoq_announce', return_result=True)
                 diff = (datetime.now() - ts).seconds
 
                 if diff > self.lib.interval(minutes=30):
-                    self.call_service('announcer/notification', message=message, type='desktop')
-                    self.call_service('timestamp/set', name='karoq')
-
-                return
-
-                # message='The car door is unlocked. A lock request has been sent'
-                # self.call_service('lock/lock', entity_id=self.const.LOCK_ENTITY_ID)
+                    self.call_service('announcer/announce', message=message, timestamp='karoq_announce')
 
                 # ts = self.call_service('timestamp/get', name='karoq', return_result=True)
                 # diff = (datetime.now() - ts).seconds
 
-                # if diff > self.lib.interval(minutes=10):
+                # self.call_service('announcer/broadcast', message=message, timestamp='karoq')
+
+                # if diff > self.lib.interval(minutes=30):
+                #     self.call_service('announcer/notification', message=message, type='desktop')
+                #     self.call_service('timestamp/set', name='karoq')
+
+                # # return
+
+
+                # ts = self.call_service('timestamp/get', name='karoq', return_result=True)
+                # diff = (datetime.now() - ts).seconds
+
+                # if diff > self.lib.interval(minutes=20):
                 #     self.call_service('announcer/broadcast', message=message, timestamp='karoq')
                 # return
 
-            ts = self.call_service('timestamp/get', name='karoq', return_result=True)
-            diff = (datetime.now() - ts).seconds
-            if diff > self.lib.interval(minutes=60):
-                self.announce()
+            # ts = self.call_service('timestamp/get', name='karoq', return_result=True)
+            # diff = (datetime.now() - ts).seconds
+            # if diff > self.lib.interval(minutes=60):
+            #     self.announce()
 
 # -----------------------------------------------------------------------------------
 
