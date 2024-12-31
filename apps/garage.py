@@ -46,7 +46,7 @@ class Garage(Hass):
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised', level='WARNING')
+        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -84,9 +84,7 @@ class Garage(Hass):
         """open garage door"""
 
         self.call_service('cover/open_cover', entity_id=self.const.GARAGE_ENTITY_ID)
-
-        if self.lib.is_below_horizon():
-            self.call_service('lighting/garage_on')
+        self.call_service('lighting/garage_on')
 
 # -----------------------------------------------------------------------------------
 
@@ -94,9 +92,7 @@ class Garage(Hass):
         """close garage door"""
 
         self.call_service('cover/close_cover', entity_id=self.const.GARAGE_ENTITY_ID)
-
-        if self.lib.is_below_horizon():
-            self.call_service('lighting/garage_off')
+        self.call_service('lighting/garage_off')
 
 # -----------------------------------------------------------------------------------
 
