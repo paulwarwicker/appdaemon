@@ -58,7 +58,7 @@ class Alarms(Hass):
         self.run_in(self.set_alarm_state, 0)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised', level='WARNING')
+        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -75,7 +75,23 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    async def set_alarm_state_async(self, kwargs):
+
+        # self.set_early_alarm()
+        # self.set_normal_alarm()
+        # self.show_alarm_time('early')
+        self.show_alarm_time('normal')
+
+# -----------------------------------------------------------------------------------
+
     def set_alarm_state(self, kwargs):
+
+        if self.get_state('input_boolean.alarms_disabled') == 'on':
+            print('here')
+            self.cancel_alarms()
+            self.set_state('input_boolean.early_alarm', state='off')
+            self.set_state('input_boolean.normal_alarm', state='off')
+            return
 
         self.set_early_alarm()
         self.set_normal_alarm()
@@ -270,7 +286,7 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def reset_alarms(self, entity, attribute, old, new, kwargs):
+    def cancel_alarms(self):
 
         self._cancel_timer(self.early_alarm_callback, 'early alarm')
         self._cancel_timer(self.normal_alarm_callback, 'normal alarm')
@@ -280,6 +296,11 @@ class Alarms(Hass):
         self.set_state('input_boolean.reset_alarms', state='off')
         self.set_state('input_boolean.alarm_testing', state='off')
 
+# -----------------------------------------------------------------------------------
+
+    def reset_alarms(self, entity, attribute, old, new, kwargs):
+
+        self.cancel_alarms()
         self.set_alarm_state({})
 
 # -----------------------------------------------------------------------------------

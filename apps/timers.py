@@ -31,7 +31,7 @@ class Timers(Hass):
         self.register_service('timers/status', self.timer_status_service)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised', level='WARNING')
+        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 

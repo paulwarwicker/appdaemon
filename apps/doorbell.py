@@ -23,7 +23,7 @@ class DoorBell(Hass):
         self.lib = AutomationLib(self)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised', level='WARNING')
+        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # # -----------------------------------------------------------------------------------
 

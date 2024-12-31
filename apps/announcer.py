@@ -59,7 +59,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         self.announce_lock = threading.Lock()
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
-        self.log('initialised', level='WARNING')
+        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 

@@ -49,7 +49,7 @@ class Starling(Hass):
         self.run_in_thread(self.add_starling_calendar_events, 0)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised', level='WARNING')
+        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 

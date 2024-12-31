@@ -93,7 +93,7 @@ class Automation(Hass):
         # self.fire_event('timestamps')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised', level='WARNING')
+        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
         # self.dummy()
         self.test({})
