@@ -10,6 +10,7 @@
 from datetime import datetime, timedelta
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 
 # from typing import Dict
 # from pprint import pprint
@@ -18,19 +19,8 @@ class Timestamp(Hass):
     """Documentation for Timestamp"""
 
     lib = None
+    const = None
     ts = {}
-    timestamps = ('upstairs','downstairs','prev_upstairs','karoq','garage','vacuum','general','travel', 'tap')
-
-    # tap_ts = None
-    # # FIXME: should be dictionary
-    # upstairs_ts = datetime.now()
-    # downstairs_ts = datetime.now()
-    # prev_upstairs_ts = datetime.now() + timedelta(minutes=-15)
-    # karoq_announce_ts = datetime.now()
-    # garage_announce_ts = datetime.now()
-    # vacuum_announce_ts = datetime.now()
-    # general_announce_ts = datetime.now() + timedelta(minutes=-15)
-    # travel_announce_ts = datetime.now() + timedelta(minutes=-15)
 
 # -----------------------------------------------------------------------------------
 
@@ -38,6 +28,7 @@ class Timestamp(Hass):
         """initialise"""
 
         self.lib = AutomationLib(self)
+        self.const = ConstantsManagement(self)
 
         self.register_service('timestamp/set', self.set_timestamp_service)
         self.register_service('timestamp/get', self.get_timestamp_service)
@@ -46,14 +37,14 @@ class Timestamp(Hass):
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.status_event, 'timestamps')
 
-        for name in self.timestamps:
+        for name in self.const.TIMESTAMPS:
             if name == 'tap':
                 self.ts[name] = None
             else:
                 self.ts[name] = datetime.now() + timedelta(minutes=-15)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised', level='WARNING')
+        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
