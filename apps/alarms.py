@@ -12,6 +12,7 @@
 # import traceback
 import random
 import time
+# import re
 from datetime import datetime, timedelta
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
@@ -33,7 +34,7 @@ class Alarms(Hass):
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
-        """."""
+        """initialise alarms"""
 
         self.lib = AutomationLib(self)
         self.const = ConstantsManagement(self)
@@ -75,19 +76,18 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def set_alarm_state_async(self, kwargs):
+    # async def set_alarm_state_async(self, kwargs):
 
-        # self.set_early_alarm()
-        # self.set_normal_alarm()
-        # self.show_alarm_time('early')
-        self.show_alarm_time('normal')
+    #     # self.set_early_alarm()
+    #     # self.set_normal_alarm()
+    #     # self.show_alarm_time('early')
+    #     self.show_alarm_time('normal')
 
 # -----------------------------------------------------------------------------------
 
     def set_alarm_state(self, kwargs):
 
         if self.get_state('input_boolean.alarms_disabled') == 'on':
-            print('here')
             self.cancel_alarms()
             self.set_state('input_boolean.early_alarm', state='off')
             self.set_state('input_boolean.normal_alarm', state='off')
@@ -460,6 +460,8 @@ class Alarms(Hass):
                 self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=volume/100.0)
                 time.sleep(sleeptime)
 
+        self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=volume/200.0)
+
         self.lib.log_function_name(False)
 
 # -----------------------------------------------------------------------------------
@@ -616,7 +618,7 @@ class Alarms(Hass):
         rota = []
         current_date = start_date
 
-        for cycle in range(num_cycles):
+        for _ in range(num_cycles):
             for days, shift in pattern:
                 for _ in range(days):
                     rota.append((current_date, shift))
@@ -643,18 +645,5 @@ class Alarms(Hass):
             timer = None
             if message is not None:
                 self.log(f'\t{message} cancelled', level='DEBUG')
-
-# -----------------------------------------------------------------------------------
-
-    # def add_shift_calendar_events(self, kwargs):
-
-    #     # print(self.rota)
-    #     for a_date, shift in self.rota:
-    #         # print(f'{date} {shift}')
-    #         if shift != 'Off':
-    #             end_date = a_date + timedelta(days=1)
-    #             self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
-
-    #     self.call_service('calendar/create_event', entity_id='calendar.shifts', summary=shift, description=shift, start_date=str(a_date), end_date=str(end_date))
 
 # -----------------------------------------------------------------------------------
