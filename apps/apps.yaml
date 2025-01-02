@@ -160,3 +160,19 @@ vacuum:
 #   dependencies:
 #     - automationlib
 #     - announcer
+alarms2:
+  module: alarms_async
+  class: Alarms2
+  log_level: DEBUG
+  dependencies:
+    - automationlib
+    - const
+    - announcer
+snoozer:
+  module: snoozer
+  class: Snoozer
+  log_level: DEBUG
+  dependencies:
+    - automationlib
+    - const
+    - announcer
