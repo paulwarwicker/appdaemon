@@ -35,12 +35,16 @@ class AutomationConstants:
     GARAGE2 = 'light.garage_2'
     DINING1 = 'light.dining_room_1'
     DINING2 = 'light.dining_room_2'
+    LIVING1 = 'light.living_room_1'
+    LIVING2 = 'light.living_room_2'
+    LIVING3 = 'light.living_room_3'
     UTILITY = 'light.utility_room_1'
     KITCHEN = 'light.kitchen'  # group
     LANDING = 'light.hallway_3'
     RADIATOR = 'light.radiator'
     HALLWAY1 = 'light.hallway_1'
     HALLWAY2 = 'light.hallway_2'
+    HALLWAY3 = 'light.hallway_3'
     BEDROOM1 = 'light.lumie'
     BEDROOM2 = 'light.bedroom_2'
     BEDROOM3 = 'light.bedroom_3'
@@ -56,15 +60,19 @@ class AutomationConstants:
 
     DINING_LIGHTS = [DINING1, DINING2]
     BEDROOM_LIGHTS = [BEDROOM1, BEDROOM2, BEDROOM3]
-    HALLWAY_LIGHTS = [HALLWAY1, HALLWAY1]
+    HALLWAY_LIGHTS = [HALLWAY1, HALLWAY2, HALLWAY3]
 
     OUTSIDE_LIGHTS = [GARAGE, FRONT_DOOR, GARDEN]
     WELCOME_LIGHTS = [HALLWAY1, FRONT_DOOR, STANDARD_LAMP]
     NIGHTTIME_LIGHTS = [HALLWAY1, BANNISTER]
-    LIVING_ROOM_LIGHTS = [RADIATOR, TABLE_LAMP, STANDARD_LAMP]
+    LIVING_ROOM_LIGHTS = [RADIATOR, TABLE_LAMP, STANDARD_LAMP, LIVING1, LIVING2, LIVING3]
     HALLWAY_GARAGE_LIGHTS = [HALLWAY1, GARAGE, FRONT_DOOR]
     FRONT_DOOR_DING_LIGHTS = [HALLWAY1, FRONT_DOOR]
 
+    HALLWAY_GARAGE_LIGHTS = [HALLWAY1, GARAGE, FRONT_DOOR]
+    FRONT_DOOR_DING_LIGHTS = [HALLWAY1, FRONT_DOOR]
+
+    # DINING_LIGHTS + BEDROOM_LIGHTS + HALLWAY_LIGHTS + OUTSIDE_LIGHTS + LIVING_ROOM_LIGHTS
     # ALL_LIGHTS = [RADIATOR, TABLE_LAMP, STANDARD_LAMP, BANNISTER, HALLWAY1, HALLWAY2, DINING1, DINING2, FRONT_DOOR, UTILITY, LANDING, LUMIE, GARAGE, KITCHEN, KITCHEN_FLOOR, LOFT, STUDY, BEDROOM1, BEDROOM2, BEDROOM3, GARDEN]  # type: ignore # pylint: disable=C0301
     ALL_LIGHTS = [UPSTAIRS, DOWNSTAIRS]
 
@@ -77,15 +85,17 @@ class AutomationConstants:
     NIGHT_COLLECT = [5, 23]
     DEFAULT = [11, 0]
     STUDY_SPEAKER = 'media_player.study'
+    DINING_SPEAKER = 'media_player.dining_room'
     KITCHEN_SPEAKER = 'media_player.kitchen'
     BEDROOM_SPEAKER = 'media_player.bedroom'
     BEDROOM2_SPEAKER = 'media_player.bedroom_2'
     BATHROOM_SPEAKER = 'media_player.bathroom'
     SOUNDBAR_SPEAKER = 'media_player.living_room'
-    ALL_SPEAKER_ENTITY_ID = [STUDY_SPEAKER, KITCHEN_SPEAKER, BEDROOM_SPEAKER, BEDROOM2_SPEAKER, BATHROOM_SPEAKER]
+    BROADCAST_ENTITY_ID = [STUDY_SPEAKER, KITCHEN_SPEAKER, BEDROOM_SPEAKER, BEDROOM2_SPEAKER, BATHROOM_SPEAKER, DINING_SPEAKER]
+    ALL_SPEAKER_ENTITY_ID = [STUDY_SPEAKER, KITCHEN_SPEAKER, BEDROOM_SPEAKER, BEDROOM2_SPEAKER, BATHROOM_SPEAKER, DINING_SPEAKER, SOUNDBAR_SPEAKER]
 
     BACKUP_STREAM = 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1'
-    TARGET_VOLUME = 50
+    TARGET_VOLUME = 40
     ATTEMPTS = 5
     PLAY_DELAY = 0.75
     DEFAULT_VOLUME = 0.15
@@ -152,7 +162,9 @@ class AutomationConstants:
     # tap
     DAILY_WATERING_MINUTES = 30
 
-    TIMESTAMPS = ('upstairs','downstairs','prev_upstairs','karoq_announce','karoq_notification','garage','vacuum','general','travel', 'tap')
+    # timestamps initialised in automation
+    TIMESTAMPS = ('upstairs','downstairs','prev_upstairs','karoq_announce','karoq_notification','garage','garage_lights', 'vacuum','general','travel', 'tap')
+
 # ConstantsManagement class
 class ConstantsManagement:
     """Documentation for ConstantsManagement"""
