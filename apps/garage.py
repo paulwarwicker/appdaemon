@@ -7,6 +7,7 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
+import time
 from datetime import datetime
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
@@ -37,6 +38,7 @@ class Garage(Hass):
 
         self.listen_event(self.garage_open_event, 'garage_open')
         self.listen_event(self.garage_close_event, 'garage_close')
+        self.listen_event(self.garage_open_close_event, 'garage_open_close')
 
         runtime = datetime(2024, 1, 1, 0, 0, 0)
         self.run_hourly(self.close_garage_door, runtime)
@@ -53,14 +55,14 @@ class Garage(Hass):
     def garage_open_service(self, namespace, domain, service, kwargs) -> None:
         """open the garage"""
 
-        self.garage_door_open('','','','',{})
+        self.fire_event('garage_open')
 
 # -----------------------------------------------------------------------------------
 
     def garage_close_service(self, namespace, domain, service, kwargs) -> None:
-        """open the garage"""
+        """close the garage"""
 
-        self.garage_door_close('','','','',{})
+        self.fire_event('garage_close')
 
 # -----------------------------------------------------------------------------------
 
@@ -68,7 +70,8 @@ class Garage(Hass):
 
         self.lib.log_function_name(True, True)
 
-        self.call_service('garage/open')
+        self.call_service('timestamp/set', name='garage')
+        self.garage_door_open('','','','',{})
 
 # -----------------------------------------------------------------------------------
 
@@ -76,7 +79,18 @@ class Garage(Hass):
 
         self.lib.log_function_name(True, True)
 
-        self.call_service('garage/close')
+        self.call_service('timestamp/set', name='garage')
+        self.garage_door_close('','','','',{})
+
+# -----------------------------------------------------------------------------------
+
+    def garage_open_close_event(self, event, data, kwargs:dict) -> None:
+
+        self.lib.log_function_name(True, True)
+
+        self.fire_event('garage_open')
+        time.sleep(30)
+        self.fire_event('garage_close')
 
 # -----------------------------------------------------------------------------------
 
@@ -103,10 +117,10 @@ class Garage(Hass):
 
         if new == 'opening':
             if below:
-                self.call_service('lighting/garage_on', seconds=self.lib.interval(minutes=30), cb='garage_off', key='garage')
+                self.call_service('lighting/garage_on', seconds=self.lib.interval(minutes=30), cb='garage_off', key='garage_lights')
         elif new == 'closed':
             if below:
-                self.call_service('lighting/garage_off', seconds=self.lib.interval(minutes=1), cb='garage_off', key='garage')
+                self.call_service('lighting/garage_off', seconds=self.lib.interval(minutes=1), cb='garage_off', key='garage_lights')
 
         self.garage_door_announce(state=new)
 
@@ -153,6 +167,7 @@ class Garage(Hass):
             message = 'The garage door is closed'
         elif state == 'open':
             message = 'The garage door is open'
+            time.sleep(4.0) # just delay open announcement because this will be triggered immediately after opening
         elif state == 'unavailable':
             return
         else:
