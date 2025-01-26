@@ -26,11 +26,12 @@ class AutomationConstants:
     APP_THREADS = 20
 
     # lighting
+    COOKER_LIGHTS = 'switch.cooker_lights'
+
     LOFT = 'light.loft'
     LUMIE = 'light.lumie'
     STUDY = 'light.study'
     GARDEN = 'light.garden_light'
-    GARAGE = 'light.garage'  # group
     GARAGE1 = 'light.garage_1'
     GARAGE2 = 'light.garage_2'
     DINING1 = 'light.dining_room_1'
@@ -39,7 +40,6 @@ class AutomationConstants:
     LIVING2 = 'light.living_room_2'
     LIVING3 = 'light.living_room_3'
     UTILITY = 'light.utility_room_1'
-    KITCHEN = 'light.kitchen'  # group
     LANDING = 'light.hallway_3'
     RADIATOR = 'light.radiator'
     HALLWAY1 = 'light.hallway_1'
@@ -54,27 +54,27 @@ class AutomationConstants:
     FRONT_DOOR = 'light.front_door_1'
     DOWNSTAIRS = 'light.downstairs'
     STANDARD_LAMP = 'light.standard_lamp_1'
-    KITCHEN_FLOOR = 'light.kitchen_floor'  # group
 
-    COOKER_LIGHTS = 'switch.cooker_lights'
+    # groups
+    GARAGE_LIGHTS = 'light.garage_lights'
+    KITCHEN_LIGHTS = 'light.kitchen_lights'
+    BEDROOM_LIGHTS = 'light.bedroom_lights'
+    DINING_ROOM_LIGHTS = 'light.dining_room_lights'
+    LIVING_ROOM_LIGHTS = 'light.living_room_lights'
+    UTILITY_ROOM_LIGHTS = 'light.utility_room_lights'
+    KITCHEN_FLOOR_LIGHTS = 'light.kitchen_floor_lights'
+    HOME_LIGHTS = 'light.home'
 
-    DINING_LIGHTS = [DINING1, DINING2]
-    BEDROOM_LIGHTS = [BEDROOM1, BEDROOM2, BEDROOM3]
+    LIVING_ROOM = [RADIATOR, TABLE_LAMP, STANDARD_LAMP]
+
     HALLWAY_LIGHTS = [HALLWAY1, HALLWAY2, HALLWAY3]
 
-    OUTSIDE_LIGHTS = [GARAGE, FRONT_DOOR, GARDEN]
+    OUTSIDE_LIGHTS = [GARAGE_LIGHTS, FRONT_DOOR, GARDEN]
     WELCOME_LIGHTS = [HALLWAY1, FRONT_DOOR, STANDARD_LAMP]
     NIGHTTIME_LIGHTS = [HALLWAY1, BANNISTER]
-    LIVING_ROOM_LIGHTS = [RADIATOR, TABLE_LAMP, STANDARD_LAMP, LIVING1, LIVING2, LIVING3]
-    HALLWAY_GARAGE_LIGHTS = [HALLWAY1, GARAGE, FRONT_DOOR]
     FRONT_DOOR_DING_LIGHTS = [HALLWAY1, FRONT_DOOR]
 
-    HALLWAY_GARAGE_LIGHTS = [HALLWAY1, GARAGE, FRONT_DOOR]
-    FRONT_DOOR_DING_LIGHTS = [HALLWAY1, FRONT_DOOR]
-
-    # DINING_LIGHTS + BEDROOM_LIGHTS + HALLWAY_LIGHTS + OUTSIDE_LIGHTS + LIVING_ROOM_LIGHTS
-    # ALL_LIGHTS = [RADIATOR, TABLE_LAMP, STANDARD_LAMP, BANNISTER, HALLWAY1, HALLWAY2, DINING1, DINING2, FRONT_DOOR, UTILITY, LANDING, LUMIE, GARAGE, KITCHEN, KITCHEN_FLOOR, LOFT, STUDY, BEDROOM1, BEDROOM2, BEDROOM3, GARDEN]  # type: ignore # pylint: disable=C0301
-    ALL_LIGHTS = [UPSTAIRS, DOWNSTAIRS]
+    ALL_LIGHTS = [HOME_LIGHTS]
 
     N_HALLWAY_ENTITIES = 3
     N_KITCHEN_ENTITIES = 6
@@ -88,11 +88,11 @@ class AutomationConstants:
     DINING_SPEAKER = 'media_player.dining_room'
     KITCHEN_SPEAKER = 'media_player.kitchen'
     BEDROOM_SPEAKER = 'media_player.bedroom'
-    BEDROOM2_SPEAKER = 'media_player.bedroom_2'
+    HALLWAY_SPEAKER = 'media_player.hallway'
     BATHROOM_SPEAKER = 'media_player.bathroom'
     SOUNDBAR_SPEAKER = 'media_player.living_room'
-    BROADCAST_ENTITY_ID = [STUDY_SPEAKER, KITCHEN_SPEAKER, BEDROOM_SPEAKER, BEDROOM2_SPEAKER, BATHROOM_SPEAKER, DINING_SPEAKER]
-    ALL_SPEAKER_ENTITY_ID = [STUDY_SPEAKER, KITCHEN_SPEAKER, BEDROOM_SPEAKER, BEDROOM2_SPEAKER, BATHROOM_SPEAKER, DINING_SPEAKER, SOUNDBAR_SPEAKER]
+    BROADCAST_ENTITY_ID = [STUDY_SPEAKER, KITCHEN_SPEAKER, BEDROOM_SPEAKER, BATHROOM_SPEAKER, DINING_SPEAKER]
+    ALL_SPEAKER_ENTITY_ID = [STUDY_SPEAKER, KITCHEN_SPEAKER, BEDROOM_SPEAKER, HALLWAY_SPEAKER, BATHROOM_SPEAKER, DINING_SPEAKER, SOUNDBAR_SPEAKER]
 
     BACKUP_STREAM = 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1'
     TARGET_VOLUME = 40
@@ -100,14 +100,13 @@ class AutomationConstants:
     PLAY_DELAY = 0.75
     DEFAULT_VOLUME = 0.15
     NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1']
+    CHRISTMAS_STREAM = 'aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1'
+    BOSSANOVA_STREAM = 'aac://http://prem2.radiotunes.com:80/smoothbossanova?5fba91be81f6da5b573f89c1'
 
-    # 'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1', # birdsong garden morning
     # 'x-sonos-spotify:spotify%3atrack%3a1r4QKeqpv1ov8FkrgKDxQ7?sid=9&flags=8224&sn=1', # a gentle thunderstorm
     # 'x-sonos-spotify:spotify%3atrack%3a2T5Lipk1QTtvt76Xjcwrxc?sid=9&flags=8224&sn=1', # heavy thunderstorm sounds
     # 'x-sonos-spotify:spotify%3atrack%3a1E0jvxVMYcnZbjvrs03Yay?sid=9&flags=8224&sn=1', # thunderstorm sounds with rain and loud claps of thunder for all isomniacs
     # 'x-sonos-spotify:spotify%3atrack%3a49kbhMUlsVPp0fOdTOCgNM?sid=9&flags=8224&sn=1', # extreme thunderstorm soubnds with torrential rain & very loud thunder claps
-    # 'x-sonos-spotify:spotify%3atrack%3a2cwKtKEhPn6ZnJmlzbmpLQ?sid=9&flags=8224&sn=1', # the early morning rain
-    # 'x-sonos-spotify:spotify%3atrack%3a4G6Lz9Et6dhLKydPyY4N9a?sid=9&flags=8224&sn=1', # rain drops dancing on a tin roof
     # 'x-sonos-spotify:spotify%3atrack%3a16D3zoIJWuEbXFfkzXSIqs?sid=9&flags=8224&sn=1', # an angry thunderstorm
     # 'x-sonos-spotify:spotify%3atrack%3a6H5aGE9xZEPkpeEAn4f7b8?sid=9&flags=8224&sn=1', # thunderstorm
     # 'x-sonos-spotify:spotify%3atrack%3a3UdClX9rDMiYUOIl6JWaRo?sid=9&flags=8224&sn=1', # heavy thunderstorm
@@ -126,6 +125,9 @@ class AutomationConstants:
                     'aac://http://prem2.zenradio.com:80/zrchillout_aac?5fba91be81f6da5b573f89c1',
                     'aac://http://prem2.zenradio.com:80/zratmosphericdreams_aac?5fba91be81f6da5b573f89c1',
                     'aac://http://prem2.zenradio.com:80/zrspacedreams_aac?5fba91be81f6da5b573f89c1',
+                    'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1', # birdsong garden morning
+                    'x-sonos-spotify:spotify%3atrack%3a2cwKtKEhPn6ZnJmlzbmpLQ?sid=9&flags=8224&sn=1', # the early morning rain
+                    'x-sonos-spotify:spotify%3atrack%3a4G6Lz9Et6dhLKydPyY4N9a?sid=9&flags=8224&sn=1', # rain drops dancing on a tin roof
                 ]
 
     # garage
@@ -157,6 +159,7 @@ class AutomationConstants:
         'proximity.papworth': ['papworth','Papworh Hospital'],
         'proximity.home': ['home', 'Max is home'],
         'proximity.jollop_place': ['jollop_place', 'Jollop Place'],
+        'proximity.c_r_t_offsite': ['c_r_t_offsite','C R T Offsite meeting'],
     }
 
     # tap
@@ -164,6 +167,9 @@ class AutomationConstants:
 
     # timestamps initialised in automation
     TIMESTAMPS = ('upstairs','downstairs','prev_upstairs','karoq_announce','karoq_notification','garage','garage_lights', 'vacuum','general','travel', 'tap')
+
+    BEDROOM_BUTTON = 'shellybutton1-C8C9A33CDF09'
+    GARAGE_BUTTON = 'shellybutton1-EC64C9C4F038'
 
 # ConstantsManagement class
 class ConstantsManagement:

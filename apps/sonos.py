@@ -46,10 +46,11 @@ class Sonos(Hass):
         self.listen_event(self.test_sonos_event, 'sonos')
         self.listen_event(self.mute_all_event, 'mute_all')
         self.listen_event(self.unjoin_all_event, 'unjoin_all')
-        self.listen_event(self.play_christmas_event, 'play_christmas')
+        self.listen_event(self.play_hallway_event, 'play_hallway')
+        self.listen_event(self.stop_hallway_event, 'stop_hallway')
 
-        self.run_daily(self.play_christmas, '07:45:00')
-        self.run_daily(self.stop_bedroom2, '21:00:00')
+        self.run_daily(self.play_hallway, '07:45:00')
+        self.run_daily(self.stop_hallway, '21:00:00')
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
@@ -59,19 +60,19 @@ class Sonos(Hass):
 
     async def mute_all_service(self, namespace, domain, service, kwargs) -> None:
 
-        self._configure(self.const.ALL_SPEAKER_ENTITY_ID, {}, unjoin=False, join=False, mute=True)
+        self._configure(self.const.BROADCAST_ENTITY_ID, {}, unjoin=False, join=False, mute=True)
 
 # -----------------------------------------------------------------------------------
 
     async def unjoin_all_service(self, namespace, domain, service, kwargs) -> None:
 
-        self._configure(self.const.ALL_SPEAKER_ENTITY_ID, {}, unjoin=True, join=False, mute=False)
+        self._configure(self.const.BROADCAST_ENTITY_ID, {}, unjoin=True, join=False, mute=False)
 
 # -----------------------------------------------------------------------------------
 
     async def mute_unjoin_all_service(self, namespace, domain, service, kwargs) -> None:
 
-        self._configure(self.const.ALL_SPEAKER_ENTITY_ID, {}, unjoin=True, join=False, mute=True)
+        self._configure(self.const.BROADCAST_ENTITY_ID, {}, unjoin=True, join=False, mute=True)
 
 # -----------------------------------------------------------------------------------
 
@@ -140,7 +141,7 @@ class Sonos(Hass):
 
         status = '\n'
 
-        for entity_id in self.const.ALL_SPEAKER_ENTITY_ID:
+        for entity_id in self.const.BROADCAST_ENTITY_ID:
             playing = self.lib.is_playing(entity_id)
             status += f'\n\tentity_id={entity_id} is_playing={playing}\n\n'
             attributes = self.get_state(entity_id=entity_id, attribute="all")
@@ -152,9 +153,16 @@ class Sonos(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def play_christmas_event(self, event, data, kwargs):
+    def play_hallway_event(self, event, data, kwargs):
 
-        self.play_christmas({})
+        self.play_hallway({})
+
+# -----------------------------------------------------------------------------------
+
+    def stop_hallway_event(self, event, data, kwargs):
+
+        self.lib.log_function_name(True, True)
+        self.stop_hallway({})
 
 # -----------------------------------------------------------------------------------
 
@@ -221,7 +229,7 @@ class Sonos(Hass):
 
         self.log(f'study_playing={self.lib.is_playing(self.const.STUDY_SPEAKER)}')
         self.log(f'bedroom_playing={self.lib.is_playing(self.const.BEDROOM_SPEAKER)}')
-        self.log(f'bedroom2_playing={self.lib.is_playing(self.const.BEDROOM2_SPEAKER)}')
+        self.log(f'bedroom2_playing={self.lib.is_playing(self.const.HALLWAY_SPEAKER)}')
 
 # -----------------------------------------------------------------------------------
 
@@ -248,15 +256,15 @@ class Sonos(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def play_christmas(self, kwargs):
+    def play_hallway(self, kwargs):
 
-        self.play_thing({'entity_id': self.const.BEDROOM2_SPEAKER, 'volume_level': 0.02, 'media_content_id': 'aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1'})
+        self.play_thing({'entity_id': self.const.HALLWAY_SPEAKER, 'volume_level': 0.02, 'media_content_id': self.const.BOSSANOVA_STREAM, 'delay': False})
 
 # -----------------------------------------------------------------------------------
 
-    def stop_bedroom2(self, kwargs):
+    def stop_hallway(self, kwargs):
 
-        self.call_service('media_player/media_stop', entity_id=self.const.BEDROOM2_SPEAKER)
+        self.call_service('media_player/media_stop', entity_id=self.const.HALLWAY_SPEAKER)
 
 # -----------------------------------------------------------------------------------
 
@@ -344,6 +352,7 @@ class Sonos(Hass):
         entity_id = kwargs['entity_id']
         volume_level = kwargs.get('volume_level', 0.15)
         media_content_id = kwargs['media_content_id']
+        delay = kwargs.get('delay', True)
 
         self.call_service('sonos/unjoin_entity', entity_id=entity_id)
         self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
@@ -374,10 +383,13 @@ class Sonos(Hass):
         incr_volume = target_volume * (2.5/100.0)  # 2.5% increase in volume
         sleeptime = span/divisor
 
-        while volume < target_volume:
-            volume += incr_volume
-            self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=volume/100.0)
-            time.sleep(sleeptime)
+        if delay:
+            while volume < target_volume:
+                volume += incr_volume
+                self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=volume/100.0)
+                time.sleep(sleeptime)
+        else:
+            self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=volume_level)
 
         self.lib.log_function_name(False, True)
 

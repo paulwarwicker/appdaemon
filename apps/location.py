@@ -64,6 +64,7 @@ class Location(Hass):
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Sainsburys_Eddington', location='proximity.sainsburys_eddington')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Waitrose_Trumpington', location='proximity.waitrose_trumpington')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Jollop_Place', location='proximity.jollop_place')
+        self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='C_R_T_offsite', location='proximity.c_r_t_offsite')
 
         self.listen_event(self.test_max_home_event, 'max_home')
         self.listen_event(self.test_paul_home_event, 'paul_home')

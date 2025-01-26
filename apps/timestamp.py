@@ -33,15 +33,10 @@ class Timestamp(Hass):
         self.register_service('timestamp/set', self.set_timestamp_service)
         self.register_service('timestamp/get', self.get_timestamp_service)
         self.register_service('timestamp/status', self.status_service)
+        self.register_service('timestamp/init', self.init_timestamp_service)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.status_event, 'timestamps')
-
-        for name in self.const.TIMESTAMPS:
-            if name == 'tap':
-                self.ts[name] = None
-            else:
-                self.ts[name] = datetime.now() + timedelta(minutes=-15)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised --------------------------------------------------------------------', level='INFO')
@@ -65,27 +60,8 @@ class Timestamp(Hass):
 
             self.ts[name] = ts
 
-            # if name == "travel":
-            #     self.travel_announce_ts = ts
-            # elif name == "garage":
-            #     self.garage_announce_ts = ts
-            # elif name == "karoq":
-            #     self.karoq_announce_ts = ts
-            # elif name == "tap":
-            #     self.tap_ts = ts
-            # elif name == "general":
-            #     self.general_announce_ts = ts
-            # elif name == "upstairs":
-            #     self.upstairs_ts = ts
-            # elif name == "downstairs":
-            #     self.downstairs_ts = ts
-            # elif name == "prev_upstairs":
-            #     self.prev_upstairs_ts = ts
-            # elif name == "vacuum":
-            #     self.vacuum_announce_ts = ts
-
             if self.lib.get_verbose_debug():
-                self.log(f'\t\t{name} timestamp set to {ts}', level='DEBUG')
+                self.log(f'\t{name} timestamp set to {ts}', level='DEBUG')
 
 # -----------------------------------------------------------------------------------
 
@@ -98,28 +74,18 @@ class Timestamp(Hass):
         if name is not None:
             ts = self.ts[name]
 
-            # if name == "travel":
-            #     ts = self.travel_announce_ts
-            # elif name == "garage":
-            #     ts = self.garage_announce_ts
-            # elif name == "karoq":
-            #     ts = self.karoq_announce_ts
-            # elif name == "tap":
-            #     ts = self.tap_ts
-            # elif name == "general":
-            #     ts = self.general_announce_ts
-            # elif name == "upstairs":
-            #     ts = self.upstairs_ts
-            # elif name == "downstairs":
-            #     ts = self.downstairs_ts
-            # elif name == "prev_upstairs":
-            #     ts = self.prev_upstairs_ts
-            # elif name == "initialise":
-            #     ts = self.initialise_ts
-            # elif name == "vacuum":
-            #     ts = self.vacuum_announce_ts
-
         return ts
+
+# -----------------------------------------------------------------------------------
+
+    def init_timestamp_service(self, namespace, domain, service, kwargs) -> None:
+        """initialise timestamps"""
+
+        for name in self.const.TIMESTAMPS:
+            if name == 'tap':
+                self.ts[name] = None
+            else:
+                self.ts[name] = datetime.now() + timedelta(minutes=-15)
 
 # -----------------------------------------------------------------------------------
 

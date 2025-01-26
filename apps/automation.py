@@ -73,29 +73,18 @@ class Automation(Hass):
         self.run_minutely(self.maxine_travel_time_to_home, runtime)
         self.run_minutely(self.fix_audio_delay, runtime)
 
-        runtime = datetime(2024, 1, 1, 0, 0, 0)
+        # runtime = datetime(2024, 1, 1, 0, 0, 0)
         # self.run_hourly(...)
 
         self.set_all_state({})
         self._set_console_log_level()
 
-        offset = timedelta(minutes=-15)
-        self.call_service('timestamp/set', name='tap')
-        self.call_service('timestamp/set', name='upstairs')
-        self.call_service('timestamp/set', name='prev_upstairs', offset=offset)
-        self.call_service('timestamp/set', name='downstairs')
-        self.call_service('timestamp/set', name='karoq')
-        self.call_service('timestamp/set', name='garage')
-        self.call_service('timestamp/set', name='vacuum')
-        self.call_service('timestamp/set', name='general', offset=offset)
-        self.call_service('timestamp/set', name='travel', offset=offset)
-
+        self.call_service('timestamp/init')
         # self.fire_event('timestamps')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised --------------------------------------------------------------------', level='INFO')
 
-        # self.dummy()
         self.test({})
 
 # -----------------------------------------------------------------------------------
@@ -103,7 +92,7 @@ class Automation(Hass):
     def test(self, kwargs) -> None:
         """test method"""
 
-        self.lib.log_function_name()
+        self.lib.log_function_name(True, True)
 
         # traceback.print_stack() # leave
 

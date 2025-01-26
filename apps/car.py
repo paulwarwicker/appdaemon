@@ -20,6 +20,7 @@ class Car(Hass):
     const = None
     _latitude = -180
     _longitude = -180
+    locked = None
 
 # -----------------------------------------------------------------------------------
 
@@ -28,11 +29,11 @@ class Car(Hass):
 
         self.lib = AutomationLib(self)
         self.const = ConstantsManagement(self)
+        self.locked = self.get_state(self.const.SENSOR_ENTITY_ID) == 'off'
 
         self.listen_state(self.car_door, self.const.SENSOR_ENTITY_ID)
 
-        runtime = datetime(2024, 1, 1)
-        self.run_minutely(self.check_status, runtime)
+        self.run_minutely(self.check_status, datetime(2024, 1, 1))
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
@@ -50,6 +51,7 @@ class Car(Hass):
         if state == 'unknown':
             self.log(f'\tupdate entities {self.const.SENSOR_ENTITY_LIST}')
             self.update()
+            return # check again next iteration
 
         tracker = self.get_state(self.const.DEVICE_TRACKER_ID, attribute='all') # device_tracker.skoda_karoq_position
         location = tracker['state']
@@ -76,12 +78,12 @@ class Car(Hass):
         locked = state == 'off'
         lock_state = 'locked' if locked else 'unlocked'
 
-        if verbose and not locked and not home:
-            ts = self.call_service('timestamp/get', name='karoq', return_result=True)
-            level = 'ERROR' if (state in ('unavailable', 'unknown')) or (location in ('unavailable', 'unknown')) else 'DEBUG'
-            self.log(f'\tstate={state} location={location} locked={locked} lock_state={lock_state} tracker={tracker} ts={ts}', level=level)
+        if not locked and not self.locked:
+            if verbose and not home:
+                ts = self.call_service('timestamp/get', name='karoq_announce', return_result=True)
+                level = 'ERROR' if (state in ('unavailable', 'unknown')) or (location in ('unavailable', 'unknown')) else 'DEBUG'
+                self.log(f'\tstate={state} location={location} locked={locked} lock_state={lock_state} tracker={tracker} ts={ts} (karoq_announce)', level=level)
 
-        if not locked:
             if self.lib.is_after(16):
                 # message='The car door is unlocked'
                 message='The car door is unlocked. A lock request has been sent'
@@ -123,6 +125,8 @@ class Car(Hass):
             # diff = (datetime.now() - ts).seconds
             # if diff > self.lib.interval(minutes=60):
             #     self.announce()
+        else:
+            self.locked = locked
 
 # -----------------------------------------------------------------------------------
 
@@ -140,8 +144,8 @@ class Car(Hass):
         else:
             self.update()
 
-        if message:
-            self.call_service('announcer/broadcast', message=message, timestamp='karoq')
+        if message is not None:
+            self.call_service('announcer/broadcast', message=message, timestamp='karoq_announce')
 
 # -----------------------------------------------------------------------------------
 

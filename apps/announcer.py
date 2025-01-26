@@ -178,17 +178,19 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         #     traceback.print_stack()
         #     return
 
-        # entity_id = [entity_id] if isinstance(entity_list, str) else self.const.ALL_SPEAKER_ENTITY_ID
+        # entity_id = [entity_id] if isinstance(entity_list, str) else self.const.BROADCAST_ENTITY_ID
 
         if self.lib.get_testing():
             entity_ids = [self.const.STUDY_SPEAKER]
         else:
-            entity_ids = self.const.ALL_SPEAKER_ENTITY_ID if entity_id is None else [entity_id]
+            entity_ids = self.const.BROADCAST_ENTITY_ID if entity_id is None else [entity_id]
 
         if self.announceable(announce) or force:
             if verbose:
                 self.log(f'\tin announce\t{uu_id} message="{message}" timestamp={timestamp} announce={announce} force={force} entity_ids={entity_ids}', level='WARNING')
 
+            self.call_service('media_player/play_media', entity_id=entity_ids, media_content_type='music', media_content_id='http://homeassistant.local:8123/local/bing.mp3', announce=True, extra={'volume': 0.5})
+            time.sleep(1.0) # give it time to play
             self.call_service('media_player/play_media',
                             entity_id=entity_ids,
                             media_content_type='music',

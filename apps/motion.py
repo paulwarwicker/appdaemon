@@ -45,8 +45,8 @@ class Motion(Hass):
 
         self.listen_state(self.kitchen_motion, 'binary_sensor.kitchen_sensor_motion', old='off', new='on', seconds=5*60, key='kitchen', cb='kitchen_off')
         self.listen_state(self.utility_motion, 'binary_sensor.utility_room_motion_sensor_motion', old='off', new='on', seconds=5*60, key='utility', cb='utility_off')
-        self.listen_state(self.garage_motion, 'binary_sensor.garage_sensor_motion', old='off', new='on', seconds=10*60, key='garage', cb='garage_off')
-        self.listen_state(self.garage_motion, 'binary_sensor.garage_sensor_motion', old='on', new='off', seconds=5*60, key='garage', cb='garage_off')
+        self.listen_state(self.garage_motion, 'binary_sensor.garage_sensor_motion', old='off', new='on', seconds=10*60, key='garage_lights', cb='garage_on')
+        self.listen_state(self.garage_motion, 'binary_sensor.garage_sensor_motion', old='on', new='off', seconds=5*60, key='garage_lights', cb='garage_off')
         self.listen_state(self.downstairs_motion, 'binary_sensor.downstairs_sensor_motion', old='off', new='on', seconds=5*60, key='downstairs', cb='bannister_off')
         self.listen_state(self.upstairs_motion, 'binary_sensor.upstairs_sensor_motion', old='off', new='on', seconds=10*60, key='upstairs', cb='bannister_off')
         self.listen_state(self.front_door_motion, 'binary_sensor.front_door_motion')
@@ -75,31 +75,38 @@ class Motion(Hass):
 # -----------------------------------------------------------------------------------
 
     def garage_motion_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
-        """reset downstairs motion flag"""
+        """garage motion detected"""
 
-        self.call_service('light/turn_on', entity_id=self.const.GARAGE2)
+        ts = self.call_service('timestamp/get', name='garage', return_result=True)
+        diff = (datetime.now() - ts).seconds
+
+        if diff > self.lib.interval(seconds=10):
+            self.call_service('light/turn_on', entity_id=self.const.GARAGE2)
 
 # -----------------------------------------------------------------------------------
 
     def upstairs_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
-        # self.lib.log_function_name()
-
         upstairs_ts = datetime.now()
         prev_upstairs_ts = self.call_service('timestamp/get', name='upstairs', return_result=True) # we return current as previous here because we will reset current shortly
         downstairs_ts = self.call_service('timestamp/get', name='downstairs', return_result=True)
+        front_door_ts = self.call_service('timestamp/get', name='front_door_motion', return_result=True)
 
         self.call_service('timestamp/set', name='prev_upstairs', value=prev_upstairs_ts)
         self.call_service('timestamp/set', name='upstairs', value=upstairs_ts)
 
         diff1 = (upstairs_ts - downstairs_ts).seconds
         diff2 = (upstairs_ts - prev_upstairs_ts).seconds
+        diff3 = (upstairs_ts - front_door_ts).seconds
 
         if self.lib.get_verbose_debug():
-            self.log(f'\tu={upstairs_ts} d={downstairs_ts} p={prev_upstairs_ts}', level='DEBUG')
-            self.log(f'\tdiff1={diff1} diff2={diff2}', level='DEBUG')
+            self.log(f'\tu={upstairs_ts} d={downstairs_ts} p={prev_upstairs_ts} f={front_door_ts}', level='DEBUG')
+            self.log(f'\tdiff1={diff1} diff2={diff2} diff3={diff3}', level='DEBUG')
 
-        if diff1 <= 300:
+        if diff3 < 120:
+            self.run_in(self.all_off, 20)
+            return
+        elif diff1 <= 300:
             timer = 600 # 10m timer for bannister if less than 300 seconds difference
             self.call_service('lighting/lumie_on') # lumie_on will check time of day
         elif diff1 > 300 and diff2 <= 120:
@@ -112,41 +119,59 @@ class Motion(Hass):
 
         self.stairs_motion(**kwargs)
 
-        # self.lib.log_function_name(False)
-
 # -----------------------------------------------------------------------------------
 
     def downstairs_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
-        # self.lib.log_function_name()
-
-        verbose = self.lib.get_verbose_debug()
         self.downstairs_motion_flag = True
+        self.call_service('timestamp/set', name='downstairs')
 
-        if verbose:
+        self.check_downstairs_motion()
+
+        if self.lib.get_verbose_debug():
             self.log(f'\tdownstairs_motion_flag={self.downstairs_motion_flag}', level='DEBUG')
 
-        self.call_service('timestamp/set', name='downstairs')
         self.stairs_motion(**kwargs)
 
         if self.now_is_between('05:00:00', '06:30:00'):
             self.call_service('media_player/volume_mute', entity_id='media_player.bedroom', is_volume_muted=True)
             self.call_service('light/turn_off', entity_id=self.const.LUMIE)
 
-        # self.lib.log_function_name(False)
+# -----------------------------------------------------------------------------------
+
+    def check_downstairs_motion(self) -> None:
+
+        downstairs_ts = self.call_service('timestamp/get', name='downstairs', return_result=True)
+        front_door_ts = self.call_service('timestamp/get', name='front_door_motion', return_result=True)
+
+        if (downstairs_ts - front_door_ts).seconds < 60:
+            self.call_service('lighting/front_door_off')
+            # self.call_service('light/turn_off', entity_id=self.const.STANDARD_LAMP)
+
+# -----------------------------------------------------------------------------------
+
+    def check_upstairs_motion(self) -> None:
+
+        upstairs_ts = self.call_service('timestamp/get', name='upstairs', return_result=True)
+        front_door_ts = self.call_service('timestamp/get', name='front_door_motion', return_result=True)
+
+        if (upstairs_ts - front_door_ts).seconds < 120:
+            self.run_in(self.all_off, 60)
+
+# -----------------------------------------------------------------------------------
+
+    def all_off(self, kwargs) -> None:
+
+        self.call_service('lighting/all_off')
 
 # -----------------------------------------------------------------------------------
 
     def kitchen_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
 
-        # self.lib.log_function_name()
-
         seconds = kwargs.get('seconds', 5*60)
 
         self.call_service('lighting/kitchen_on', seconds=seconds, cb='kitchen_off', key='kitchen')
         self.call_service('lighting/kitchen_floor_on', seconds=seconds*2, cb='kitchen_floor_off', key='kitchen_floor')
-
-        # self.lib.log_function_name(False)
 
 # -----------------------------------------------------------------------------------
 
@@ -228,11 +253,14 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tentity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
 
-        if (self.now_is_between('05:00:00', '06:00:00') and new == 'on'):
-            self.call_service('scene/turn_on', entity_id='scene.all_off')
+        self.call_service('timsestamp/set', name='front_door_motion')
+
+        # if (self.now_is_between('05:00:00', '06:00:00') and new == 'on'):
+        #     # self.call_service('scene/turn_on', entity_id='scene.all_off')
+        #     self.call_service('lighting/all_off')
 
         if (self.now_is_between('sunset', 'sunrise') and new == 'on'):
-            self.call_service('lighting/front_door_on', seconds=seconds, cb='front_door_off', key='front_door')
+            self.call_service('lighting/front_door_on', seconds=seconds, key='front_door', cb='front_door_off')
 
         # self.lib.log_function_name(False)
 
@@ -299,7 +327,7 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.garage_motion('', '', 'off', 'on', {}) # {'seconds': 5, 'key': 'garage', 'cb': 'garage_off'})
+        self.garage_motion('', '', 'off', 'on', {}) # {'seconds': 5, 'key': 'garage_lights', 'cb': 'garage_off'})
         self.lib.delay(15)
         self.garage_motion('', '', 'on', 'off', {'test': True})
 

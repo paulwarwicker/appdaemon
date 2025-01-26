@@ -522,7 +522,7 @@ class Alarms(Hass):
         transition = kwargs['transition']
         rgb_color = kwargs['rgb_color']
 
-        self.call_service('light/turn_on', entity_id='light.lumie', brightness=brightness, transition=transition, rgb_color=rgb_color)
+        self.call_service('lighting/lumie_on') # lumie_on will check time of day
 
 # # -----------------------------------------------------------------------------------
 
@@ -553,7 +553,7 @@ class Alarms(Hass):
 
     def lumie_on(self, kwargs):
 
-        self.call_service('light/turn_on', entity_id='light.lumie', brightness=64, rgb_color=[255, 180, 10])
+        self.fire_event('lumie_wake')
 
 # -----------------------------------------------------------------------------------
 
