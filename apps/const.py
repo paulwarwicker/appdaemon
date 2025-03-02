@@ -50,6 +50,7 @@ class AutomationConstants:
     BEDROOM3 = 'light.bedroom_3'
     UPSTAIRS = 'light.upstairs'
     BANNISTER = 'light.bannister'
+    CLOAKROOM = 'light.cloakroom_1'
     TABLE_LAMP = 'light.table_lamp_1'
     FRONT_DOOR = 'light.front_door_1'
     DOWNSTAIRS = 'light.downstairs'
@@ -59,6 +60,7 @@ class AutomationConstants:
     GARAGE_LIGHTS = 'light.garage_lights'
     KITCHEN_LIGHTS = 'light.kitchen_lights'
     BEDROOM_LIGHTS = 'light.bedroom_lights'
+    BATHROOM_LIGHTS = 'light.bathroom_lights'
     DINING_ROOM_LIGHTS = 'light.dining_room_lights'
     LIVING_ROOM_LIGHTS = 'light.living_room_lights'
     UTILITY_ROOM_LIGHTS = 'light.utility_room_lights'
@@ -72,12 +74,13 @@ class AutomationConstants:
     OUTSIDE_LIGHTS = [GARAGE_LIGHTS, FRONT_DOOR, GARDEN]
     WELCOME_LIGHTS = [HALLWAY1, FRONT_DOOR, STANDARD_LAMP]
     NIGHTTIME_LIGHTS = [HALLWAY1, BANNISTER]
-    FRONT_DOOR_DING_LIGHTS = [HALLWAY1, FRONT_DOOR]
+    FRONT_DOOR_LIGHTS = [HALLWAY1, FRONT_DOOR]
 
     ALL_LIGHTS = [HOME_LIGHTS]
 
     N_HALLWAY_ENTITIES = 3
     N_KITCHEN_ENTITIES = 6
+    N_BATHROOM_ENTITIES = 4
     N_KITCHEN_FLOOR_ENTITIES = 2
 
     # alarms
@@ -166,7 +169,7 @@ class AutomationConstants:
     DAILY_WATERING_MINUTES = 30
 
     # timestamps initialised in automation
-    TIMESTAMPS = ('upstairs','downstairs','prev_upstairs','karoq_announce','karoq_notification','garage','garage_lights', 'vacuum','general','travel', 'tap')
+    TIMESTAMPS = ('upstairs','downstairs','prev_upstairs','karoq_announce','karoq_notification','garage','garage_lights', 'vacuum','general','travel', 'tap', 'karoq_home')
 
     BEDROOM_BUTTON = 'shellybutton1-C8C9A33CDF09'
     GARAGE_BUTTON = 'shellybutton1-EC64C9C4F038'

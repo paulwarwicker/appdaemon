@@ -12,6 +12,7 @@ announcer:
   log_level: DEBUG
   dependencies:
     - automationlib
+    # - timestamp
     - const
 
 automation:
@@ -79,6 +80,7 @@ motion:
     - automationlib
     - const
     - announcer
+    - timestamp
 
 lighting:
   module: lighting
@@ -88,6 +90,7 @@ lighting:
     - automationlib
     - const
     - announcer
+    - timestamp
 
 front_door:
   module: front_door
@@ -107,6 +110,7 @@ garage:
     - automationlib
     - const
     - announcer
+    - timestamp
 
 weather:
   module: weather
@@ -126,6 +130,7 @@ tap:
     - automationlib
     - const
     - announcer
+    - timestamp
 
 car:
   module: car
@@ -135,6 +140,7 @@ car:
     - automationlib
     - const
     - announcer
+    - timestamp
 
 vacuum:
   module: vacuum
@@ -144,6 +150,7 @@ vacuum:
     - automationlib
     - const
     - announcer
+    - timestamp
 
 # --
 # doorbell:
@@ -160,14 +167,15 @@ vacuum:
 #   dependencies:
 #     - automationlib
 #     - announcer
-alarms2:
-  module: alarms_async
-  class: Alarms2
-  log_level: DEBUG
-  dependencies:
-    - automationlib
-    - const
-    - announcer
+# alarms2:
+#   module: alarms_async
+#   class: Alarms2
+#   log_level: DEBUG
+#   dependencies:
+#     - automationlib
+#     - const
+#     - announcer
+
 snoozer:
   module: snoozer
   class: Snoozer

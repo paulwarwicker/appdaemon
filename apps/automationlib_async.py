@@ -2,6 +2,7 @@
 
 # import logging
 
+import asyncio
 import time
 import inspect
 from datetime import datetime,timedelta
@@ -22,6 +23,28 @@ class AutomationLib():
         self.testing = adapi.get_state('input_boolean.testing') == 'on'
 
         adapi.log('initialised')
+
+# -----------------------------------------------------------------------------------
+
+    async def get_state_async(self, name, entity_id=None, attribute=None):
+
+        if name is not None:
+            return await self.adapi.get_state(name)
+
+        return await self.adapi.get_state(entity_id=entity_id, attribute=attribute)
+
+# -----------------------------------------------------------------------------------
+
+    def get_state_wrapper(self, name, entity_id, attribute):
+
+        loop = asyncio.get_event_loop()
+
+        if name is not None:
+            return loop.run_until_complete(self.get_state_async(name, None, None))
+
+        return loop.run_until_complete(self.get_state_async(None, entity_id, attribute))
+
+# print(sync_wrapper())
 
 # -----------------------------------------------------------------------------------
 
@@ -155,7 +178,6 @@ class AutomationLib():
     def get_debug(self) -> bool:
         """get debug setting"""
 
-        # return self.adapi.get_state('input_boolean.debug') == 'on'
         return self.debug
 
 # -----------------------------------------------------------------------------------
@@ -163,7 +185,6 @@ class AutomationLib():
     def get_verbose(self) -> bool:
         """get verbose setting"""
 
-        # return self.adapi.get_state('input_boolean.verbose') == 'on'
         return self.verbose
 
 # -----------------------------------------------------------------------------------
@@ -178,7 +199,6 @@ class AutomationLib():
     def get_testing(self) -> bool:
         """get testing setting"""
 
-        # return self.adapi.get_state('input_boolean.testing') == 'on'
         return self.testing
 
 # -----------------------------------------------------------------------------------
@@ -237,15 +257,15 @@ class AutomationLib():
 
 # -----------------------------------------------------------------------------------
 
-    def is_playing(self, entity_id: str=None) -> bool:
+    async def is_playing(self, entity_id: str=None) -> bool:
         """is entity id playing"""
 
         if entity_id is None:
             (entity_id, volume) = self.get_entity_id()
 
         self.adapi.call_service('homeassistant/update_entity', entity_id=entity_id)
-        attributes = self.adapi.get_state(entity_id=entity_id, attribute="attributes")
-        state = self.adapi.get_state(entity_id=entity_id, attribute="state")
+        attributes = await self.adapi.get_state(entity_id=entity_id, attribute="attributes")
+        state = await self.adapi.get_state(entity_id=entity_id, attribute="state")
         self.adapi.log(f'entity_id={entity_id} state={state} attributes={attributes}', level='DEBUG')
 
         return state == 'playing'
@@ -259,11 +279,11 @@ class AutomationLib():
 
 # -----------------------------------------------------------------------------------
 
-    def is_twilight(self) -> bool:
+    async def is_twilight(self) -> bool:
         """is it twilight"""
         # civil twilight is a sun elevation -6 degrees below horizon
 
-        elev = self.adapi.get_state('sun.sun', attribute='elevation')
+        elev = await self.adapi.get_state('sun.sun', attribute='elevation')
         twilight = -6 < elev < 0
 
         if self.get_verbose_debug():
@@ -303,7 +323,7 @@ class AutomationLib():
 
 # -----------------------------------------------------------------------------------
 
-    def percent_to_brightness(self, percent:int):
+    def percent_to_brightness(self, percent: int):
 
         return int(255/100 * percent)
 
@@ -311,3 +331,5 @@ class AutomationLib():
 
 # def helper_function():
 #     print("This is a helper function.")
+
+

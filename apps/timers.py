@@ -32,6 +32,7 @@ class Timers(Hass):
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised --------------------------------------------------------------------', level='INFO')
+        # print(self.timers)
 
 # -----------------------------------------------------------------------------------
 
@@ -150,9 +151,7 @@ class Timers(Hass):
             self.check_timer('cancel', timer)
             self.log(f'\t\t\tcancelling running timer name={name} timer={timer}', level='WARNING')
             self.cancel_timer(timer)
-            self.print_timers()
-            self.timers.pop(name)
-            self.print_timers()
+            self.remove_timer(timer)
         else:
             self.log(f'_cancel_timer did not find timer name={name}', level='ERROR')
 
@@ -163,7 +162,8 @@ class Timers(Hass):
     def remove_timer(self, name) -> None:
         """remove timer"""
 
-        timer = self.timers.get(name, None)
+        # timer = self.timers.get(name, None)
+        timer = self.get_timer(name)
 
         if timer is not None:
             self.log(f'\t\t\tremoving timer name={name} timer={timer}')

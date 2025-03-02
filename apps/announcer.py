@@ -100,8 +100,12 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         notify_type = data.get('type', 'desktop')
         message = data.get('message', 'default message')
+        timestamp = data.get('timestamp', None)
 
         self.notification(notify_type, message)
+
+        if timestamp is not None:
+            self.call_service('timestamp/set', name=timestamp)
 
 # -----------------------------------------------------------------------------------
 

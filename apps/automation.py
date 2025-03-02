@@ -9,7 +9,7 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-from datetime import datetime, timedelta
+from datetime import datetime
 import pprint
 import textwrap
 from io import StringIO

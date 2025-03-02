@@ -49,12 +49,17 @@ class Timestamp(Hass):
         name = kwargs.get('name', None)
         offset = kwargs.get('offset', None)
         value = kwargs.get('value', None)
+        force = kwargs.get('force', False)
 
         if name is not None:
             if value is not None:
                 ts = value
             else:
-                ts = datetime.now()
+                if force:
+                    ts = value
+                else:
+                    ts = datetime.now()
+
                 if offset is not None:
                     ts += offset
 
@@ -72,7 +77,7 @@ class Timestamp(Hass):
         name = kwargs.get('name', None)
 
         if name is not None:
-            ts = self.ts[name]
+            ts = self.ts.get(name, datetime.now())
 
         return ts
 
@@ -83,6 +88,8 @@ class Timestamp(Hass):
 
         for name in self.const.TIMESTAMPS:
             if name == 'tap':
+                self.ts[name] = None
+            if name == 'karoq_home':
                 self.ts[name] = None
             else:
                 self.ts[name] = datetime.now() + timedelta(minutes=-15)

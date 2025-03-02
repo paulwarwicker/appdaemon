@@ -90,12 +90,16 @@ class Alarms(Hass):
         if self.get_state('input_boolean.alarms_disabled') == 'on':
             self.cancel_alarms()
             self.set_state('input_boolean.early_alarm', state='off')
-            self.set_state('input_boolean.normal_alarm', state='off')
-            return
 
-        self.set_early_alarm()
+        if self.get_state('input_boolean.alarms_disabled') == 'off':
+            # self.set_early_alarm()
+            pass
+
         self.set_normal_alarm()
-        self.show_alarm_time('early')
+
+        if self.get_state('input_boolean.alarms_disabled') == 'off':
+            self.show_alarm_time('early')
+
         self.show_alarm_time('normal')
 
 # -----------------------------------------------------------------------------------
@@ -103,6 +107,12 @@ class Alarms(Hass):
     def set_early_alarm(self):
 
         state, alarm_time, hour, minute = self.get_early_alarm_time()
+        print(f'{state} {alarm_time} {hour} {minute}')
+        # state = 'off'
+        # alarm_time = '11:00:00'
+        # hour = 11
+        # minute = 0
+
         self.set_early_alarm_time(state, alarm_time, hour, minute)
 
 # -----------------------------------------------------------------------------------

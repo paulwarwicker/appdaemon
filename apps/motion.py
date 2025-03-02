@@ -34,22 +34,28 @@ class Motion(Hass):
         self.register_service('motion/reset_motion_flag', self.reset_motion_flag_service)
         self.register_service('motion/garage', self.garage_motion_service)
 
-        self.listen_event(self.stairs_motion_event, 'stairs_motion')
-        self.listen_event(self.upstairs_motion_event, 'upstairs_motion')
+        self.listen_event(self.stairs_motion_event,     'stairs_motion')
+        self.listen_event(self.upstairs_motion_event,   'upstairs_motion')
         self.listen_event(self.downstairs_motion_event, 'downstairs_motion')
         self.listen_event(self.front_door_motion_event, 'front_door_motion')
-        self.listen_event(self.kitchen_motion_event, 'kitchen_motion')
-        self.listen_event(self.utility_motion_event, 'utility_motion')
-        self.listen_event(self.garage_motion_event, 'garage_motion')
-        self.listen_event(self.motion_motion_event, 'motion_motion')
+        self.listen_event(self.kitchen_motion_event,    'kitchen_motion')
+        self.listen_event(self.utility_motion_event,    'utility_motion')
+        self.listen_event(self.garage_motion_event,     'garage_motion')
+        self.listen_event(self.motion_motion_event,     'motion_motion')
 
-        self.listen_state(self.kitchen_motion, 'binary_sensor.kitchen_sensor_motion', old='off', new='on', seconds=5*60, key='kitchen', cb='kitchen_off')
-        self.listen_state(self.utility_motion, 'binary_sensor.utility_room_motion_sensor_motion', old='off', new='on', seconds=5*60, key='utility', cb='utility_off')
-        self.listen_state(self.garage_motion, 'binary_sensor.garage_sensor_motion', old='off', new='on', seconds=10*60, key='garage_lights', cb='garage_on')
-        self.listen_state(self.garage_motion, 'binary_sensor.garage_sensor_motion', old='on', new='off', seconds=5*60, key='garage_lights', cb='garage_off')
-        self.listen_state(self.downstairs_motion, 'binary_sensor.downstairs_sensor_motion', old='off', new='on', seconds=5*60, key='downstairs', cb='bannister_off')
-        self.listen_state(self.upstairs_motion, 'binary_sensor.upstairs_sensor_motion', old='off', new='on', seconds=10*60, key='upstairs', cb='bannister_off')
-        self.listen_state(self.front_door_motion, 'binary_sensor.front_door_motion')
+        self.listen_state(self.front_door_motion, 'binary_sensor.front_door_motion',          new='on',  cb='front_door_off')
+        self.listen_state(self.front_door_motion, 'binary_sensor.front_door_motion',          new='off', cb='front_door_off')
+        self.listen_state(self.kitchen_motion,    'binary_sensor.kitchen_sensor_motion',      new='on',  cb='kitchen_off')
+        self.listen_state(self.kitchen_motion,    'binary_sensor.kitchen_sensor_motion',      new='off', cb='kitchen_off')
+        self.listen_state(self.utility_motion,    'binary_sensor.utility_room_sensor_motion', new='on',  cb='utility_off')
+        self.listen_state(self.utility_motion,    'binary_sensor.utility_room_sensor_motion', new='off', cb='utility_off')
+        self.listen_state(self.bathroom_motion,   'binary_sensor.bathroom_sensor_motion',     new='on',  cb='bathroom_off')
+        self.listen_state(self.bathroom_motion,   'binary_sensor.bathroom_sensor_motion',     new='off', cb='bathroom_off')
+        self.listen_state(self.cloakroom_motion,  'binary_sensor.garage_sensor_motion',       new='on',  cb='cloakroom_off')
+        self.listen_state(self.cloakroom_motion,  'binary_sensor.garage_sensor_motion',       new='off', cb='cloakroom_off')
+
+        self.listen_state(self.downstairs_motion, 'binary_sensor.downstairs_sensor_motion',   new='on',  cb='bannister_off', seconds=5*60,  key='downstairs')
+        self.listen_state(self.upstairs_motion,   'binary_sensor.upstairs_sensor_motion',     new='on',  cb='bannister_off', seconds=10*60, key='upstairs')
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
@@ -57,7 +63,7 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def set_motion_flag_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+    def set_motion_flag_service(self, namespace:str, domain:str, service:str, kwargs) -> None:
         """set downstairs motion flag"""
 
         value = kwargs.get('value', None)
@@ -67,14 +73,14 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def reset_motion_flag_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+    def reset_motion_flag_service(self, namespace:str, domain:str, service:str, kwargs) -> None:
         """reset downstairs motion flag"""
 
         self.downstairs_motion_flag = False
 
 # -----------------------------------------------------------------------------------
 
-    def garage_motion_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+    def garage_motion_service(self, namespace:str, domain:str, service:str, kwargs) -> None:
         """garage motion detected"""
 
         ts = self.call_service('timestamp/get', name='garage', return_result=True)
@@ -85,7 +91,10 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def upstairs_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
+    def upstairs_motion(self, entity:str, attribute:str, old:str, new:str, kwargs) -> None:
+
+        if self.now_is_between('sunset + 00:30:00', '23:30:00'):
+            self.call_service('lighting/landing_on', cb='landing_off') # lumie_on will check time of day
 
         upstairs_ts = datetime.now()
         prev_upstairs_ts = self.call_service('timestamp/get', name='upstairs', return_result=True) # we return current as previous here because we will reset current shortly
@@ -121,12 +130,12 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def downstairs_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
+    def downstairs_motion(self, entity:str, attribute:str, old:str, new:str, kwargs) -> None:
 
         self.downstairs_motion_flag = True
         self.call_service('timestamp/set', name='downstairs')
 
-        self.check_downstairs_motion()
+        # self.check_downstairs_motion()
 
         if self.lib.get_verbose_debug():
             self.log(f'\tdownstairs_motion_flag={self.downstairs_motion_flag}', level='DEBUG')
@@ -166,32 +175,86 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def kitchen_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
+    def kitchen_motion(self, entity:str, attribute:str, old:str, new:str, kwargs) -> None:
 
+        self.lib.log_function_name()
+
+        cb = kwargs.get('cb', None)
+        key = kwargs.get('key', 'kitchen')
         seconds = kwargs.get('seconds', 5*60)
 
-        self.call_service('lighting/kitchen_on', seconds=seconds, cb='kitchen_off', key='kitchen')
-        self.call_service('lighting/kitchen_floor_on', seconds=seconds*2, cb='kitchen_floor_off', key='kitchen_floor')
+        if new == 'off':
+            self.call_service('lighting/kitchen_off', cb='kitchen_off', key='kitchen_off')
+        elif new == 'on':
+            # timer = self.call_service('timers/get', name='kitchen_off', return_result=True)
+            # print(timer)
+            # self.call_service('timers/status')
+            # if timer is not None:
+            #     self.call_service('timers/cancel', name='kitchen_off')
+            self.call_service('lighting/kitchen_on', seconds=seconds, cb=cb, key=key)
+            # self.call_service('lighting/kitchen_floor_on', seconds=seconds*2, cb='kitchen_floor_off', key='kitchen_floor')
+
+        self.call_service('timers/status')
+
+        self.lib.log_function_name(False)
 
 # -----------------------------------------------------------------------------------
 
-    def utility_motion(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
+    def utility_motion(self, entity:str, attribute:str, old:str, new:str, kwargs) -> None:
 
-        # self.lib.log_function_name()
+        self.lib.log_function_name()
 
         cb = kwargs.get('cb', None)
         seconds = kwargs.get('seconds', 5*60)
         key = kwargs.get('key', 'utility')
         brightness = kwargs.get('brightness', 64)
 
-        if self.now_is_between('sunset + 00:15:00', 'sunrise'):
-            self.call_service('lighting/turn_on_if_off', entity_id=self.const.UTILITY, brightness=brightness, seconds=seconds, cb=cb, key=key)
+        if new == 'off':
+            self.call_service('lighting/utility_off', cb=cb, key=key)
+        elif new == 'on':
+            if self.now_is_between('sunset + 00:15:00', 'sunrise'):
+                self.call_service('lighting/turn_on_if_off', entity_id=self.const.UTILITY, brightness=brightness, seconds=seconds, cb=cb, key=key)
 
-        # self.lib.log_function_name(False)
+        self.lib.log_function_name(False)
 
 # -----------------------------------------------------------------------------------
 
-    def status(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
+    def bathroom_motion(self, entity:str, attribute:str, old:str, new:str, kwargs) -> None:
+
+        self.lib.log_function_name()
+
+        cb = kwargs.get('cb', None)
+        key = kwargs.get('key', 'bathroom')
+
+        key = 'bathroom_off' if new == 'off' else key
+
+        self.call_service(f'lighting/bathroom_{new}', entity_id=self.const.BATHROOM_LIGHTS, cb=cb, key=key)
+
+        self.lib.log_function_name(False)
+
+# -----------------------------------------------------------------------------------
+
+    def cloakroom_motion(self, entity:str, attribute:str, old:str, new:str, kwargs) -> None:
+
+        self.lib.log_function_name()
+
+        cb = kwargs.get('cb', None)
+        key = kwargs.get('key', 'cloakroom')
+        seconds = kwargs.get('seconds', 10*60)
+        brightness = kwargs.get('brightness', 128)
+
+        if new == 'on':
+            early = 'sunrise + 01:00:00'
+            evening = 'sunset + 00:00:00'
+            brightness = 255 if self.now_is_between(early, evening) else 128
+
+        self.call_service(f'lighting/cloakroom_{new}', entity_id=self.const.CLOAKROOM, brightness=brightness, seconds=seconds, cb=cb, key=key)
+
+        self.lib.log_function_name(False)
+
+# -----------------------------------------------------------------------------------
+
+    def status(self, entity:str, attribute:str, old:str, new:str, kwargs) -> None:
 
         status = f'\n\n\tdownstairs_motion_flag={self.downstairs_motion_flag}\n'
 
@@ -201,13 +264,13 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def status_event(self, event:str, data:dict, kwargs:dict) -> None:
+    def status_event(self, event:str, data:dict, kwargs) -> None:
 
         self.status('','','','',{})
 
 # -----------------------------------------------------------------------------------
 
-    def garage_motion(self, entity_id:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
+    def garage_motion(self, entity_id:str, attribute:str, old:str, new:str, kwargs) -> None:
 
         # self.lib.log_function_name()
 
@@ -244,29 +307,16 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def front_door_motion(self, entity_id:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
+    def front_door_motion(self, entity_id:str, attribute:str, old:str, new:str, kwargs) -> None:
 
-        # self.lib.log_function_name()
+        cb = kwargs.get('cb', None)
 
-        seconds = kwargs.get('seconds', 5*60)
-
-        if self.lib.get_verbose_debug():
-            self.log(f'\tentity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
-
-        self.call_service('timsestamp/set', name='front_door_motion')
-
-        # if (self.now_is_between('05:00:00', '06:00:00') and new == 'on'):
-        #     # self.call_service('scene/turn_on', entity_id='scene.all_off')
-        #     self.call_service('lighting/all_off')
-
-        if (self.now_is_between('sunset', 'sunrise') and new == 'on'):
-            self.call_service('lighting/front_door_on', seconds=seconds, key='front_door', cb='front_door_off')
-
-        # self.lib.log_function_name(False)
+        if self.now_is_between('sunset', 'sunrise'):
+            self.call_service(f'lighting/front_door_{new}', entity_id=self.const.FRONT_DOOR_LIGHTS, cb=cb)
 
 # -----------------------------------------------------------------------------------
 
-    def front_door_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
+    def front_door_motion_event(self, event:str, data:dict, kwargs) -> None:
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -275,7 +325,7 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def downstairs_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
+    def downstairs_motion_event(self, event:str, data:dict, kwargs) -> None:
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -284,7 +334,7 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def upstairs_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
+    def upstairs_motion_event(self, event:str, data:dict, kwargs) -> None:
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -293,7 +343,7 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def stairs_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
+    def stairs_motion_event(self, event:str, data:dict, kwargs) -> None:
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -304,7 +354,7 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def kitchen_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
+    def kitchen_motion_event(self, event:str, data:dict, kwargs) -> None:
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -313,7 +363,7 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def utility_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
+    def utility_motion_event(self, event:str, data:dict, kwargs) -> None:
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -322,7 +372,7 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def garage_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
+    def garage_motion_event(self, event:str, data:dict, kwargs) -> None:
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -333,7 +383,7 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def motion_motion_event(self, event:str, data:dict, kwargs:dict) -> None:
+    def motion_motion_event(self, event:str, data:dict, kwargs) -> None:
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
