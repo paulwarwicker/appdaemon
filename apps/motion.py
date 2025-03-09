@@ -94,7 +94,7 @@ class Motion(Hass):
     def upstairs_motion(self, entity:str, attribute:str, old:str, new:str, kwargs) -> None:
 
         if self.now_is_between('sunset + 00:30:00', '23:30:00'):
-            self.call_service('lighting/landing_on', cb='landing_off') # lumie_on will check time of day
+            self.call_service('lighting/landing_on', cb='landing_off')
 
         upstairs_ts = datetime.now()
         prev_upstairs_ts = self.call_service('timestamp/get', name='upstairs', return_result=True) # we return current as previous here because we will reset current shortly

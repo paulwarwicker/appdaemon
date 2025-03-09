@@ -65,6 +65,8 @@ class Lighting(Hass):
         self.listen_event(self.all_off_event, 'all_off')
         self.listen_event(self.bathroom_on_event, 'bathroom_on')
         self.listen_event(self.bathroom_off_event, 'bathroom_off')
+        self.listen_event(self.test_welcome_lights_event, 'test_welcome_lights')
+        self.listen_event(self.test_lights_event, 'test_lights')
 
         self.run_daily(self.living_room_on, 'sunset + 00:10:00')
         self.run_daily(self.downstairs_off, '23:30:00')
@@ -102,11 +104,12 @@ class Lighting(Hass):
         seconds = data.get('seconds', 5*60)
 
         callback = self.get_callback(cb)
+        # print(f'>>> cb={cb} callback={callback}')
 
-        self.show_service(namespace, domain, service, data, cb)
+        self.show_service(namespace, domain, service, data, cb, callback)
 
-        self.call_service('lighting/turn_on_if_off', entity_id=self.const.WELCOME_LIGHTS, brightness=128) # TODO: cb=cb ??
-        self.call_service('lighting/turn_on_if_off', entity_id=self.const.HALLWAY1, brightness=64)
+        self.call_service('lighting/turn_on_if_off', entity_id=self.const.WELCOME_LIGHTS, brightness=128, cb='noop') # TODO: cb=cb ??
+        self.call_service('lighting/turn_on_if_off', entity_id=self.const.HALLWAY1, brightness=64, cb='noop')
 
         if self.now_is_between('05:00:00', '06:30:00'):
             self.call_service('light/turn_off', entity_id=self.const.STANDARD_LAMP)
@@ -258,7 +261,7 @@ class Lighting(Hass):
         """turn on landing lights"""
 
         cb = data.get('cb', None)
-        brightness = data.get('brightness', self.lib.percent_to_brightness(25))
+        brightness = data.get('brightness', self.lib.percent_to_brightness(50))
 
         callback = self.get_callback(cb)
 
@@ -553,7 +556,7 @@ class Lighting(Hass):
     def lumie_on_event(self, event, data, kwargs) -> None:
 
         force = data.get('force', False)
-        brightness = data.get('brightness', 4)
+        brightness = data.get('brightness', self.lib.percent_to_brightness(1))
 
         if self.now_is_between('23:30:00', '04:00:00') or force:
             self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=brightness)
@@ -575,19 +578,12 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    # def radiator_on(self, kwargs) -> None:
-    #     """turn on radiator light"""
-
-    #     self.call_service('light/turn_on', entity_id=self.const.RADIATOR, transition=10, brightness=102)
-
-# -----------------------------------------------------------------------------------
-
     def living_room_on(self, kwargs) -> None:
         """turn on living room lights"""
 
         for entity_id in self.const.LIVING_ROOM:
             if not self.is_light_on(entity_id):
-                self.call_service('light/turn_on', entity_id=entity_id, brightness=self.percent_to_brightness(40), transition=10)
+                self.call_service('light/turn_on', entity_id=entity_id, brightness=self.lib.percent_to_brightness(40), transition=10)
 
 # -----------------------------------------------------------------------------------
 
@@ -643,6 +639,7 @@ class Lighting(Hass):
     def front_door_off(self, kwargs) -> None:
 
         self.call_service('light/turn_off', entity_id=self.const.FRONT_DOOR, transition=10)
+        self.call_service('light/turn_off', entity_id=self.const.HALLWAY1, transition=10)
 
 # -----------------------------------------------------------------------------------
 
@@ -953,9 +950,10 @@ class Lighting(Hass):
             self.log('no callback specified', 'ERROR')
             traceback.print_stack()
         else:
-            timer = self.run_in(callback, seconds, key=cb, seconds=seconds)
-            self.set_timer(cb, timer)
-            self.fire_event('timers')
+            if cb != 'noop':
+                timer = self.run_in(callback, seconds, key=cb, seconds=seconds)
+                self.set_timer(cb, timer)
+                self.fire_event('timers')
 
 # -----------------------------------------------------------------------------------
 
@@ -978,3 +976,20 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def test_welcome_lights_event(self, event, data, kwargs):
+
+        self.call_service('lighting/welcome_lights', cb='welcome_lights_off', seconds=10)
+
+# -----------------------------------------------------------------------------------
+
+    def test_lights_event(self, event, data, kwargs):
+
+        self.living_room_on({})
+
+# -----------------------------------------------------------------------------------
+
+    def noop(self, kwargs) -> None:
+
+        pass
+
+# -----------------------------------------------------------------------------------

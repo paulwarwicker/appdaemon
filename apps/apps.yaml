@@ -12,6 +12,7 @@ announcer:
   log_level: DEBUG
   dependencies:
     - automationlib
+    # causes cyclic dependency
     # - timestamp
     - const
 

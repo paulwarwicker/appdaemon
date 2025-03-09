@@ -30,8 +30,9 @@ class Location(Hass):
         self.register_service('location/max_home', self.max_home_service)
         self.register_service('location/paul_home', self.paul_home_service)
 
+        self.listen_state(self.paul_location_detect, self.const.PAUL_ENTITY_ID)
+
         # arrive
-        self.listen_state(self.paul_location_detect, self.const.PAUL_ENTITY_ID, new='home')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Home', location='proximity.home')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Village', location='proximity.village')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Pilates', location='proximity.pilates')
@@ -46,7 +47,6 @@ class Location(Hass):
         # self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, new='Newmarket', location='proximity.newmarket')
 
         # leave
-        self.listen_state(self.paul_location_detect, self.const.PAUL_ENTITY_ID, new='not_home')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='DS_Smith_Fordham', location='proximity.ds_smith_fordham')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='DS_Smith_Warboys', location='proximity.ds_smith_warboys')
         self.listen_state(self.max_location_detect, self.const.MAX_ENTITY_ID, old='Pilates', location='proximity.pilates')
@@ -68,7 +68,6 @@ class Location(Hass):
 
         self.listen_event(self.test_max_home_event, 'max_home')
         self.listen_event(self.test_paul_home_event, 'paul_home')
-        self.listen_event(self.test_welcome_lights_event, 'welcome_lights')
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
@@ -81,7 +80,7 @@ class Location(Hass):
 
         self.lib.log_function_name(True, True)
 
-        self.call_service('lighting/welcome_lights', cb='welcome_lights_off', seconds=5*60, key='welcome_lights')
+        self.call_service('lighting/welcome_lights', cb='welcome_lights_off')
 
         self.lib.log_function_name(False, True)
 
@@ -160,10 +159,9 @@ class Location(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tpaul location entity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
 
-        if new == 'home':
+        if old == 'not_home' and new == 'home':
             self.call_service('garage/open')
-
-        if new == 'not_home':
+        elif new == 'not_home' and old == 'home':
             self.call_service('garage/close')
 
         self.lib.log_function_name(False, True)
@@ -185,11 +183,5 @@ class Location(Hass):
     def test_paul_home_event(self, event, data, kwargs):
 
         self.call_service('location/paul_home')
-
-# -----------------------------------------------------------------------------------
-
-    def test_welcome_lights_event(self, event, data, kwargs):
-
-        self.call_service('lighting/welcome_lights', cb='welcome_lights_off', seconds=10, key='welcome_lights')
 
 # -----------------------------------------------------------------------------------
