@@ -100,7 +100,7 @@ class Lighting(Hass):
             self.log('\ttoo early for welcome lights', level='DEBUG')
             return
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
         seconds = data.get('seconds', 5*60)
 
         callback = self.get_callback(cb)
@@ -121,7 +121,7 @@ class Lighting(Hass):
     def front_door_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on front door lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         self._cancel_timer(cb)
 
@@ -137,7 +137,7 @@ class Lighting(Hass):
 
         # self.call_service('light/turn_off', entity_id=self.const.FRONT_DOOR)
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         self._cancel_timer(cb)
 
@@ -154,7 +154,7 @@ class Lighting(Hass):
     def kitchen_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on kitchen lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         self._cancel_timer(cb)
 
@@ -176,7 +176,7 @@ class Lighting(Hass):
     def kitchen_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn off kitchen lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         self._cancel_timer(cb)
         self._cancel_timer('kitchen_floor_off')
@@ -200,7 +200,7 @@ class Lighting(Hass):
         """turn on utility lights"""
 
         callback = None
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         self.show_service(namespace, domain, service, data, cb, callback)
 
@@ -213,7 +213,7 @@ class Lighting(Hass):
     def utility_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on utility lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         self._cancel_timer(cb)
 
@@ -226,7 +226,7 @@ class Lighting(Hass):
     def utility_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn off utility lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         callback = self.get_callback(cb)
 
@@ -244,7 +244,7 @@ class Lighting(Hass):
     def lumie_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on lumie lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
         brightness = int(data.get('brightness', self.lib.percent_to_brightness(1)))
 
         callback = self.get_callback(cb)
@@ -260,8 +260,9 @@ class Lighting(Hass):
     def landing_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on landing lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
         brightness = data.get('brightness', self.lib.percent_to_brightness(50))
+        seconds = data.get('seconds', 2*60)
 
         callback = self.get_callback(cb)
 
@@ -269,9 +270,10 @@ class Lighting(Hass):
 
         self.call_service('light/turn_on', entity_id=self.const.LANDING, brightness=brightness)
         self.call_service('light/turn_on', entity_id=self.const.BEDROOM2, brightness=brightness)
-        self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=self.lib.percent_to_brightness(95))
+        # self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=self.lib.percent_to_brightness(95))
+        self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=250)
 
-        self.set_callback(cb, callback)
+        self.set_callback(cb, callback, seconds)
 
 # -----------------------------------------------------------------------------------
 
@@ -280,7 +282,7 @@ class Lighting(Hass):
 
         self.lib.log_function_name(None, True)
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
         seconds = int(data.get('seconds', 30))
         brightness = int(data.get('brightness', 64))
         color_temp = int(data.get('color_temp', 152))
@@ -328,7 +330,7 @@ class Lighting(Hass):
     def bathroom_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on bathroom lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         self._cancel_timer(cb)
 
@@ -363,7 +365,7 @@ class Lighting(Hass):
     def bathroom_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn off bathroom lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         callback = self.get_callback(cb)
 
@@ -376,7 +378,7 @@ class Lighting(Hass):
     def cloakroom_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on cloakroom lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         self._cancel_timer(cb)
 
@@ -398,7 +400,7 @@ class Lighting(Hass):
     def cloakroom_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn off cloakroom lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
 
         callback = self.get_callback(cb)
 
@@ -418,7 +420,7 @@ class Lighting(Hass):
     def bannister_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on bannister and hallway lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
         seconds = int(data.get('seconds', 0))
 
         callback = self.get_callback(cb)
@@ -437,7 +439,7 @@ class Lighting(Hass):
     def hallway_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn off bannister and hallway lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
         seconds = int(data.get('seconds', 0))
 
         callback = self.get_callback(cb)
@@ -453,7 +455,7 @@ class Lighting(Hass):
     def front_door_ding_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on front door/hallway lights"""
 
-        cb = data.get('cb', None)
+        cb = data.get('cb', 'noop')
         seconds = int(data.get('seconds', 0))
 
         callback = self.get_callback(cb)
@@ -920,9 +922,10 @@ class Lighting(Hass):
     def landing_off(self, kwargs) -> None:
         """turn off landing light"""
 
-        self.call_service('light/turn_off', entity_id=self.const.LUMIE, transition=10)
-        self.call_service('light/turn_off', entity_id=self.const.LANDING, transition=10)
-        self.call_service('light/turn_off', entity_id=self.const.BEDROOM2, transition=10)
+        s = 60
+        self.call_service('light/turn_off', entity_id=self.const.LUMIE, transition=s)
+        self.call_service('light/turn_off', entity_id=self.const.LANDING, transition=s)
+        self.call_service('light/turn_off', entity_id=self.const.BEDROOM2, transition=s)
 
 # -----------------------------------------------------------------------------------
 
