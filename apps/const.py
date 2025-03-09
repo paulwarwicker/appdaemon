@@ -103,9 +103,9 @@ class AutomationConstants:
     ATTEMPTS = 5
     PLAY_DELAY = 0.75
     DEFAULT_VOLUME = 0.15
-    NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1']
+    # NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+    #                 'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+    #                 'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1']
     # NORMAL_ALARM = ['aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
     #                 'aac://http://prem4.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
     #                 'aac://http://prem1.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1']
