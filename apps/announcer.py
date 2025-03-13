@@ -193,13 +193,18 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             if verbose:
                 self.log(f'\tin announce\t{uu_id} message="{message}" timestamp={timestamp} announce={announce} force={force} entity_ids={entity_ids}', level='WARNING')
 
-            self.call_service('media_player/play_media', entity_id=entity_ids, media_content_type='music', media_content_id='http://homeassistant.local:8123/local/bing.mp3', announce=True, extra={'volume': 0.5})
+            self.call_service('media_player/play_media',
+                              entity_id=entity_ids,
+                              media_content_type='music',
+                              media_content_id='http://homeassistant.local:8123/local/bing.mp3',
+                              announce=True,
+                              extra={'volume': 0.5})
             time.sleep(1.0) # give it time to play
             self.call_service('media_player/play_media',
-                            entity_id=entity_ids,
-                            media_content_type='music',
-                            media_content_id=f'media-source://tts/cloud?message="{message}"',
-                            announce=True)
+                              entity_id=entity_ids,
+                              media_content_type='music',
+                              media_content_id=f'media-source://tts/cloud?message="{message}"',
+                              announce=True)
 
             time.sleep(max(len(message) * self.const.SECONDS_PER_CHARACTER, self.const.MINIMUM_MESSAGE_LENGTH))
 

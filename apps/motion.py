@@ -96,6 +96,9 @@ class Motion(Hass):
         if self.now_is_between('sunset + 00:30:00', '23:30:00'):
             self.call_service('lighting/landing_on', cb='landing_off')
 
+        # if self.now_is_between('23:30:00', 'sunset + 00:00:00'):
+        #     self.call_service('lighting/lumie_on')
+
         upstairs_ts = datetime.now()
         prev_upstairs_ts = self.call_service('timestamp/get', name='upstairs', return_result=True) # we return current as previous here because we will reset current shortly
         downstairs_ts = self.call_service('timestamp/get', name='downstairs', return_result=True)
@@ -115,16 +118,17 @@ class Motion(Hass):
         if diff3 < 120:
             self.run_in(self.all_off, 20)
             return
-        elif diff1 <= 300:
+
+        if diff1 <= 300:
             timer = 600 # 10m timer for bannister if less than 300 seconds difference
-            self.call_service('lighting/lumie_on') # lumie_on will check time of day
+            self.call_service('lighting/lumie_on')
         elif diff1 > 300 and diff2 <= 120:
             timer = 10 # but if max has gone to the loo, only 10 seconds
         else:
             timer = 60
 
         if self.now_is_between('22:00:00', 'sunrise') or self.lib.get_testing():
-            kwargs = {**kwargs, 'timer': timer, 'key': 'upstairs'} #  'check_override': False,
+            kwargs = {**kwargs, 'timer': timer, 'key': 'upstairs'}
 
         self.stairs_motion(**kwargs)
 

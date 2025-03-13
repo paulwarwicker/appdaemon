@@ -90,7 +90,7 @@ class Car(Hass):
             ts = self.call_service('timestamp/get', name='karoq_home', return_result=True)
 
             if ts is None:
-                self.log(f'\thome but karoq_home timestamp is not set', level='ERROR')
+                self.log('\thome but karoq_home timestamp is not set', level='ERROR')
                 return
 
             diff1 = (datetime.now() - ts).seconds

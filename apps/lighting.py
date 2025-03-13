@@ -67,6 +67,18 @@ class Lighting(Hass):
         self.listen_event(self.bathroom_off_event, 'bathroom_off')
         self.listen_event(self.test_welcome_lights_event, 'test_welcome_lights')
         self.listen_event(self.test_lights_event, 'test_lights')
+        self.listen_event(self.test_event, 'Test')
+        self.listen_event(self.learn_event, 'Learn')
+        self.listen_event(self.delete_event, 'Delete')
+        # self.listen_event(self.learn_fanl_event, 'learn_fanl')
+        # self.listen_event(self.learn_fanm_event, 'learn_fanm')
+        # self.listen_event(self.learn_fanh_event, 'learn_fanh')
+        # self.listen_event(self.learn_light_event, 'learn_light')
+        # self.listen_event(self.test_fanl_event, 'test_fanl')
+        # self.listen_event(self.test_fanm_event, 'test_fanm')
+        # self.listen_event(self.test_fanh_event, 'test_fanh')
+        # self.listen_event(self.test_light_event, 'test_light')
+        # self.listen_event(self.delete_fanm_event, 'delete_fanm')
 
         self.run_daily(self.living_room_on, 'sunset + 00:10:00')
         self.run_daily(self.downstairs_off, '23:30:00')
@@ -237,7 +249,7 @@ class Lighting(Hass):
         if self.any_light_on_full(entity_ids):
             self.log('\tdeferring - utility lights on', level='DEBUG')
         else:
-           self.set_callback(cb, callback)
+            self.set_callback(cb, callback)
 
 # -----------------------------------------------------------------------------------
 
@@ -260,6 +272,10 @@ class Lighting(Hass):
     def landing_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on landing lights"""
 
+        if self.get_state('input_boolean.landing_disabled') == 'on':
+            self.set_state('input_boolean.landing_disabled', state='off')
+            return
+
         cb = data.get('cb', 'noop')
         brightness = data.get('brightness', self.lib.percent_to_brightness(50))
         seconds = data.get('seconds', 2*60)
@@ -268,10 +284,14 @@ class Lighting(Hass):
 
         self.show_service(namespace, domain, service, data, cb, callback)
 
+        self.set_state('input_boolean.landing_disabled', state='off')
+
         self.call_service('light/turn_on', entity_id=self.const.LANDING, brightness=brightness)
-        self.call_service('light/turn_on', entity_id=self.const.BEDROOM2, brightness=brightness)
-        # self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=self.lib.percent_to_brightness(95))
-        self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=250)
+        self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light')
+
+        # self.call_service('light/turn_on', entity_id=self.const.BEDROOM2, brightness=brightness)
+        # # self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=self.lib.percent_to_brightness(95))
+        # self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=250)
 
         self.set_callback(cb, callback, seconds)
 
@@ -923,9 +943,10 @@ class Lighting(Hass):
         """turn off landing light"""
 
         s = 60
-        self.call_service('light/turn_off', entity_id=self.const.LUMIE, transition=s)
+        # self.call_service('light/turn_off', entity_id=self.const.LUMIE, transition=s)
         self.call_service('light/turn_off', entity_id=self.const.LANDING, transition=s)
-        self.call_service('light/turn_off', entity_id=self.const.BEDROOM2, transition=s)
+        # self.call_service('light/turn_off', entity_id=self.const.BEDROOM2, transition=s)
+        self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light')
 
 # -----------------------------------------------------------------------------------
 
@@ -988,6 +1009,100 @@ class Lighting(Hass):
     def test_lights_event(self, event, data, kwargs):
 
         self.living_room_on({})
+
+# # -----------------------------------------------------------------------------------
+
+#     def learn_light_event(self, event, data, kwargs):
+
+#         self.call_service('remote/learn_command', entity_id='remote.broadlink', device='fan', command='light', command_type='rf')
+
+# # -----------------------------------------------------------------------------------
+
+#     def learn_fanl_event(self, event, data, kwargs):
+
+#         self.call_service('remote/learn_command', entity_id='remote.broadlink', device='fan', command='low', command_type='rf')
+
+# # -----------------------------------------------------------------------------------
+
+#     def learn_fanm_event(self, event, data, kwargs):
+
+#         self.call_service('remote/learn_command', entity_id='remote.broadlink', device='fan', command='medium', command_type='rf')
+
+# # -----------------------------------------------------------------------------------
+
+#     def learn_fanh_event(self, event, data, kwargs):
+
+#         self.call_service('remote/learn_command', entity_id='remote.broadlink', device='fan', command='high', command_type='rf')
+
+# # -----------------------------------------------------------------------------------
+
+#     def delete_fanm_event(self, event, data, kwargs):
+
+#         self.call_service('remote/delete_command', entity_id='remote.broadlink', device='fan', command='medium', command_type='rf')
+
+# # -----------------------------------------------------------------------------------
+
+#     def test_light_event(self, event, data, kwargs):
+
+#         self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light')
+
+# # -----------------------------------------------------------------------------------
+
+#     def test_fanl_event(self, event, data, kwargs):
+
+#         self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='low')
+
+# # -----------------------------------------------------------------------------------
+
+#     def test_fanm_event(self, event, data, kwargs):
+
+#         self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='medium')
+
+# # -----------------------------------------------------------------------------------
+
+#     def test_fanh_event(self, event, data, kwargs):
+
+#         self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='high')
+
+# # -----------------------------------------------------------------------------------
+
+#     def command(self, name):
+
+#         name = name.lower()
+#         command = None
+
+#         if name == 'h':
+#             command = 'high'
+#         elif name == 'm':
+#             command = 'medium'
+#         elif name == 'l':
+#             command = 'low'
+
+#         return command
+
+# -----------------------------------------------------------------------------------
+
+    def learn_event(self, event, data, kwargs):
+
+        command=data.get('name', None)
+        print(f'\tlearn {command}')
+        self.call_service('remote/learn_command', entity_id='remote.broadlink', device='fan', command=command, command_type='rf')
+
+# -----------------------------------------------------------------------------------
+
+    def test_event(self, event, data, kwargs):
+
+        command=data.get('name', None)
+        print(f'\ttest {command}')
+        self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command=command)
+
+# -----------------------------------------------------------------------------------
+
+    def delete_event(self, event, data, kwargs):
+
+        command=data.get('name', None)
+        print(f'\tdelete {command}')
+        self.call_service('remote/delete_command', entity_id='remote.broadlink', device='fan', command=command)
 
 # -----------------------------------------------------------------------------------
 
