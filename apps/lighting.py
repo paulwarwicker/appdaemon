@@ -31,7 +31,8 @@ class Lighting(Hass):
 
         self.register_service('lighting/garage_on', self.garage_on_service)
         self.register_service('lighting/garage_off', self.garage_off_service)
-        self.register_service('lighting/bannister_on', self.bannister_on_service)
+        self.register_service('lighting/downstairs_on', self.downstairs_on_service)
+        self.register_service('lighting/upstairs_on', self.upstairs_on_service)
         self.register_service('lighting/utility_on', self.utility_on_service)
         self.register_service('lighting/utility_off', self.utility_off_service)
         self.register_service('lighting/turn_on_if_off', self.turn_on_if_off_service)
@@ -41,16 +42,14 @@ class Lighting(Hass):
         self.register_service('lighting/welcome_lights', self.welcome_lights_service)
         self.register_service('lighting/front_door_on', self.front_door_on_service)
         self.register_service('lighting/front_door_off', self.front_door_off_service)
-        self.register_service('lighting/hallway_off', self.hallway_off_service)
         self.register_service('lighting/lumie_on', self.lumie_on_service)
         self.register_service('lighting/lumie_off', self.lumie_off_service)
         self.register_service('lighting/front_door_ding', self.front_door_ding_service)
         self.register_service('lighting/all_off', self.all_off_service)
         self.register_service('lighting/bathroom_on', self.bathroom_on_service)
-        self.register_service('lighting/bathroom_off', self.bathroom_off_service)
-        self.register_service('lighting/landing_on', self.landing_on_service)
+        # self.register_service('lighting/landing_on', self.landing_on_service)
         self.register_service('lighting/cloakroom_on', self.cloakroom_on_service)
-        self.register_service('lighting/cloakroom_off', self.cloakroom_off_service)
+        self.register_service('lighting/cancel_timer', self.cancel_timer_service)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.status_event, 'timers')
@@ -64,7 +63,6 @@ class Lighting(Hass):
         self.listen_event(self.button_event, 'shelly.click')
         self.listen_event(self.all_off_event, 'all_off')
         self.listen_event(self.bathroom_on_event, 'bathroom_on')
-        self.listen_event(self.bathroom_off_event, 'bathroom_off')
         self.listen_event(self.test_welcome_lights_event, 'test_welcome_lights')
         self.listen_event(self.test_lights_event, 'test_lights')
         self.listen_event(self.test_event, 'Test')
@@ -81,7 +79,7 @@ class Lighting(Hass):
         # self.listen_event(self.delete_fanm_event, 'delete_fanm')
 
         self.run_daily(self.living_room_on, 'sunset + 00:10:00')
-        self.run_daily(self.downstairs_off, '23:30:00')
+        self.run_daily(self.downstairs_all_off, '23:30:00')
         self.run_daily(self.outside_off, '21:30:00')
         self.run_daily(self.all_off, '02:00:00')
 
@@ -269,34 +267,6 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def landing_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
-        """turn on landing lights"""
-
-        if self.get_state('input_boolean.landing_disabled') == 'on':
-            self.set_state('input_boolean.landing_disabled', state='off')
-            return
-
-        cb = data.get('cb', 'noop')
-        brightness = data.get('brightness', self.lib.percent_to_brightness(50))
-        seconds = data.get('seconds', 2*60)
-
-        callback = self.get_callback(cb)
-
-        self.show_service(namespace, domain, service, data, cb, callback)
-
-        self.set_state('input_boolean.landing_disabled', state='off')
-
-        self.call_service('light/turn_on', entity_id=self.const.LANDING, brightness=brightness)
-        self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light')
-
-        # self.call_service('light/turn_on', entity_id=self.const.BEDROOM2, brightness=brightness)
-        # # self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=self.lib.percent_to_brightness(95))
-        # self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=250)
-
-        self.set_callback(cb, callback, seconds)
-
-# -----------------------------------------------------------------------------------
-
     def turn_on_if_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on a light if it off"""
 
@@ -382,19 +352,6 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def bathroom_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
-        """turn off bathroom lights"""
-
-        cb = data.get('cb', 'noop')
-
-        callback = self.get_callback(cb)
-
-        self.show_service(namespace, domain, service, data, cb, callback)
-
-        self.set_callback(cb, callback)
-
-# -----------------------------------------------------------------------------------
-
     def cloakroom_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on cloakroom lights"""
 
@@ -437,7 +394,7 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def bannister_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
+    def downstairs_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on bannister and hallway lights"""
 
         cb = data.get('cb', 'noop')
@@ -456,19 +413,41 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def hallway_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
-        """turn off bannister and hallway lights"""
+    def upstairs_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
+        """turn on landing and bedroom lights"""
+
+        if self.get_state('input_boolean.landing_disabled') == 'on':
+            self.set_state('input_boolean.landing_disabled', state='off')
+            return
 
         cb = data.get('cb', 'noop')
-        seconds = int(data.get('seconds', 0))
+        brightness = data.get('brightness', self.lib.percent_to_brightness(50))
+        seconds = data.get('seconds', 2*60)
 
         callback = self.get_callback(cb)
 
-        if self.lib.get_verbose_debug():
-            self.show_service(namespace, domain, service, data, cb, callback)
-            self.log(f'interval={seconds}', level='DEBUG')
+        self.show_service(namespace, domain, service, data, cb, callback)
 
-        self.set_callback(cb, callback, seconds)
+        self.set_state('input_boolean.landing_disabled', state='off')
+
+        upstairs_ts = self.call_service('timestamp/get', name='upstairs', return_result=True) # we return current as previous here because we will reset current shortly
+        downstairs_ts = self.call_service('timestamp/get', name='downstairs', return_result=True) # we return current as previous here because we will reset current shortly
+        prev_upstairs_ts = self.call_service('timestamp/get', name='prev_upstairs', return_result=True) # we return current as previous here because we will reset current shortly
+
+        diff1 = (upstairs_ts - downstairs_ts).seconds
+        diff2 = (upstairs_ts - prev_upstairs_ts).seconds
+
+        # if diff1 <= 300:
+        #     timer = 600 # 10m timer for bannister if less than 300 seconds difference
+        #     # self.call_service('lighting/lumie_on')
+        # elif diff1 > 300 and diff2 <= 120:
+        #     timer = 10 # but if max has gone to the loo, only 10 seconds
+        # else:
+        #     timer = 60
+
+        if diff1 < 30 and diff2 > 12*60*60:
+            self.landing_on()
+            self.set_callback(cb, callback, seconds)
 
 # -----------------------------------------------------------------------------------
 
@@ -487,6 +466,24 @@ class Lighting(Hass):
         self.call_service('light/turn_on', entity_id=self.const.HALLWAY1, brightness=64, transition=10)
 
         self.set_callback(cb, callback, seconds)
+
+# -----------------------------------------------------------------------------------
+
+    def cancel_timer_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
+        """cancel a timer"""
+
+        name = data.get('name', None)
+        cb = data.get('cb', None)
+
+        if self.get_timer(name) is not None:
+            self._cancel_timer(name)
+
+        callback = self.get_callback(cb)
+
+        self.show_service(namespace, domain, service, data, cb, callback)
+
+        if callback is not None:
+            self.set_callback(cb, callback, 0)
 
 # -----------------------------------------------------------------------------------
 
@@ -560,12 +557,6 @@ class Lighting(Hass):
         seconds = data.get('seconds', 10)
 
         self.call_service('lighting/bathroom_on', seconds=seconds, brightness=brightness, cb='bathroom_off')
-
-# -----------------------------------------------------------------------------------
-
-    def bathroom_off_event(self, event, data, kwargs) -> None:
-
-        self.call_service('lighting/bathroom_off', seconds=0, cb='bathroom_off')
 
 # -----------------------------------------------------------------------------------
 
@@ -698,8 +689,8 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def downstairs_off(self, kwargs) -> None:
-        """turn off downstairslights"""
+    def downstairs_all_off(self, kwargs) -> None:
+        """turn off all downstairs lights apart  from study"""
 
         self.call_service('light/turn_off', entity_id=self.const.LIVING_ROOM_LIGHTS)
         self.call_service('light/turn_off', entity_id=self.const.STANDARD_LAMP) # try again - wasn't switching off
@@ -719,6 +710,18 @@ class Lighting(Hass):
     def hallway_off(self, kwargs) -> None:
 
         self.call_service('light/turn_off', entity_id=self.const.HALLWAY_LIGHTS, transition=10)
+
+# -----------------------------------------------------------------------------------
+
+    def downstairs_off(self, kwargs) -> None:
+
+        self.call_service('light/turn_off', entity_id=self.const.DOWNSTAIR_LIGHTS, transition=10)
+
+# -----------------------------------------------------------------------------------
+
+    def upstairs_off(self, kwargs) -> None:
+
+        self.call_service('light/turn_off', entity_id=self.const.UPSTAIR_LIGHTS, transition=10)
 
 # -----------------------------------------------------------------------------------
 
@@ -939,14 +942,21 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def landing_on(self) -> None:
+        """turn off landing light"""
+
+        self.call_service('light/turn_on', entity_id=self.const.LANDING)
+        # self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light') # FIXME:
+        self.log('\ntoggle fan light\n')
+
+# -----------------------------------------------------------------------------------
+
     def landing_off(self, kwargs) -> None:
         """turn off landing light"""
 
-        s = 60
-        # self.call_service('light/turn_off', entity_id=self.const.LUMIE, transition=s)
-        self.call_service('light/turn_off', entity_id=self.const.LANDING, transition=s)
-        # self.call_service('light/turn_off', entity_id=self.const.BEDROOM2, transition=s)
-        self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light')
+        self.call_service('light/turn_off', entity_id=self.const.LANDING, transition=60)
+        # self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light') # FIXME:
+        self.log('\ntoggle fan light\n')
 
 # -----------------------------------------------------------------------------------
 

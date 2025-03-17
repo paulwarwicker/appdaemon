@@ -76,6 +76,9 @@ class AutomationConstants:
     NIGHTTIME_LIGHTS = [HALLWAY1, BANNISTER]
     FRONT_DOOR_LIGHTS = [HALLWAY1, FRONT_DOOR]
 
+    UPSTAIR_LIGHTS = [HALLWAY3, BANNISTER]
+    DOWNSTAIR_LIGHTS = [HALLWAY1, HALLWAY2, BANNISTER]
+
     ALL_LIGHTS = [HOME_LIGHTS]
 
     N_HALLWAY_ENTITIES = 3
@@ -192,7 +195,7 @@ class AutomationConstants:
     DAILY_WATERING_MINUTES = 30
 
     # timestamps initialised in automation
-    TIMESTAMPS = ('upstairs','downstairs','prev_upstairs','karoq_announce','karoq_notification','garage','garage_lights', 'vacuum','general','travel', 'tap', 'karoq_home')
+    TIMESTAMPS = ['downstairs','prev_upstairs','upstairs','karoq_announce','karoq_notification','garage','garage_lights','vacuum','general','travel','tap','karoq_home']
 
     BEDROOM_BUTTON = 'shellybutton1-C8C9A33CDF09'
     GARAGE_BUTTON = 'shellybutton1-EC64C9C4F038'

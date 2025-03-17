@@ -7,6 +7,7 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
+import time
 from datetime import datetime, timedelta
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
@@ -87,12 +88,13 @@ class Timestamp(Hass):
         """initialise timestamps"""
 
         for name in self.const.TIMESTAMPS:
-            if name == 'tap':
-                self.ts[name] = None
-            if name == 'karoq_home':
+            if name == 'tap' or name == 'karoq_home':
                 self.ts[name] = None
             else:
                 self.ts[name] = datetime.now() + timedelta(minutes=-15)
+            time.sleep(2.0)
+
+        self.status('','','','',{})
 
 # -----------------------------------------------------------------------------------
 
@@ -113,7 +115,7 @@ class Timestamp(Hass):
 
         status = status = '\n\n'
 
-        for name in self.timestamps:
+        for name in self.const.TIMESTAMPS:
             ts = self.ts[name]
             status += f'\t{name}_ts={ts}\n'
 
