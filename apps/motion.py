@@ -242,9 +242,6 @@ class Motion(Hass):
         self.lib.log_function_name()
 
         cb = kwargs.get('cb', None)
-        key = kwargs.get('key', 'bathroom')
-
-        key = 'bathroom_off' if new == 'off' else key
 
         self.call_service(f'lighting/bathroom_{new}', entity_id=self.const.BATHROOM_LIGHTS, cb=cb)
 

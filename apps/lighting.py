@@ -946,8 +946,7 @@ class Lighting(Hass):
         """turn off landing light"""
 
         self.call_service('light/turn_on', entity_id=self.const.LANDING)
-        # self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light') # FIXME:
-        self.log('\ntoggle fan light\n')
+        self.toggle_bedroom_light()
 
 # -----------------------------------------------------------------------------------
 
@@ -955,7 +954,14 @@ class Lighting(Hass):
         """turn off landing light"""
 
         self.call_service('light/turn_off', entity_id=self.const.LANDING, transition=60)
-        # self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light') # FIXME:
+        self.toggle_bedroom_light()
+
+# -----------------------------------------------------------------------------------
+
+    def toggle_bedroom_light(self) -> None:
+        """toggle bedroom light"""
+
+        self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light') # FIXME:
         self.log('\ntoggle fan light\n')
 
 # -----------------------------------------------------------------------------------
