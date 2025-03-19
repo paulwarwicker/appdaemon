@@ -20,6 +20,7 @@ class Lighting(Hass):
     lib = None
     const = None
     timers = {}
+    fan_light_state = False
 
 # -----------------------------------------------------------------------------------
 
@@ -32,6 +33,7 @@ class Lighting(Hass):
         self.register_service('lighting/garage_on', self.garage_on_service)
         self.register_service('lighting/garage_off', self.garage_off_service)
         self.register_service('lighting/downstairs_on', self.downstairs_on_service)
+        self.register_service('lighting/downstairs_off', self.downstairs_off_service)
         self.register_service('lighting/upstairs_on', self.upstairs_on_service)
         self.register_service('lighting/utility_on', self.utility_on_service)
         self.register_service('lighting/utility_off', self.utility_off_service)
@@ -47,8 +49,10 @@ class Lighting(Hass):
         self.register_service('lighting/front_door_ding', self.front_door_ding_service)
         self.register_service('lighting/all_off', self.all_off_service)
         self.register_service('lighting/bathroom_on', self.bathroom_on_service)
-        # self.register_service('lighting/landing_on', self.landing_on_service)
+        self.register_service('lighting/bathroom_off', self.bathroom_off_service)
+        self.register_service('lighting/landing_on', self.landing_on_service)
         self.register_service('lighting/cloakroom_on', self.cloakroom_on_service)
+        self.register_service('lighting/cloakroom_off', self.cloakroom_off_service)
         self.register_service('lighting/cancel_timer', self.cancel_timer_service)
 
         self.listen_event(self.status_event, 'status')
@@ -63,6 +67,7 @@ class Lighting(Hass):
         self.listen_event(self.button_event, 'shelly.click')
         self.listen_event(self.all_off_event, 'all_off')
         self.listen_event(self.bathroom_on_event, 'bathroom_on')
+        self.listen_event(self.bathroom_off_event, 'bathroom_off')
         self.listen_event(self.test_welcome_lights_event, 'test_welcome_lights')
         self.listen_event(self.test_lights_event, 'test_lights')
         self.listen_event(self.test_event, 'Test')
@@ -125,6 +130,8 @@ class Lighting(Hass):
             self.call_service('light/turn_off', entity_id=self.const.STANDARD_LAMP)
 
         self.set_callback(cb, callback, seconds)
+
+        self.lib.log_function_name(False, True)
 
 # -----------------------------------------------------------------------------------
 
@@ -267,6 +274,38 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def landing_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
+        """turn on landing lights"""
+
+        self.lib.log_function_name(True, True)
+
+        if self.get_state('input_boolean.landing_disabled') == 'on':
+            self.set_state('input_boolean.landing_disabled', state='off')
+            return
+
+        cb = data.get('cb', 'noop')
+        brightness = data.get('brightness', self.lib.percent_to_brightness(50))
+        seconds = data.get('seconds', 2*60)
+
+        callback = self.get_callback(cb)
+
+        self.show_service(namespace, domain, service, data, cb, callback)
+
+        self.set_state('input_boolean.landing_disabled', state='off')
+
+        self.call_service('light/turn_on', entity_id=self.const.LANDING, brightness=brightness)
+        self.toggle_bedroom_light()
+
+        # self.call_service('light/turn_on', entity_id=self.const.BEDROOM2, brightness=brightness)
+        # # self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=self.lib.percent_to_brightness(95))
+        # self.call_service('light/turn_on', entity_id=self.const.LUMIE, brightness=250)
+
+        self.set_callback(cb, callback, seconds)
+
+        self.lib.log_function_name(False, True)
+
+# -----------------------------------------------------------------------------------
+
     def turn_on_if_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on a light if it off"""
 
@@ -352,6 +391,19 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def bathroom_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
+        """turn off bathroom lights"""
+
+        cb = data.get('cb', 'noop')
+
+        callback = self.get_callback(cb)
+
+        self.show_service(namespace, domain, service, data, cb, callback)
+
+        self.set_callback(cb, callback)
+
+# -----------------------------------------------------------------------------------
+
     def cloakroom_on_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
         """turn on cloakroom lights"""
 
@@ -408,6 +460,22 @@ class Lighting(Hass):
 
         self.call_service('light/turn_on', entity_id=self.const.HALLWAY1, brightness=64)
         self.call_service('light/turn_on', entity_id=self.const.BANNISTER, brightness=self.lib.percent_to_brightness(12))
+
+        self.set_callback(cb, callback, seconds)
+
+# -----------------------------------------------------------------------------------
+
+    def downstairs_off_service(self, namespace:str, domain:str, service:str, data:dict) -> None:
+        """turn off bannister and hallway lights"""
+
+        cb = data.get('cb', 'noop')
+        seconds = int(data.get('seconds', 0))
+
+        callback = self.get_callback(cb)
+
+        if self.lib.get_verbose_debug():
+            self.show_service(namespace, domain, service, data, cb, callback)
+            self.log(f'interval={seconds}', level='DEBUG')
 
         self.set_callback(cb, callback, seconds)
 
@@ -560,9 +628,15 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def bathroom_off_event(self, event, data, kwargs) -> None:
+
+        self.call_service('lighting/bathroom_off', seconds=0, cb='bathroom_off')
+
+# -----------------------------------------------------------------------------------
+
     def front_door_ding_event(self, event, data, kwargs) -> None:
 
-        self.call_service('lighting/front_door_ding', seconds=20, cb='front_door_hallway_off', key='front_door_ding')
+        self.call_service('lighting/front_door_ding', seconds=20, cb='front_door_hallway_off')
 
 # -----------------------------------------------------------------------------------
 
@@ -945,24 +1019,37 @@ class Lighting(Hass):
     def landing_on(self) -> None:
         """turn off landing light"""
 
+        self.lib.log_function_name(True, True)
+
         self.call_service('light/turn_on', entity_id=self.const.LANDING)
         self.toggle_bedroom_light()
+
+        self.lib.log_function_name(False, True)
 
 # -----------------------------------------------------------------------------------
 
     def landing_off(self, kwargs) -> None:
         """turn off landing light"""
 
+        self.lib.log_function_name(True, True)
+
         self.call_service('light/turn_off', entity_id=self.const.LANDING, transition=60)
         self.toggle_bedroom_light()
+
+        self.lib.log_function_name(False, True)
 
 # -----------------------------------------------------------------------------------
 
     def toggle_bedroom_light(self) -> None:
         """toggle bedroom light"""
 
+        self.lib.log_function_name(True, True)
+
         self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='light') # FIXME:
-        self.log('\ntoggle fan light\n')
+        self.fan_light_state = not self.fan_light_state
+        self.log(f'toggle fan light state={self.fan_light_state}', level='WARNING')
+
+        self.lib.log_function_name(False, True)
 
 # -----------------------------------------------------------------------------------
 
@@ -993,7 +1080,7 @@ class Lighting(Hass):
             if cb != 'noop':
                 timer = self.run_in(callback, seconds, key=cb, seconds=seconds)
                 self.set_timer(cb, timer)
-                self.fire_event('timers')
+                # self.fire_event('timers')
 
 # -----------------------------------------------------------------------------------
 

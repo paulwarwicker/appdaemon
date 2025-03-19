@@ -223,8 +223,7 @@ class Motion(Hass):
         self.lib.log_function_name()
 
         cb = kwargs.get('cb', None)
-        seconds = kwargs.get('seconds', 5*60)
-        key = kwargs.get('key', 'utility')
+        seconds = kwargs.get('seconds', 2*60)
         brightness = kwargs.get('brightness', 64)
 
         if new == 'off':
