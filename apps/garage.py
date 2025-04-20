@@ -92,9 +92,9 @@ class Garage(Hass):
 
         self.lib.log_function_name(True, True)
 
-        self.fire_event('garage_open')
+        self.call_service('garage/open')
         time.sleep(30)
-        self.fire_event('garage_close')
+        self.call_service('garage/close')
 
 # -----------------------------------------------------------------------------------
 
