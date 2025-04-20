@@ -425,9 +425,6 @@ class Alarms(Hass):
         test = self.is_test(kwargs)
         entity_id = self.const.STUDY_SPEAKER if test else self.const.BEDROOM_SPEAKER
 
-        if self.lib.is_night():
-            self.lumie_on({})
-
         self.call_service('sonos/unjoin_entity', entity_id=entity_id)
         self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
         self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=0)
@@ -449,6 +446,7 @@ class Alarms(Hass):
                     self.log(f'state={state}', level='DEBUG')
                 self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
                 self.call_service('media_player/play_media', entity_id=entity_id, media_content_type="music", media_content_id=media)
+                time.sleep(1.0)
             else:
                 break
 
@@ -532,7 +530,7 @@ class Alarms(Hass):
         transition = kwargs['transition']
         rgb_color = kwargs['rgb_color']
 
-        self.call_service('lighting/lumie_on')
+        self.call_service('lighting/lumie_on', brightness=brightness)
 
 # # -----------------------------------------------------------------------------------
 

@@ -64,9 +64,15 @@ class FrontDoor(Hass):
 
     def front_door_battery(self, kwargs) -> None:
 
+        level = self.get_state('sensor.front_door_battery')
+
+        if level == 'unavailable':
+            self.log('Battery level not available', level='ERROR')
+            return
+
         message = None
         battery = ''
-        level = int(self.get_state('sensor.front_door_battery'))
+        level = int(level)
 
         if level <= 50:
             if level <= 20:

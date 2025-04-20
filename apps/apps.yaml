@@ -76,6 +76,7 @@ timers:
 motion:
   module: motion
   class: Motion
+  reset_on_off: false
   # log_level: DEBUG
   dependencies:
     - automationlib
@@ -152,6 +153,15 @@ vacuum:
     - const
     - announcer
     - timestamp
+
+shelly:
+  module: shelly
+  class: Shelly
+  # log_level: DEBUG
+  dependencies:
+    - automationlib
+    - const
+    - announcer
 
 # --
 # doorbell:

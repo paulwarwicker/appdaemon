@@ -173,7 +173,10 @@ class Tap(Hass):
 
     def status(self, entity, attribute, old, new, kwargs) -> None:
 
-        status = '\n\n'
+        (_, week, _) = self.lib.now().isocalendar()
+        state = 17 <= week <= 37
+
+        status = f'\n\n\tweek={week}\n\tstate={state}\n'
 
         self.log(f'{status}')
 

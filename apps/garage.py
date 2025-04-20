@@ -39,7 +39,6 @@ class Garage(Hass):
         self.listen_event(self.garage_open_event, 'garage_open')
         self.listen_event(self.garage_close_event, 'garage_close')
         self.listen_event(self.garage_open_close_event, 'garage_open_close')
-        self.listen_event(self.button_event, 'shelly.click')
 
         runtime = datetime(2024, 1, 1, 0, 0, 0)
         self.run_hourly(self.close_garage_door, runtime)
@@ -56,32 +55,36 @@ class Garage(Hass):
     def garage_open_service(self, namespace, domain, service, kwargs) -> None:
         """open the garage"""
 
-        self.fire_event('garage_open')
+        self.lib.log_function_name(True, True)
+
+        self.call_service('timestamp/set', name='garage')
+        self.garage_door_open('','','','',{})
+
+        self.lib.log_function_name(False, True)
 
 # -----------------------------------------------------------------------------------
 
     def garage_close_service(self, namespace, domain, service, kwargs) -> None:
         """close the garage"""
 
-        self.fire_event('garage_close')
+        self.lib.log_function_name(True, True)
+
+        self.call_service('timestamp/set', name='garage')
+        self.garage_door_close('','','','',{})
+
+        self.lib.log_function_name(False, True)
 
 # -----------------------------------------------------------------------------------
 
     def garage_open_event(self, event, data, kwargs:dict) -> None:
 
-        self.lib.log_function_name(True, True)
-
-        self.call_service('timestamp/set', name='garage')
-        self.garage_door_open('','','','',{})
+        self.call_service('garage/open')
 
 # -----------------------------------------------------------------------------------
 
     def garage_close_event(self, event, data, kwargs:dict) -> None:
 
-        self.lib.log_function_name(True, True)
-
-        self.call_service('timestamp/set', name='garage')
-        self.garage_door_close('','','','',{})
+        self.call_service('garage/close')
 
 # -----------------------------------------------------------------------------------
 
@@ -92,38 +95,6 @@ class Garage(Hass):
         self.fire_event('garage_open')
         time.sleep(30)
         self.fire_event('garage_close')
-
-# -----------------------------------------------------------------------------------
-
-    def button_event(self, event, data, kwargs) -> None:
-
-        # print(f'garage={self.const.GARAGE_BUTTON}')
-
-        event_type  = None
-        device = data['device']
-        click_type = data['click_type']
-
-        if device != self.const.GARAGE_BUTTON:
-            return
-
-        print(data)
-
-        if click_type == 'single':
-            event_type  = 'garage_close'
-        elif click_type == 'long':
-            event_type  = 'garage_open'
-        elif click_type == 'double':
-            state = self.get_state(self.const.GARAGE_ENTITY_ID)
-            if state == 'open':
-                event_type = 'garage_close'
-            else:
-                event_type = 'garage_open'
-        elif click_type == 'triple':
-            pass
-
-        if event_type is not None:
-            print(event_type)
-            self.fire_event(event_type)
 
 # -----------------------------------------------------------------------------------
 
@@ -150,10 +121,10 @@ class Garage(Hass):
 
         if new == 'opening':
             if below:
-                self.call_service('lighting/garage_on', seconds=self.lib.interval(minutes=30), cb='garage_off', key='garage_lights')
+                self.call_service('lighting/garage_on', seconds=self.lib.interval(minutes=30), cb='garage_off')
         elif new == 'closed':
             if below:
-                self.call_service('lighting/garage_off', seconds=self.lib.interval(minutes=1), cb='garage_off', key='garage_lights')
+                self.call_service('lighting/garage_off', seconds=self.lib.interval(minutes=1), cb='garage_off')
 
         self.garage_door_announce(state=new)
 

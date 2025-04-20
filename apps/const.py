@@ -84,7 +84,20 @@ class AutomationConstants:
     N_HALLWAY_ENTITIES = 3
     N_KITCHEN_ENTITIES = 6
     N_BATHROOM_ENTITIES = 4
+    N_UTILITY_ROOM_ENTITIES = 1
     N_KITCHEN_FLOOR_ENTITIES = 2
+
+    DEFAULT_TIMEOUT = 2*60
+    WELCOME_TIMEOUT = 5*60
+    BATHROOM_TIMEOUT = 3*60
+    UPSTAIRS_TIMEOUT = 3*60
+    BANNISTER_TIMEOUT = 10*60
+    KITCHEN_FLOOR_TIMEOUT = 5*60
+    CLOAKROOM_TIMEOUT = 2*60
+
+    FULL_ON = 250
+    HALF_ON = 128
+    QUARTER_ON = 64
 
     # alarms
     NIGHT_DELIVER = [5, 3]
@@ -106,24 +119,27 @@ class AutomationConstants:
     ATTEMPTS = 5
     PLAY_DELAY = 0.75
     DEFAULT_VOLUME = 0.15
-    # NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1']
+    NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+                    'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+                    'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1']
     # NORMAL_ALARM = ['aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
     #                 'aac://http://prem4.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
     #                 'aac://http://prem1.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1']
-    NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem4.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem1.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem1.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem4.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1']
+    # NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+    #                 'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+    #                 'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+    #                 'aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    #                 'aac://http://prem4.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    #                 'aac://http://prem1.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    #                 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+    #                 'aac://http://prem1.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+    #                 'aac://http://prem4.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1']
 
     CHRISTMAS_STREAM = 'aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1'
     BOSSANOVA_STREAM = 'aac://http://prem2.radiotunes.com:80/smoothbossanova?5fba91be81f6da5b573f89c1'
+    SUMMER_VIBES_ALBUM = 'spotify:album:37ZeJt50FWCaLkw3HNJB2c'
+    SUMMER_VIBES_PLAYLIST = 'spotify:playlist:2hmLDliFT9mW84XHxRUzwx'
+    SUMMER_HITS_PLAYLIST = 'spotify:playlist:37i9dQZF1DX4uU3TGzIPXL'
 
     # 'x-sonos-spotify:spotify%3atrack%3a1r4QKeqpv1ov8FkrgKDxQ7?sid=9&flags=8224&sn=1', # a gentle thunderstorm
     # 'x-sonos-spotify:spotify%3atrack%3a2T5Lipk1QTtvt76Xjcwrxc?sid=9&flags=8224&sn=1', # heavy thunderstorm sounds
@@ -172,7 +188,6 @@ class AutomationConstants:
         'proximity.pilates': ['pilates','Pilates Longstanton'],
         'proximity.pilates2': ['pilates2','Pilates Bar Hill'],
         'proximity.pilates3': ['pilates3','Pilates Northstowe'],
-        'proximity.pilates4': ['pilates4','Pilates Northstowe'],
         'proximity.karen_wax': ['karen_wax','Karen waxing'],
         'proximity.karen_smith': ['karen_smith','Karen Smith'],
         'proximity.karen_nail': ['karen_nail','Karen nails'],
@@ -188,14 +203,16 @@ class AutomationConstants:
         'proximity.papworth': ['papworth','Papworh Hospital'],
         'proximity.home': ['home', 'Max is home'],
         'proximity.jollop_place': ['jollop_place', 'Jollop Place'],
+        'proximity.c_r_t': ['c_r_t','C R T Offices'],
         'proximity.c_r_t_offsite': ['c_r_t_offsite','C R T Offsite meeting'],
+        'proximity.jan_jim': ['jan_jim','Jan and Jim'],
     }
 
     # tap
     DAILY_WATERING_MINUTES = 30
 
     # timestamps initialised in automation
-    TIMESTAMPS = ['downstairs','prev_upstairs','upstairs','karoq_announce','karoq_notification','garage','garage_lights','vacuum','general','travel','tap','karoq_home']
+    TIMESTAMPS = ['downstairs', 'prev_upstairs', 'upstairs', 'karoq_announce', 'karoq_notification', 'vacuum', 'general', 'travel', 'tap', 'karoq_home', 'upstairs_motion', 'garage_open', 'garage_close', 'garage_lights_on', 'garage_lights_off']
 
     BEDROOM_BUTTON = 'shellybutton1-C8C9A33CDF09'
     GARAGE_BUTTON = 'shellybutton1-EC64C9C4F038'

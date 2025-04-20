@@ -90,6 +90,8 @@ class Timestamp(Hass):
         for name in self.const.TIMESTAMPS:
             if name == 'tap' or name == 'karoq_home':
                 self.ts[name] = None
+            elif name == 'upstairs_motion':
+                self.ts[name] = datetime.now() + timedelta(hours=-6)
             else:
                 self.ts[name] = datetime.now() + timedelta(minutes=-15)
             time.sleep(2.0)

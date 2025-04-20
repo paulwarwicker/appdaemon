@@ -80,7 +80,6 @@ class Automation(Hass):
         self._set_console_log_level()
 
         self.call_service('timestamp/init')
-        # self.fire_event('timestamps')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('initialised --------------------------------------------------------------------', level='INFO')
@@ -301,7 +300,7 @@ class Automation(Hass):
         if self.lib.get_alarm_testing():
             self.call_service('alarm/reset')
 
-        self.call_service('motion/reset_motion_flag')
+        # self.call_service('motion/reset_motion_flag')
         self.call_service('sonos/unjoin_all')
 
         self.set_state('input_boolean.override', state='off')

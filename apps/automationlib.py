@@ -6,7 +6,6 @@ import time
 import inspect
 from datetime import datetime,timedelta
 import requests  # type: ignore # pylint: disable=E0401
-import arrow  # pylint: disable=E0401
 
 from adapi import ADAPI # type: ignore # pylint: disable=E0401 disable=E0611
 
@@ -28,7 +27,7 @@ class AutomationLib():
     def now(self):
         """now"""
 
-        return arrow.now() # pylint: disable=E1101
+        return datetime.now()
 
 # -----------------------------------------------------------------------------------
 
@@ -88,7 +87,7 @@ class AutomationLib():
     def is_summer(self) -> bool:
         """is today a summer day (end of april to mid-september)"""
 
-        (isoy, isow, isod) = self.now().isocalendar()
+        (_, isow, _) = self.now().isocalendar()
 
         return 17 <= isow <= 37
 
@@ -218,22 +217,24 @@ class AutomationLib():
 
 # -----------------------------------------------------------------------------------
 
-    def log_function_name(self, start: bool=True, separator: bool=False) -> None:
+    def log_function_name(self, start: bool=True, separator: bool=False, notification: bool=False, stacktrace: bool=False) -> None:
         """log function name as log message"""
 
         name = inspect.currentframe().f_back.f_code.co_name
+        prefix = '>>>' if start else '<<<'
+
+        if notification:
+            self.adapi.call_service('announcer/notification', message=f'{prefix} {name}', type='desktop')
+
+        if stacktrace:
+            print(inspect.currentframe())
+            print(inspect.currentframe().f_back)
 
         if separator:
-            prefix = '>>>' if start else '<<<'
             dashes = '-' * (80 - len(name))
             self.adapi.log(f'{prefix} {name} {dashes}',level='WARNING')
-            return
-
-        if self.get_verbose_debug():
-            # print(inspect.currentframe())
-            # print(inspect.currentframe().f_back)
-            name = inspect.currentframe().f_back.f_code.co_name
-            self.adapi.log(('\t>>> begin' if start else '\t<<< end') + f' {name}', level='DEBUG')
+        else:
+            self.adapi.log(f'\t{prefix} {name}', level='DEBUG')
 
 # -----------------------------------------------------------------------------------
 
@@ -245,7 +246,7 @@ class AutomationLib():
 
         self.adapi.call_service('homeassistant/update_entity', entity_id=entity_id)
         attributes = self.adapi.get_state(entity_id=entity_id, attribute="attributes")
-        state = self.adapi.get_state(entity_id=entity_id, attribute="state")
+        state = self.adapi.get_state(entity_id=entity_id)
         self.adapi.log(f'entity_id={entity_id} state={state} attributes={attributes}', level='DEBUG')
 
         return state == 'playing'
