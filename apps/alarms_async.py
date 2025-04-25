@@ -41,7 +41,6 @@ class Alarms2(Hass):
         # self.rota = self.generate_rota(datetime(2024, 5, 16).date(), 12)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 

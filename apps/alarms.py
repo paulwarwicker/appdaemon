@@ -59,7 +59,6 @@ class Alarms(Hass):
         self.run_in(self.set_alarm_state, 0)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -378,7 +377,7 @@ class Alarms(Hass):
 
             kwargs.pop('action', None)  # del kwargs['action']
             alarm = self.run_daily(self.alarm, f'{alarm_time}:00', **kwargs)
-            self.log(f'\t{_alarm_type} alarm set for {alarm_time}:00 using {time_entity_id}', level="WARNING")
+            self.log(f'\t{_alarm_type} alarm set for {alarm_time}:00 using {time_entity_id}', level="INFO")
         elif action == 'cancel':
             self.set_state(bool_entity_id, state='off')
             alarm_time = 'unset' # can trace in message below

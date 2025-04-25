@@ -28,7 +28,6 @@ class Snoozer(Hass):
         self.listen_event(self.snooze_event, "snooze_60", minutes=60)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
