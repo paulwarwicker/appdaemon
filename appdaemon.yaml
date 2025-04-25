@@ -17,6 +17,9 @@ appdaemon:
       cert_verify: True
 http:
   url: http://homeassistant.local:5050
+logs:
+  main_log:
+    level: info
 api:
 admin:
 hadashboard:
