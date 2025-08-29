@@ -90,6 +90,10 @@ class Lighting(Hass):
         self.listen_state(self.bathroom_on_full, 'input_boolean.bathroom_override', new='off')
         self.listen_state(self.cloakroom_on_full, 'input_boolean.cloakroom_override', new='on')
         self.listen_state(self.cloakroom_on_full, 'input_boolean.cloakroom_override', new='off')
+        self.listen_state(self.kitchen_on_full, 'input_boolean.kitchen_override', new='on')
+        self.listen_state(self.kitchen_on_full, 'input_boolean.kitchen_override', new='off')
+        self.listen_state(self.utility_on_full, 'input_boolean.utility_override', new='on')
+        self.listen_state(self.utility_on_full, 'input_boolean.utility_override', new='off')
 
         self.run_daily(self.living_room_on, 'sunset - 00:10:00')
         self.run_daily(self.downstairs_all_off, '23:30:00')
@@ -180,7 +184,7 @@ class Lighting(Hass):
 
         self.lib.log_function_name(start=True)
 
-        if self.get_state('input_boolean.kitchen_override') == 'on' or self.any_light_on_full('kitchen'):
+        if self.any_light_on_full('kitchen'):
             self.log('\tignoring kitchen on service', level='INFO')
             self.lib.log_function_name(start=False)
             return
@@ -220,6 +224,11 @@ class Lighting(Hass):
 
         self.lib.log_function_name(start=True)
 
+        if self.any_light_on_full('utility_room'):
+            self.log('\tignoring utility on service', level='INFO')
+            self.lib.log_function_name(start=False)
+            return
+
         if self.lib.is_below_horizon():
             brightness = self.const.HALF_ON if self.now_is_between('sunrise', 'sunset') else self.const.QUARTER_ON
             self.call_service('light/turn_on', entity_id=self.const.UTILITY_ROOM_LIGHTS, brightness=brightness)
@@ -235,6 +244,11 @@ class Lighting(Hass):
 
         cb = data.get('cb', 'noop')
         seconds = data.get('seconds', self.const.DEFAULT_TIMEOUT)
+
+        if self.get_state('input_boolean.utility_override') == 'on' or self.any_light_on_full('utility_room'):
+            self.log('\tdeferring utility off service', level='INFO')
+            self.lib.log_function_name(start=False)
+            return
 
         callback = self.get_callback(cb)
 
@@ -404,7 +418,7 @@ class Lighting(Hass):
 
         cb = data.get('cb', 'noop')
 
-        if self.get_state('input_boolean.bathroom_override') == 'on' or self.any_light_on_full('bathroom'):
+        if self.any_light_on_full('bathroom'): # self.get_state('input_boolean.bathroom_override') == 'on' or :
             self.log('\tignoring bathroom on service', level='INFO')
             self.lib.log_function_name(start=False)
             return
@@ -464,7 +478,7 @@ class Lighting(Hass):
 
         cb = data.get('cb', 'noop')
 
-        if self.get_state('input_boolean.cloakroom_override') == 'on' or self.any_light_on_full('cloakroom'):
+        if self.any_light_on('cloakroom'):
             self.log('\tignoring cloakroom on service', level='INFO')
             self.lib.log_function_name(start=False)
             return
@@ -809,11 +823,11 @@ class Lighting(Hass):
 
     def bedroom_off(self, kwargs) -> None:
 
-        self.lib.log_function_name(start=True)#force=True)
+        self.lib.log_function_name(start=True)
 
         self.toggle_bedroom_light()
 
-        self.lib.log_function_name(start=False)#, force=True)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -862,9 +876,10 @@ class Lighting(Hass):
 
         if self.get_state('input_boolean.cloakroom_override') == 'on':
             self.log('\tdeferring cloakroom off', level='INFO')
-        else:
-            self.call_service('light/turn_off', entity_id=self.const.CLOAKROOM, transition=10)
-            self.fire_event('timers')
+            return
+
+        self.call_service('light/turn_off', entity_id=self.const.CLOAKROOM, transition=10)
+        self.fire_event('timers')
 
 # -----------------------------------------------------------------------------------
 
@@ -880,9 +895,10 @@ class Lighting(Hass):
 
         if self.get_state('input_boolean.bathroom_override') == 'on' or self.any_light_on_full('bathroom'):
             self.log('\tdeferring bathroom off', level='INFO')
-        else:
-            self.call_service('light/turn_off', entity_id=self.const.BATHROOM_LIGHTS, transition=10)
-            self.fire_event('timers')
+            return
+
+        self.call_service('light/turn_off', entity_id=self.const.BATHROOM_LIGHTS, transition=10)
+        self.fire_event('timers')
 
 # -----------------------------------------------------------------------------------
 
@@ -937,12 +953,13 @@ class Lighting(Hass):
 
         if self.any_light_on_full(entity_ids):
             self.log('\tdeferring kitchen off', level='INFO')
-        else:
-            self.call_service('light/turn_off', entity_id=self.const.KITCHEN_LIGHTS, transition=10)
-            cb = 'kitchen_floor_off'
-            callback = self.get_callback(cb)
-            self.set_callback(cb, callback, 5*60)
-            self.fire_event('timers')
+            return
+
+        self.call_service('light/turn_off', entity_id=self.const.KITCHEN_LIGHTS, transition=10)
+        cb = 'kitchen_floor_off'
+        callback = self.get_callback(cb)
+        self.set_callback(cb, callback, 5*60)
+        self.fire_event('timers')
 
 # -----------------------------------------------------------------------------------
 
@@ -956,8 +973,9 @@ class Lighting(Hass):
 
         if self.any_light_on_full('utility_room'):
             self.log('\tdeferring - utiltity lights on', level='INFO')
-        else:
-            self.call_service('light/turn_off', entity_id=self.const.UTILITY_ROOM_LIGHTS, transition=10)
+            return
+
+        self.call_service('light/turn_off', entity_id=self.const.UTILITY_ROOM_LIGHTS, transition=10)
 
 # -----------------------------------------------------------------------------------
 
@@ -985,9 +1003,6 @@ class Lighting(Hass):
                 self._cancel_timer(name)
 
         self.log(f'\tadding new timer name={name} timer={timer}', level='DEBUG')
-
-        # if self.check_timer(name, timer):
-        #     self.timers[name] = timer
 
         self.timers[name] = timer
 
@@ -1055,7 +1070,6 @@ class Lighting(Hass):
             return False
 
         end_time, interval, kwargs = self.info_timer(timer)
-        # self.log(f'\tname={name} timer={timer} end_time={end_time} interval={interval} kwargs={kwargs} isrunning={self.timer_running(timer)}')
 
         return True
 
@@ -1139,14 +1153,7 @@ class Lighting(Hass):
     def any_light_on_full(self, area)  -> bool:
         """is any light on full"""
 
-        entity_ids = []
-
-        if area == 'kitchen':
-            entity_ids = self.light_entities(area, self.const.N_KITCHEN_ENTITIES)
-        elif area == 'utility_room':
-            entity_ids = self.light_entities(area, self.const.N_UTILITY_ROOM_ENTITIES)
-        elif area == 'bathroom':
-            entity_ids = self.light_entities(area, self.const.N_BATHROOM_ENTITIES)
+        entity_ids = self.light_entities_for_area(area)
 
         for entity_id in entity_ids:
             brightness = self.get_state(entity_id=entity_id, attribute="brightness")
@@ -1161,14 +1168,58 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def any_light_on(self, entity_ids)  -> bool:
+    def light_entities_for_area(self, area):
+        """light entities for area"""
+
+        entity_ids = []
+
+        if area == 'kitchen':
+            entity_ids = self.light_entities(area, self.const.N_KITCHEN_ENTITIES)
+        elif area == 'utility_room':
+            entity_ids = self.light_entities(area, self.const.N_UTILITY_ROOM_ENTITIES)
+        elif area == 'bathroom':
+            entity_ids = self.light_entities(area, self.const.N_BATHROOM_ENTITIES)
+        elif area == 'cloakroom':
+            entity_ids = self.light_entities(area, self.const.N_CLOAKROOM_ENTITIES)
+
+        return entity_ids
+
+# -----------------------------------------------------------------------------------
+
+    def any_light_on(self, area)  -> bool:
         """is any light on"""
+
+        entity_ids = self.light_entities_for_area(area)
 
         for entity_id in entity_ids:
             if self.is_light_on(entity_id):
                 return True
 
         return False
+
+        # return self._any_light_on(entity_ids)
+
+        # for entity_id in entity_ids:
+        #     brightness = self.get_state(entity_id=entity_id, attribute="brightness")
+        #     self.log(f'entity_id={entity_id} brightness={brightness}', level='DEBUG')
+        #     if brightness is not None and brightness > 10:
+        #         self.log('any_light_on_at_all returning True', level='DEBUG')
+        #         return True
+
+        # self.log('any_light_on_at_all returning False', level='DEBUG')
+
+        # return False
+
+# -----------------------------------------------------------------------------------
+
+    # def _any_light_on(self, entity_ids)  -> bool:
+    #     """is any light on"""
+
+    #     for entity_id in entity_ids:
+    #         if self.is_light_on(entity_id):
+    #             return True
+
+    #     return False
 
 # -----------------------------------------------------------------------------------
 
@@ -1184,7 +1235,7 @@ class Lighting(Hass):
     def toggle_bedroom_light(self) -> None:
         """toggle bedroom light"""
 
-        self.lib.log_function_name(start=True)#force=True)
+        self.lib.log_function_name(start=True)
 
         self.fan_light_state = not self.fan_light_state
 
@@ -1193,7 +1244,7 @@ class Lighting(Hass):
 
         self.log(f'\tfan_light_state={self.fan_light_state}')
 
-        self.lib.log_function_name(start=False)#, force=True)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -1207,7 +1258,6 @@ class Lighting(Hass):
             traceback.print_stack()
         else:
             if cb != 'noop':
-                # self.call_service('announcer/notification', message=f'set_callback cb={cb} seconds={seconds}', type='desktop')
                 timer = self.run_in(callback, seconds, key=cb, seconds=seconds)
                 self.set_timer(cb, timer)
                 self.fire_event('timers')
@@ -1251,7 +1301,7 @@ class Lighting(Hass):
         if new == 'on':
             self.call_service('lighting/bathroom_on', entity_id=self.const.BATHROOM_LIGHTS, cb='noop', seconds=self.const.SHORT_TIMEOUT)
         else:
-            self.call_service('lighting/bathroom_off', entity_id=self.const.BATHROOM_LIGHTS, cb='bathroom_off', seconds=0) #self.const.SHORT_TIMEOUT)
+            self.call_service('lighting/bathroom_off', entity_id=self.const.BATHROOM_LIGHTS, cb='bathroom_off', seconds=0)
 
 # -----------------------------------------------------------------------------------
 
@@ -1261,6 +1311,28 @@ class Lighting(Hass):
         if new == 'on':
             self.call_service('lighting/cloakroom_on', entity_id=self.const.CLOAKROOM, cb='noop', seconds=self.const.SHORT_TIMEOUT)
         else:
-            self.call_service('lighting/cloakroom_off', entity_id=self.const.CLOAKROOM, cb='cloakroom_off', seconds=0) #self.const.SHORT_TIMEOUT)
+            self.call_service('lighting/cloakroom_off', entity_id=self.const.CLOAKROOM, cb='cloakroom_off', seconds=0)
+
+# -----------------------------------------------------------------------------------
+
+    def kitchen_on_full(self, entity, attribute, old, new, kwargs) -> None:
+        """kitchen on full"""
+
+        if new == 'on':
+            self.call_service('lighting/kitchen_on', entity_id=self.const.KITCHEN_LIGHTS, cb='noop', seconds=self.const.SHORT_TIMEOUT)
+        else:
+            self.call_service('lighting/kitchen_off', entity_id=self.const.KITCHEN_LIGHTS, cb='kitchen_off', seconds=0)
+            self.call_service('lighting/kitchen_off', entity_id=self.const.KITCHEN_LIGHTS, cb='kitchen_off', seconds=0) # just in case
+            self.kitchen_floor_off({})
+
+# -----------------------------------------------------------------------------------
+
+    def utility_on_full(self, entity, attribute, old, new, kwargs) -> None:
+        """utility room on full"""
+
+        if new == 'on':
+            self.call_service('lighting/utility_on', entity_id=self.const.UTILITY, cb='noop', seconds=self.const.SHORT_TIMEOUT)
+        else:
+            self.call_service('lighting/utility_off', entity_id=self.const.UTILITY, cb='utility_off', seconds=0)
 
 # -----------------------------------------------------------------------------------
