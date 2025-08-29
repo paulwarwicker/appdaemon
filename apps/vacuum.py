@@ -39,7 +39,6 @@ class Vacuum(Hass):
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -80,8 +79,11 @@ class Vacuum(Hass):
         diff = (datetime.now() - ts).seconds
 
         self.call_service('announcer/announce', entity_id=self.const.STUDY_SPEAKER, message=message)
+        self.call_service('announcer/announce', entity_id=self.const.KITCHEN_SPEAKER, message=message)
 
-        if diff > ( 3 * 60 ):
-            self.call_service('announcer/broadcast', message=message, timestamp='vacuum')
+        # if diff > ( 3 * 60 ):
+        #     self.call_service('announcer/broadcast', message=message, timestamp='vacuum')
+
+        self.call_service('timestamp/set', name='vacuum')
 
 # -----------------------------------------------------------------------------------

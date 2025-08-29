@@ -58,23 +58,26 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         self.announce_lock = threading.Lock()
 
-        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
+        # self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
+        self.set_log_level('INFO')
+        # self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
+        self.log('announcer initialised -----------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
     def announce_service(self, namespace, domain, service, kwargs) -> None:
 
-        if self.lib.get_verbose_debug():
-            self.log(f'namespace={namespace}, domain={domain}, service={service}, kwargs={kwargs}', level='DEBUG')
+        self.log(f'namespace={namespace}, domain={domain}, service={service}, kwargs={kwargs}', level='DEBUG')
 
         entity_id = kwargs.get('entity_id', self.const.STUDY)
         message = kwargs.get('message', 'Default message')
         announce = kwargs.get('announce', True)
         timestamp = kwargs.get('timestamp', None)
         force = kwargs.get('force', False)
+        volume = kwargs.get('volume', 0.5)
 
-        entry = self.prepare(entity_id, message, timestamp, announce, force)
+        entry = self.prepare(entity_id, message, timestamp, announce, force, volume)
+
         with self.announce_lock:
             self.announce(entry)
 
@@ -82,15 +85,16 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
     def broadcast_service(self, namespace, domain, service, kwargs) -> None:
 
-        if self.lib.get_verbose_debug():
-            self.log(f'namespace={namespace}, domain={domain}, service={service}, kwargs={kwargs}', level='DEBUG')
+        self.log(f'namespace={namespace}, domain={domain}, service={service}, kwargs={kwargs}', level='DEBUG')
 
         message = kwargs.get('message', 'Default message')
         announce = kwargs.get('announce', True)
         timestamp = kwargs.get('timestamp', None)
         force = kwargs.get('force', False)
+        volume = kwargs.get('volume', 0.5)
 
-        entry = self.prepare(None, message, timestamp, announce, force)
+        entry = self.prepare(None, message, timestamp, announce, force, volume)
+
         with self.announce_lock:
             self.announce(entry)
 
@@ -112,8 +116,11 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
     def initialised_service(self, namespace, domain, service, data) -> None:
 
         name = data.get('name', 'unknown')
-        message = f'{name} initialised'
 
+        message = f'{name} initialised'
+        spacer = (80 - len(name) - 11) * '-'
+
+        self.log(f'{message} {spacer}', level='INFO')
         self.notification('desktop', message)
 
 # -----------------------------------------------------------------------------------
@@ -128,9 +135,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             elif attempt == 2:
                 message = 'third announce message'
 
-            self.call_service('announcer/announce',
-                              entity_id=self.const.STUDY_SPEAKER,
-                              message=message)
+            self.call_service('announcer/announce', entity_id=self.const.STUDY_SPEAKER, message=message, volume=0.2)
             time.sleep(2.0)
 
 # -----------------------------------------------------------------------------------
@@ -145,9 +150,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             elif attempt == 2:
                 message = 'third broadcast message'
 
-            self.call_service('announcer/broadcast',
-                              entity_id=None,
-                              message=message)
+            self.call_service('announcer/broadcast', entity_id=None, message=message)
             time.sleep(2.0)
 
 # -----------------------------------------------------------------------------------
@@ -173,16 +176,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
     @ad.app_lock
     def announce(self, entry) -> None: # pylint: disable=R0914
 
-        (uu_id, entity_id, message, timestamp, announce, force) = entry
-
-        verbose = self.lib.get_verbose_debug()
-
-        # if entity_list is None:
-        #     self.log('entity_list is unspecified', level='ERROR')
-        #     traceback.print_stack()
-        #     return
-
-        # entity_id = [entity_id] if isinstance(entity_list, str) else self.const.BROADCAST_ENTITY_ID
+        (uu_id, entity_id, message, timestamp, announce, force, volume) = entry
 
         if self.lib.get_testing():
             entity_ids = [self.const.STUDY_SPEAKER]
@@ -190,21 +184,22 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             entity_ids = self.const.BROADCAST_ENTITY_ID if entity_id is None else [entity_id]
 
         if self.announceable(announce) or force:
-            if verbose:
-                self.log(f'\tin announce\t{uu_id} message="{message}" timestamp={timestamp} announce={announce} force={force} entity_ids={entity_ids}', level='WARNING')
 
             self.call_service('media_player/play_media',
                               entity_id=entity_ids,
                               media_content_type='music',
                               media_content_id='http://homeassistant.local:8123/local/bing.mp3',
                               announce=True,
-                              extra={'volume': 0.5})
+                              extra={'volume': volume})
+
             time.sleep(1.0) # give it time to play
+
             self.call_service('media_player/play_media',
                               entity_id=entity_ids,
                               media_content_type='music',
                               media_content_id=f'media-source://tts/cloud?message="{message}"',
-                              announce=True)
+                              announce=True,
+                              extra={'volume': volume})
 
             time.sleep(max(len(message) * self.const.SECONDS_PER_CHARACTER, self.const.MINIMUM_MESSAGE_LENGTH))
 
@@ -217,10 +212,13 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
     def notification(self, notify_type, message) -> None:
 
-        if self.lib.get_verbose_debug():
-            self.log(f'\t{notify_type} notification message={message}', level="DEBUG")
-
-        self.call_service('notify/disc0rd', title='Desktop notification', message=message, target='1250932196613685313')
+        # self.call_service('notify/disc0rd', title='Desktop notification', message=message, target='1250932196613685313')
+        # self.call_service('notify/disc0rd', title='Desktop notification', message=message, service_data={'target': '1250932196613685313'})
+        self.call_service('notify/disc0rd', service_data={
+            'target': '1250932196613685313',
+            'title': 'Desktop notification',
+            'message': message
+        })
 
 # -----------------------------------------------------------------------------------
 
@@ -321,17 +319,14 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
 # -----------------------------------------------------------------------------------
 
-    def prepare(self, entity_id, message, timestamp, announce, force) -> list: # pylint: disable=R0913
+    def prepare(self, entity_id, message, timestamp, announce, force, volume) -> list: # pylint: disable=R0913
 
         uu_id = uuid.uuid4()
 
         if self.lib.get_testing():
             entity_id = self.const.STUDY_SPEAKER
 
-        if self.lib.get_verbose_debug():
-            self.log(f'\tin prepare uu_id={uu_id} entity_id={entity_id} message="{message}" timestamp={timestamp} announce={announce} force={force}', level='WARNING')
-
-        return [uu_id, entity_id, message, timestamp, announce, force]
+        return [uu_id, entity_id, message, timestamp, announce, force, volume]
 
 # -----------------------------------------------------------------------------------
 

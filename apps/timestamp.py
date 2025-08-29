@@ -40,7 +40,6 @@ class Timestamp(Hass):
         self.listen_event(self.status_event, 'timestamps')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -96,24 +95,12 @@ class Timestamp(Hass):
                 self.ts[name] = datetime.now() + timedelta(minutes=-15)
             time.sleep(2.0)
 
-        self.status('','','','',{})
+        self.call_service('timestamp/status')
 
 # -----------------------------------------------------------------------------------
 
     def status_service(self, namespace, domain, service, kwargs):
-        """status event"""
-
-        self.status('','','','',{})
-
-# -----------------------------------------------------------------------------------
-
-    def status_event(self, event, data, kwargs) -> None:
-
-        self.status('','','','',{})
-
-# -----------------------------------------------------------------------------------
-
-    def status(self, entity, attribute, old, new, kwargs) -> None:
+        """status service"""
 
         status = status = '\n\n'
 
@@ -130,5 +117,31 @@ class Timestamp(Hass):
         self.log(f'{status}')
 
         self.set_state('input_boolean.status', state='off')
+
+# -----------------------------------------------------------------------------------
+
+    def status_event(self, event, data, kwargs) -> None:
+
+        self.call_service('timestamp/status')
+
+# -----------------------------------------------------------------------------------
+
+    # def status(self, entity, attribute, old, new, kwargs) -> None:
+
+    #     status = status = '\n\n'
+
+    #     for name in self.const.TIMESTAMPS:
+    #         ts = self.ts[name]
+    #         status += f'\t{name}_ts={ts}\n'
+
+    #     diff1 = (self.ts['upstairs'] - self.ts['downstairs']).seconds
+    #     diff2 = (self.ts['upstairs'] - self.ts['prev_upstairs']).seconds
+
+    #     status += f'\n\tupstairs vs downstairs diff={diff1}\n'
+    #     status += f'\tupstairs vs prev_upstairs diff={diff2}\n'
+
+    #     self.log(f'{status}')
+
+    #     self.set_state('input_boolean.status', state='off')
 
 # -----------------------------------------------------------------------------------

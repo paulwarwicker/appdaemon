@@ -49,7 +49,6 @@ class Starling(Hass):
         self.run_in_thread(self.add_starling_calendar_events, 0)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -69,7 +68,7 @@ class Starling(Hass):
     def add_starling_calendar_events(self, kwargs):
         pass
 
-        # # self.lib.log_function_name()
+        # # self.lib.log_function_name(start=True)
 
         # helper = self.starling
         # account = helper.account()
@@ -133,7 +132,7 @@ class Starling(Hass):
         #     if add:
         #         self.add_starling_so_calendar_event(so)
 
-        # # self.lib.log_function_name(False)
+        # # self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -266,8 +265,8 @@ class Starling(Hass):
 
     def _check_feed(self):
 
-        self.lib.log_function_name()
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=True)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -313,23 +312,23 @@ class Starling(Hass):
 
     def delete_calendar_events(self, event, data, kwargs):
 
-        self.lib.log_function_name()
+        self.lib.log_function_name(start=True)
 
         state = self.get_state('sensor.starling_events', attribute='scheduled_events')
         for el in state["calendar.starling"]["events"]:
             print(el)
 
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def add_calendar_events(self, event, data, kwargs):
 
-        self.lib.log_function_name()
+        self.lib.log_function_name(start=True)
 
         self.add_starling_calendar_events({})
 
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 

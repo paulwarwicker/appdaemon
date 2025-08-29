@@ -31,8 +31,6 @@ class Timers(Hass):
         self.register_service('timers/status', self.timer_status_service)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
-        # print(self.timers)
 
 # -----------------------------------------------------------------------------------
 
@@ -86,7 +84,7 @@ class Timers(Hass):
     def set_timer(self, name:str, timer:str) -> None:
         """set a timer"""
 
-        self.lib.log_function_name()
+        self.lib.log_function_name(start=True)
 
         print(timer)
         extant = self.info_timer(timer)
@@ -113,14 +111,14 @@ class Timers(Hass):
             self.timers[name] = timer
             self.print_timers()
 
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def get_timer(self, name:str) -> str:
         """get a timer"""
 
-        self.lib.log_function_name()
+        self.lib.log_function_name(start=True)
 
         verbose = self.lib.get_verbose_debug()
 
@@ -134,7 +132,7 @@ class Timers(Hass):
         else:
             self.log(f'\t\t\tdid not find timer name={name}', level='WARNING')
 
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=False)
 
         return timer
 
@@ -143,7 +141,7 @@ class Timers(Hass):
     def _cancel_timer(self, name:str) -> None:
         """cancel a timer callback"""
 
-        self.lib.log_function_name()
+        self.lib.log_function_name(start=True)
 
         timer = self.get_timer(name)
 
@@ -155,7 +153,7 @@ class Timers(Hass):
         else:
             self.log(f'_cancel_timer did not find timer name={name}', level='ERROR')
 
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 

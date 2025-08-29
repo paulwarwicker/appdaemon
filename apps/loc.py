@@ -21,10 +21,11 @@ class Location(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def initialize(self):
+    async def initialize(self):
         """."""
 
         self.lib = AutomationLib(self)
+        await self.lib.initialize()
         self.const = ConstantsManagement(self)
 
         self.register_service('location/max_home', self.max_home_service)

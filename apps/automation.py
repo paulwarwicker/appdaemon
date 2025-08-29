@@ -23,6 +23,7 @@ class Automation(Hass):
     debug = False
     testing = False
     verbose = False
+    trace = False
     override = False
 
     lib = None
@@ -45,6 +46,10 @@ class Automation(Hass):
         self.debug = self.get_state('input_boolean.default_debug_state') == 'on'
         self.verbose = self.get_state('input_boolean.default_verbose_state') == 'on'
         self.testing = self.get_state('input_boolean.default_testing_state') == 'on'
+        self.trace = self.get_state('input_boolean.default_trace_state') == 'on'
+        self.debug = False
+        self.verbose = False
+        # print(f'\tdebug={self.debug} verbose={self.verbose} testing={self.testing} trace={self.trace}')
 
         self.listen_event(self.set_all_state_event, 'set_all_state')
         self.listen_event(self.status_event, 'status')
@@ -52,13 +57,13 @@ class Automation(Hass):
 
         self.listen_state(self.set_console_log_level, 'input_boolean.debug')
         self.listen_state(self.set_console_log_level, 'input_boolean.verbose')
+        self.listen_state(self.set_debug_flag, 'input_boolean.debug')
+        self.listen_state(self.set_verbose_flag, 'input_boolean.verbose')
 
         self.listen_state(self.reset_test1, 'input_boolean.test_1', new='on')
         self.listen_state(self.reset_test2, 'input_boolean.test_2', new='on')
 
         self.listen_state(self.fire_status_event, 'input_boolean.status', new='on')
-        self.listen_state(self.set_debug_flag, 'input_boolean.debug')
-        self.listen_state(self.set_verbose_flag, 'input_boolean.verbose')
 
         self.listen_state(self.set_test_test, 'input_boolean.test_test', new='on', action='set')
         self.listen_state(self.set_test_test, 'input_boolean.test_test', new='off', action='cancel')
@@ -79,10 +84,11 @@ class Automation(Hass):
         self.set_all_state({})
         self._set_console_log_level()
 
+        self.log('initialising timestamps', level='WARNING')
         self.call_service('timestamp/init')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
+        # self.log('initialised --------------------------------------------------------------------', level='INFO')
 
         self.test({})
 
@@ -91,26 +97,26 @@ class Automation(Hass):
     def test(self, kwargs) -> None:
         """test method"""
 
-        self.lib.log_function_name(True, True)
+        self.lib.log_function_name(start=True)
 
         # traceback.print_stack() # leave
 
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def dummy(self) -> None:
         """dummy"""
 
-        self.lib.log_function_name()
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=True)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def set_all_state(self, kwargs) -> None:
         """set all state - reset to false and then set_default_state"""
 
-        self.lib.log_function_name()
+        self.lib.log_function_name(start=True)
 
         booleans = {
             # !!! do NOT include debug/verbose/testing !!!
@@ -127,13 +133,14 @@ class Automation(Hass):
 
         self.set_default_state()
 
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def set_console_log_level(self, entity, attribute, old, new, kwargs) -> None:
-        """set console log level depending on the debug flag"""
+        """set console log level depending on the debug or verboseflag"""
 
+        # separate method required because we are listening to the state of the input_boolean.debug and input_boolean.verbose
         self._set_console_log_level()
 
 # -----------------------------------------------------------------------------------
@@ -143,11 +150,12 @@ class Automation(Hass):
 
         level = "DEBUG" if self.get_state('input_boolean.debug') == 'on' else "INFO"
         prefix = "VERBOSE " if self.get_state('input_boolean.verbose') == 'on' else ""
+        log_level = level+prefix
 
-        if self.log_level != level:
-            self.log(f'\tchanging log level to {prefix}{level}')
+        if self.log_level != log_level:
+            self.log(f'\tchanging log level to {prefix}{level} (now {log_level} was {self.log_level})', level='INFO')
             self.set_log_level(level)
-            self.log_level = level
+            self.log_level = level+prefix
 
             for module in self.const.MODULES:
                 self.log(f'setting log level {prefix}{level} on app {module}')
@@ -214,12 +222,14 @@ class Automation(Hass):
     def set_default_state(self) -> None:
         """set default values from backstop default values"""
 
-        # self.set_state('input_boolean.early_alarm', state=self.get_state('input_boolean.default_early_alarm_state'))
-        self.set_state('input_boolean.normal_alarm', state=self.get_state('input_boolean.default_normal_alarm_state'))
-        self.set_state('input_boolean.lumie', state=self.get_state('input_boolean.default_lumie_state'))
-        self.set_state('input_boolean.debug', state=self.get_state('input_boolean.default_debug_state'))
-        self.set_state('input_boolean.verbose', state=self.get_state('input_boolean.default_verbose_state'))
-        self.set_state('input_boolean.testing', state=self.get_state('input_boolean.default_testing_state'))
+        # FIXME: bool
+        # # self.set_state('input_boolean.early_alarm', state=self.get_state('input_boolean.default_early_alarm_state'))
+        # self.set_state('input_boolean.normal_alarm', state=self.get_state('input_boolean.default_normal_alarm_state'))
+        # self.set_state('input_boolean.lumie', state=self.get_state('input_boolean.default_lumie_state'))
+        # self.set_state('input_boolean.debug', state=self.get_state('input_boolean.default_debug_state'))
+        # self.set_state('input_boolean.verbose', state=self.get_state('input_boolean.default_verbose_state'))
+        # self.set_state('input_boolean.testing', state=self.get_state('input_boolean.default_testing_state'))
+        # self.set_state('input_boolean.trace', state=self.get_state('input_boolean.default_trace_state'))
 
 # -----------------------------------------------------------------------------------
 
@@ -288,9 +298,9 @@ class Automation(Hass):
     def test_test(self, entity, attribute, old, new, kwargs) -> None:
         """test test"""
 
-        self.lib.log_function_name()
+        self.lib.log_function_name(start=True)
         self.run_in(self.test, 0)
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -319,7 +329,11 @@ class Automation(Hass):
             self.log(f'\tmessage="{message}" title="{title}"')
 
         self.call_service('notify/lg_webos_tv_oled65c7v', message=message)
-        self.call_service('notify/disc0rd', title=title, message=message, target="1250932196613685313")
+        self.call_service('notify/disc0rd', service_data={
+            'target': '1250932196613685313',
+            'title': title,
+            'message': message
+        })
 
 # -----------------------------------------------------------------------------------
 
@@ -351,7 +365,11 @@ class Automation(Hass):
         home = self.get_state('person.maxine') == 'home'
 
         if not home:
-            minutes = int(self.get_state('sensor.google_travel_time'))
+            result = self.get_state('sensor.google_travel_time')
+            if result == 'unknown':
+                self.log('\tmaxine travel time is unknown', level='ERROR')
+                return
+            minutes = int(result)
             message = f'Max is {minutes} minutes away'
             direction = self.get_state('sensor.home_maxine_direction_of_travel')
             state = self.get_state('sensor.maxine_iphone_activity')

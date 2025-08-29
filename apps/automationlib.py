@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-# import logging
-
 import time
 import inspect
 from datetime import datetime,timedelta
@@ -12,15 +8,22 @@ from adapi import ADAPI # type: ignore # pylint: disable=E0401 disable=E0611
 class AutomationLib():
     """Documentation for AutomationLib"""
 
-    def __init__(self, adapi: ADAPI) -> None:
-        """__init__"""
-
+    def __init__(self, adapi: ADAPI, dummy=None) -> None:
         self.adapi = adapi
-        self.debug = adapi.get_state('input_boolean.debug') == 'on'
-        self.verbose = adapi.get_state('input_boolean.verbose') == 'on'
-        self.testing = adapi.get_state('input_boolean.testing') == 'on'
+        self.debug = False
+        self.verbose = False
+        self.testing = False
+        self.trace = False
 
-        adapi.log('initialised')
+    async def initialize(self):
+        """Async initialization logic"""
+
+        self.debug = await self.adapi.get_state('input_boolean.default_debug_state') == 'on'
+        self.verbose = await self.adapi.get_state('input_boolean.default_verbose_state') == 'on'
+        self.testing = await self.adapi.get_state('input_boolean.default_testing_state') == 'on'
+        self.trace = await self.adapi.get_state('input_boolean.default_trace_state') == 'on'
+
+        self.adapi.log('initialised')
 
 # -----------------------------------------------------------------------------------
 
@@ -154,7 +157,6 @@ class AutomationLib():
     def get_debug(self) -> bool:
         """get debug setting"""
 
-        # return self.adapi.get_state('input_boolean.debug') == 'on'
         return self.debug
 
 # -----------------------------------------------------------------------------------
@@ -162,7 +164,6 @@ class AutomationLib():
     def get_verbose(self) -> bool:
         """get verbose setting"""
 
-        # return self.adapi.get_state('input_boolean.verbose') == 'on'
         return self.verbose
 
 # -----------------------------------------------------------------------------------
@@ -215,13 +216,53 @@ class AutomationLib():
 
         self.debug = torf
 
+        # start = kawrgs.get('start', True)
+        # separator:bool=True, notification:bool=False, stacktrace:bool=False, force:bool=False
+    # def log_function_name(self, **kwargs) -> None:
+
+    # def log_function_name(self, start:bool=True, separator:bool=True, notification:bool=False, stacktrace:bool=False, force:bool=False) -> None:
+    #     """log function name as log message"""
+
+    #     if force:
+    #         trace = separator = notification = True
+    #     else:
+    #         trace = self.adapi.get_state("input_boolean.trace") == "on"
+
+    #     name = inspect.currentframe().f_back.f_code.co_name
+    #     prefix = '>>' if start else '<<'
+
+    #     if notification:
+    #         self.adapi.call_service('announcer/notification', message=f'{prefix} {name}', type='desktop')
+
+    #     if stacktrace:
+    #         print(inspect.currentframe())
+    #         print(inspect.currentframe().f_back)
+
+    #     if trace:
+    #         if separator:
+    #             dashes = '-' * (80 - len(name))
+    #             self.adapi.log(f'{prefix} {name} {dashes}',level='INFO')
+    #         else:
+    #             self.adapi.log(f'\t{prefix} {name}', level='DEBUG')
+
 # -----------------------------------------------------------------------------------
 
-    def log_function_name(self, start: bool=True, separator: bool=False, notification: bool=False, stacktrace: bool=False) -> None:
+    def log_function_name(self, **kwargs) -> None:
         """log function name as log message"""
 
+        start = kwargs.get('start', True)
+        separator = kwargs.get('separator', True)
+        notification = kwargs.get('notification', False)
+        stacktrace = kwargs.get('stacktrace', False)
+        force = kwargs.get('force', False)
+
+        if force:
+            trace = separator = notification = True
+        else:
+            trace = self.adapi.get_state("input_boolean.trace") == "on"
+
         name = inspect.currentframe().f_back.f_code.co_name
-        prefix = '>>>' if start else '<<<'
+        prefix = '>>' if start else '<<'
 
         if notification:
             self.adapi.call_service('announcer/notification', message=f'{prefix} {name}', type='desktop')
@@ -230,11 +271,19 @@ class AutomationLib():
             print(inspect.currentframe())
             print(inspect.currentframe().f_back)
 
-        if separator:
-            dashes = '-' * (80 - len(name))
-            self.adapi.log(f'{prefix} {name} {dashes}',level='WARNING')
-        else:
-            self.adapi.log(f'\t{prefix} {name}', level='DEBUG')
+        if trace:
+            if separator:
+                dashes = '-' * (80 - len(name))
+                self.adapi.log(f'{prefix} {name} {dashes}',level='INFO')
+            else:
+                self.adapi.log(f'\t{prefix} {name}', level='DEBUG')
+
+# -----------------------------------------------------------------------------------
+
+    def log(self, message, level) -> None:
+        """log for async methods"""
+
+        self.adapi.log(message,level=level)
 
 # -----------------------------------------------------------------------------------
 

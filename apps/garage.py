@@ -48,31 +48,30 @@ class Garage(Hass):
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
     def garage_open_service(self, namespace, domain, service, kwargs) -> None:
         """open the garage"""
 
-        self.lib.log_function_name(True, True)
+        self.lib.log_function_name(start=True)
 
         self.call_service('timestamp/set', name='garage')
         self.garage_door_open('','','','',{})
 
-        self.lib.log_function_name(False, True)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def garage_close_service(self, namespace, domain, service, kwargs) -> None:
         """close the garage"""
 
-        self.lib.log_function_name(True, True)
+        self.lib.log_function_name(start=True)
 
         self.call_service('timestamp/set', name='garage')
         self.garage_door_close('','','','',{})
 
-        self.lib.log_function_name(False, True)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -90,7 +89,7 @@ class Garage(Hass):
 
     def garage_open_close_event(self, event, data, kwargs:dict) -> None:
 
-        self.lib.log_function_name(True, True)
+        self.lib.log_function_name(start=True)
 
         self.call_service('garage/open')
         time.sleep(30)

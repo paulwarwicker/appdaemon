@@ -38,83 +38,84 @@ class Car(Hass):
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
     def check_status(self, kwargs) -> None:
         """check karoq status"""
 
-        verbose = self.lib.get_verbose_debug()
+        return
 
-        self.update()
+        # verbose = self.lib.get_verbose_debug()
 
-        state = self.get_state(self.const.SENSOR_ENTITY_ID) # binary_sensor.skoda_karoq_vehicle_locked
+        # self.update()
 
-        if state == 'unknown':
-            return # check again next iteration
+        # state = self.get_state(self.const.SENSOR_ENTITY_ID) # binary_sensor.skoda_karoq_vehicle_locked
 
-        tracker = self.get_state(self.const.DEVICE_TRACKER_ID, attribute='all') # device_tracker.skoda_karoq_position
-        location = tracker['state']
-        latitude = tracker['attributes'].get('latitude', None)
-        longitude = tracker['attributes'].get('longitude', None)
-        home = location == 'home'
+        # if state == 'unknown' or state == 'unavailable':
+        #     return # check again next iteration
 
-        ts = self.call_service('timestamp/get', name='karoq_home', return_result=True)
+        # tracker = self.get_state(self.const.DEVICE_TRACKER_ID, attribute='all') # device_tracker.skoda_karoq_position
+        # location = tracker['state']
+        # latitude = tracker['attributes'].get('latitude', None)
+        # longitude = tracker['attributes'].get('longitude', None)
+        # home = location == 'home'
 
-        if home:
-            if ts is None:
-                self.call_service('timestamp/set', name='karoq_home')
-        else:
-            if ts is not None:
-                self.call_service('timestamp/set', name='karoq_home', value=None, force=True)
+        # ts = self.call_service('timestamp/get', name='karoq_home', return_result=True)
 
-        if (latitude and longitude) and (latitude != self._latitude or longitude != self._longitude):
-            self.log(f'\tlatitude={latitude} longitude={longitude}')
-            self.set_state('sensor.karoq_latitude', state=latitude)
-            self.set_state('sensor.karoq_longitude', state=longitude)
-            self._latitude = latitude
-            self._longitude = longitude
+        # if home:
+        #     if ts is None:
+        #         self.call_service('timestamp/set', name='karoq_home')
+        # else:
+        #     if ts is not None:
+        #         self.call_service('timestamp/set', name='karoq_home', value=None, force=True)
 
-        locked = state == 'off'
-        lock_state = 'locked' if locked else 'unlocked'
+        # if (latitude and longitude) and (latitude != self._latitude or longitude != self._longitude):
+        #     self.log(f'\tlatitude={latitude} longitude={longitude}')
+        #     self.set_state('sensor.karoq_latitude', state=latitude)
+        #     self.set_state('sensor.karoq_longitude', state=longitude)
+        #     self._latitude = latitude
+        #     self._longitude = longitude
 
-        if verbose:
-            level = 'ERROR' if (state in ('unavailable', 'unknown')) or (location in ('unavailable', 'unknown')) else 'DEBUG'
-            self.log(f'\tstate={state} location={location} home={home} locked={locked} lock_state={lock_state} tracker={tracker}', level=level)
+        # locked = state == 'off'
+        # lock_state = 'locked' if locked else 'unlocked'
 
-        if not home:
-            return # not interested if not at home
+        # if verbose:
+        #     level = 'ERROR' if (state in ('unavailable', 'unknown')) or (location in ('unavailable', 'unknown')) else 'DEBUG'
+        #     self.log(f'\tstate={state} location={location} home={home} locked={locked} lock_state={lock_state} tracker={tracker}', level=level)
 
-        if not locked and not self.locked and self.lib.is_after(16):
-            ts = self.call_service('timestamp/get', name='karoq_home', return_result=True)
+        # if not home:
+        #     return # not interested if not at home
 
-            if ts is None:
-                self.log('\thome but karoq_home timestamp is not set', level='ERROR')
-                return
+        # if not locked and not self.locked and self.lib.is_after(16):
+        #     ts = self.call_service('timestamp/get', name='karoq_home', return_result=True)
 
-            diff1 = (datetime.now() - ts).seconds
+        #     if ts is None:
+        #         self.log('\thome but karoq_home timestamp is not set', level='ERROR')
+        #         return
 
-            ts = self.call_service('timestamp/get', name='karoq_notification', return_result=True)
-            diff2 = (datetime.now() - ts).seconds
+        #     diff1 = (datetime.now() - ts).seconds
 
-            message='The car door is unlocked'
+        #     ts = self.call_service('timestamp/get', name='karoq_notification', return_result=True)
+        #     diff2 = (datetime.now() - ts).seconds
 
-            if diff2 > self.lib.interval(minutes=10):
-                self.call_service('announcer/notification', message=message, type='desktop', timestamp='karoq_notification')
+        #     message='The car door is unlocked'
 
-            if diff1 > self.lib.interval(minutes=60):
-                # been at home for more than 1h
+        #     if diff2 > self.lib.interval(minutes=10):
+        #         self.call_service('announcer/notification', message=message, type='desktop', timestamp='karoq_notification')
 
-                # ts = self.call_service('timestamp/get', name='karoq_announce', return_result=True)
-                # diff = (datetime.now() - ts).seconds
+        #     if diff1 > self.lib.interval(minutes=60):
+        #         # been at home for more than 1h
 
-                # message='The car door is unlocked. A lock request has been sent'
-                # self.call_service('lock/lock', entity_id=self.const.LOCK_ENTITY_ID)
-                # message='The car door is unlocked'
-                self.call_service('announcer/announce', message=message, timestamp='karoq_announce')
-        else:
-            self.locked = locked
+        #         # ts = self.call_service('timestamp/get', name='karoq_announce', return_result=True)
+        #         # diff = (datetime.now() - ts).seconds
+
+        #         # message='The car door is unlocked. A lock request has been sent'
+        #         # self.call_service('lock/lock', entity_id=self.const.LOCK_ENTITY_ID)
+        #         # message='The car door is unlocked'
+        #         self.call_service('announcer/announce', message=message, timestamp='karoq_announce')
+        # else:
+        #     self.locked = locked
 
 # -----------------------------------------------------------------------------------
 
@@ -137,7 +138,7 @@ class Car(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def car_door(self, entity:str, attribute:str, old:str, new:str, kwargs:dict) -> None:
+    def car_door(self, entity, attribute, old, new, kwargs:dict) -> None:
 
         self.announce()
 
@@ -145,7 +146,8 @@ class Car(Hass):
 
     def update(self) -> None:
 
-        self.call_service('homeassistant/update_entity', entity_id=self.const.SENSOR_ENTITY_LIST)
-        self.call_service('homeassistant/update_entity', entity_id=self.const.DEVICE_TRACKER_ID)
+        pass
+        # self.call_service('homeassistant/update_entity', entity_id=self.const.SENSOR_ENTITY_LIST)
+        # self.call_service('homeassistant/update_entity', entity_id=self.const.DEVICE_TRACKER_ID)
 
 # -----------------------------------------------------------------------------------

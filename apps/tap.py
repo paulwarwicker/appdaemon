@@ -44,14 +44,13 @@ class Tap(Hass):
         self.listen_state(self.water_garden_for, 'input_boolean.water_garden_30', new='on', minutes=30)
         self.listen_state(self.water_garden_stop, 'input_boolean.water_garden_30', new='off')
 
-        self.run_daily(self.water_garden_daily, 'sunset + 00:30:00')
+        self.run_daily(self.water_garden_daily, 'sunset - 01:00:00')
 
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.check_garden_tap, runtime)
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -101,14 +100,20 @@ class Tap(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def broadcast(self, message) -> None:
+        """broadcast message using announcer"""
+
+        self.call_service('announcer/broadcast', message=message)
+
+# -----------------------------------------------------------------------------------
+
     def water_garden_daily(self, kwargs) -> None:
         """water garden daily"""
 
-        if self.lib.is_summer():
-            if self.lib.no_rain():
-                kwargs = {**kwargs, 'minutes': self.const.DAILY_WATERING_MINUTES}
-                self.water_garden_for_n_minutes(kwargs)
-                self.announce(message=f'Watering garden for {self.const.DAILY_WATERING_MINUTES} minutes')
+        if self.lib.is_summer() and self.lib.no_rain():
+            kwargs = {**kwargs, 'minutes': self.const.DAILY_WATERING_MINUTES}
+            self.water_garden_for_n_minutes(kwargs)
+            self.broadcast(f'Watering garden for {self.const.DAILY_WATERING_MINUTES} minutes')
 
 # -----------------------------------------------------------------------------------
 
@@ -118,9 +123,9 @@ class Tap(Hass):
         minutes = kwargs['minutes']
 
         if minutes:
-            self.log(f'\ttap_on for {minutes:d} minutes')
+            self.log(f'\ttap_on for {minutes:d} minutes', level='INFO')
             self.call_service('switch/turn_on', entity_id='switch.garden_tap')
-            self.call_service('timsestamp/set', name='tap')
+            self.call_service('timestamp/set', name='tap')
             seconds = self.lib.interval(minutes=minutes)
             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
             self.run_in(self.tap_off, seconds)
@@ -131,8 +136,8 @@ class Tap(Hass):
         """turn garden tap off"""
 
         self.call_service('switch/turn_off', entity_id='switch.garden_tap')
-        self.announce(message='The garden tap is now off')
-        self.call_service('timsestamp/set', name='tap', value=None)
+        self.broadcast('The garden tap is now off')
+        self.call_service('timestamp/set', name='tap', value=None)
         self.set_state('input_boolean.water_garden_1', state='off')
         self.set_state('input_boolean.water_garden_15', state='off')
         self.set_state('input_boolean.water_garden_20', state='off')
@@ -151,9 +156,10 @@ class Tap(Hass):
             seconds = (datetime.now() - ts).seconds
             n = math.ceil(seconds / 60)
             diff1,diff2 = divmod(seconds, 60)
-            self.log(f'\t\t{diff1} {diff2}')
+            # self.log(f'\t\t{diff1}m {diff2}s', level='DEBUG')
+            # self.log(f'\t\t{diff1}m {diff2}s', level='INFO') # FIXME: remove
             if diff1 > 0 and ((diff1 + 1) % 10) == 0:
-                self.announce(message=f'The garden tap has been on for {n} minutes', entity_id=['media_player.kitchen','media_player.study'])
+                self.broadcast(f'The garden tap has been on for {n} minutes')
 
 # -----------------------------------------------------------------------------------
 
@@ -161,7 +167,7 @@ class Tap(Hass):
 
         minutes = data['minutes']
         self.water_garden_for_n_minutes({'minutes': minutes})
-        self.announce(message=f'Watering garden for {minutes} minutes')
+        self.broadcast(f'Watering garden for {minutes} minutes')
 
 # -----------------------------------------------------------------------------------
 

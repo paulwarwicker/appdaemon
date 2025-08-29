@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-
-from adapi import ADAPI # type: ignore # pylint: disable=E0401 disable=E0611
+from adapi import ADAPI # pylint: disable=E0401
 
 class AutomationConstants:
-    """Documentation for AutomationConstants"""
+    """Manage constants for automation"""
 
     # announcer
     START_HOUR = 8 # :30
@@ -20,7 +18,8 @@ class AutomationConstants:
 
     # automation
     MODULES = ["alarms", "timers", "timestamp", "announcer", "location", "sonos",
-              "starling", "motion", "lighting", "tap", "weather", "garage", "car"]
+              "starling", "motion", "lighting", "tap", "weather", "garage", "car",
+              "vacuum"]
 
     # front_door
     APP_THREADS = 20
@@ -87,13 +86,15 @@ class AutomationConstants:
     N_UTILITY_ROOM_ENTITIES = 1
     N_KITCHEN_FLOOR_ENTITIES = 2
 
-    DEFAULT_TIMEOUT = 2*60
-    WELCOME_TIMEOUT = 5*60
-    BATHROOM_TIMEOUT = 3*60
-    UPSTAIRS_TIMEOUT = 3*60
-    BANNISTER_TIMEOUT = 10*60
-    KITCHEN_FLOOR_TIMEOUT = 5*60
-    CLOAKROOM_TIMEOUT = 2*60
+    ONEMINUTE = 60
+    SHORT_TIMEOUT = ONEMINUTE
+    DEFAULT_TIMEOUT = 2*ONEMINUTE
+    LONG_TIMEOUT = 5*ONEMINUTE
+
+    LONGER_TIMEOUT = DEFAULT_TIMEOUT + SHORT_TIMEOUT
+    WELCOME_TIMEOUT = LONG_TIMEOUT
+    KITCHEN_FLOOR_TIMEOUT = LONG_TIMEOUT
+    BANNISTER_TIMEOUT = 2*LONG_TIMEOUT
 
     FULL_ON = 250
     HALF_ON = 128
@@ -119,28 +120,52 @@ class AutomationConstants:
     ATTEMPTS = 5
     PLAY_DELAY = 0.75
     DEFAULT_VOLUME = 0.15
-    NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-                    'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1']
-    # NORMAL_ALARM = ['aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem4.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem1.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1']
-    # NORMAL_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem4.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem1.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem1.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem4.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1']
+    ALARM_VOLUME = 0.3
 
+    NORMAL_ALARM = [
+        PROGRESSIVE1_STREAM := 'aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+        PROGRESSIVE2_STREAM := 'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+        PROGRESSIVE3_STREAM := 'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+    ]
+
+    EARLY_ALARM = [
+        OCEANS_STREAM := 'aac://http://prem2.zenradio.com:80/zroceansounds_aac?5fba91be81f6da5b573f89c1',
+        NATIVEAMERICAN_STREAM := 'aac://http://prem2.zenradio.com:80/zrnativeamericansounds_aac?5fba91be81f6da5b573f89c1',
+        SOUNDSOFRAIN_STREAM := 'aac://http://prem2.zenradio.com:80/zrsoundsofrain_aac?5fba91be81f6da5b573f89c1',
+        RELAXATION_STREAM := 'aac://http://prem2.zenradio.com:80/zrrelaxation_aac?5fba91be81f6da5b573f89c1',
+        RELAXINGSPA_STREAM := 'aac://http://prem2.zenradio.com:80/zrrelaxingspanmassage_aac?5fba91be81f6da5b573f89c1',
+        SHAMANICMUSIC_STREAM := 'aac://http://prem2.zenradio.com:80/zrshamanicmusic_aac?5fba91be81f6da5b573f89c1',
+        SUNSETS_STREAM := 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+        NATURE_STREAM := 'aac://http://prem2.zenradio.com:80/zrnature_aac?5fba91be81f6da5b573f89c1',
+        TIBETANMUSIC_STREAM := 'aac://http://prem2.zenradio.com:80/zrtibetanmusic_aac?5fba91be81f6da5b573f89c1',
+        SLEEPRELAXATION_STREAM := 'aac://http://prem2.zenradio.com:80/zrsleeprelaxation_aac?5fba91be81f6da5b573f89c1',
+        CHILLOUT_STREAM := 'aac://http://prem2.zenradio.com:80/zrchillout_aac?5fba91be81f6da5b573f89c1',
+        ATMOSPHERICDREAMS_STREAM := 'aac://http://prem2.zenradio.com:80/zratmosphericdreams_aac?5fba91be81f6da5b573f89c1',
+        SPACEDREAMS_STREAM := 'aac://http://prem2.zenradio.com:80/zrspacedreams_aac?5fba91be81f6da5b573f89c1',
+        BIRDSONG_STREAM := 'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1', # birdsong garden morning
+        EARLYMORNINGRAIN_STREAM := 'x-sonos-spotify:spotify%3atrack%3a2cwKtKEhPn6ZnJmlzbmpLQ?sid=9&flags=8224&sn=1', # the early morning rain
+        RAINDROPSDANCING_STREAM := 'x-sonos-spotify:spotify%3atrack%3a4G6Lz9Et6dhLKydPyY4N9a?sid=9&flags=8224&sn=1', # rain drops dancing on a tin roof
+    ]
+
+    BACKUP_STREAM = SUNSETS_STREAM
+    PROGRESSIVE_STREAM = PROGRESSIVE1_STREAM
+
+    ALTNEWWAVE_STREAM = 'aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1'
     CHRISTMAS_STREAM = 'aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1'
-    BOSSANOVA_STREAM = 'aac://http://prem2.radiotunes.com:80/smoothbossanova?5fba91be81f6da5b573f89c1'
-    SUMMER_VIBES_ALBUM = 'spotify:album:37ZeJt50FWCaLkw3HNJB2c'
-    SUMMER_VIBES_PLAYLIST = 'spotify:playlist:2hmLDliFT9mW84XHxRUzwx'
-    SUMMER_HITS_PLAYLIST = 'spotify:playlist:37i9dQZF1DX4uU3TGzIPXL'
 
+    HALLWAY_STREAMS = [
+        SUMMER_VIBES_ALBUM := 'spotify:album:37ZeJt50FWCaLkw3HNJB2c',
+        SUMMER_VIBES_PLAYLIST := 'spotify:playlist:2hmLDliFT9mW84XHxRUzwx',
+        SUMMER_HITS_PLAYLIST := 'spotify:playlist:37i9dQZF1DX4uU3TGzIPXL',
+        BOSSANOVA_STREAM := 'aac://http://prem2.radiotunes.com:80/smoothbossanova?5fba91be81f6da5b573f89c1',
+    ]
+
+    # ALTNEWWAVE1_STREAM := 'aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    # ALTNEWWAVE2_STREAM := 'aac://http://prem4.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    # ALTNEWWAVE3_STREAM := 'aac://http://prem1.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    # SUNSETS1_STREAM := 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+    # SUNSETS2_STREAM := 'aac://http://prem1.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+    # SUNSETS3_STREAM := 'aac://http://prem4.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1'
     # 'x-sonos-spotify:spotify%3atrack%3a1r4QKeqpv1ov8FkrgKDxQ7?sid=9&flags=8224&sn=1', # a gentle thunderstorm
     # 'x-sonos-spotify:spotify%3atrack%3a2T5Lipk1QTtvt76Xjcwrxc?sid=9&flags=8224&sn=1', # heavy thunderstorm sounds
     # 'x-sonos-spotify:spotify%3atrack%3a1E0jvxVMYcnZbjvrs03Yay?sid=9&flags=8224&sn=1', # thunderstorm sounds with rain and loud claps of thunder for all isomniacs
@@ -149,32 +174,6 @@ class AutomationConstants:
     # 'x-sonos-spotify:spotify%3atrack%3a6H5aGE9xZEPkpeEAn4f7b8?sid=9&flags=8224&sn=1', # thunderstorm
     # 'x-sonos-spotify:spotify%3atrack%3a3UdClX9rDMiYUOIl6JWaRo?sid=9&flags=8224&sn=1', # heavy thunderstorm
 
-    # EARLY_ALARM = [
-    #                 'aac://http://prem2.zenradio.com:80/zroceansounds_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrnativeamericanflute_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrsoundsofrain_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrrelaxation_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrrelaxingspanmassage_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrshamanicmusic_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrnature_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrtibetanmusic_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrsleeprelaxation_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrchillout_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zratmosphericdreams_aac?5fba91be81f6da5b573f89c1',
-    #                 'aac://http://prem2.zenradio.com:80/zrspacedreams_aac?5fba91be81f6da5b573f89c1',
-    #                 'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1', # birdsong garden morning
-    #                 'x-sonos-spotify:spotify%3atrack%3a2cwKtKEhPn6ZnJmlzbmpLQ?sid=9&flags=8224&sn=1', # the early morning rain
-    #                 'x-sonos-spotify:spotify%3atrack%3a4G6Lz9Et6dhLKydPyY4N9a?sid=9&flags=8224&sn=1', # rain drops dancing on a tin roof
-    #             ]
-    # EARLY_ALARM = ['aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-    #                'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-    #                'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1']
-    EARLY_ALARM = ['aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-                   'aac://http://prem4.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-                   'aac://http://prem1.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1']
-
-    # NORMAL_ALARM = ['aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1']
     # garage
     GARAGE_ENTITY_ID = 'cover.remootio_device_host_192_168_1_13_s_n_30c92235df30xupwfafu_none'
 
@@ -190,7 +189,7 @@ class AutomationConstants:
         'proximity.pilates3': ['pilates3','Pilates Northstowe'],
         'proximity.karen_wax': ['karen_wax','Karen waxing'],
         'proximity.karen_smith': ['karen_smith','Karen Smith'],
-        'proximity.karen_nail': ['karen_nail','Karen nails'],
+        'proximity.karen_nails': ['karen_nails','Karen nails'],
         'proximity.indian_ocean': ['indian_ocean','Indian Ocean'],
         'proximity.newmarket': ['newmarket','Newmarket junction'],
         'proximity.bar_hill': ['bar_hill','Bar Hill junction'],
@@ -212,7 +211,11 @@ class AutomationConstants:
     DAILY_WATERING_MINUTES = 30
 
     # timestamps initialised in automation
-    TIMESTAMPS = ['downstairs', 'prev_upstairs', 'upstairs', 'karoq_announce', 'karoq_notification', 'vacuum', 'general', 'travel', 'tap', 'karoq_home', 'upstairs_motion', 'garage_open', 'garage_close', 'garage_lights_on', 'garage_lights_off']
+    TIMESTAMPS = [
+        'downstairs', 'prev_upstairs', 'upstairs', 'karoq_announce', 'karoq_notification', 'vacuum', 'general', 'travel',
+        'tap', 'karoq_home', 'upstairs_motion', 'garage_open', 'garage_close', 'garage_lights_on', 'garage_lights_off',
+        'snooze'
+        ]
 
     BEDROOM_BUTTON = 'shellybutton1-C8C9A33CDF09'
     GARAGE_BUTTON = 'shellybutton1-EC64C9C4F038'
@@ -231,12 +234,8 @@ class ConstantsManagement:
     def __setattr__(self, name, value):
         raise TypeError("Constants are immutable")
 
-# # Create an instance of ConstantsManagement
 # constants_manager = ConstantsManagement()
-
 # # Accessing constants
 # print(constants_manager.PI)  # Output: 3.14159
-# print(constants_manager.MAX_SIZE)  # Output: 100
-
 # # Attempting to modify constants raises a TypeError
 # #constants_manager.PI = 3.14  # Raises TypeError: Constants are immutable

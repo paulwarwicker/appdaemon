@@ -11,7 +11,6 @@
 
 # import traceback
 import random
-import time
 # import re
 from datetime import datetime, timedelta
 from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
@@ -118,91 +117,95 @@ class Alarms(Hass):
 
     def get_early_alarm_time(self, backup=False):
 
-        day = datetime.now().date()
+        # day = datetime.now().date()
 
-        a_day = timedelta(days=1)
+        # a_day = timedelta(days=1)
 
-        if self.now_is_between('03:00:00', '23:59:59'):
-            day1 = day + a_day # tomorrow
-        else:
-            day1 = day
+        # if self.now_is_between('03:00:00', '23:59:59'):
+        #     day1 = day + a_day # tomorrow
+        # else:
+        #     day1 = day
 
-        day0 = day1 - a_day # yesterday
+        # day0 = day1 - a_day # yesterday
 
-        shift0 = self.check_shift(day0)
-        shift1 = self.check_shift(day1)
+        # shift0 = self.check_shift(day0)
+        # shift1 = self.check_shift(day1)
 
-        if self.lib.get_verbose_debug():
-            self.log(f'\t{day0} is {shift0} shift (day/shift0)')
-            self.log(f'\t{day1} is {shift1} shift (day/shift1)')
+        # if self.lib.get_verbose_debug():
+        #     self.log(f'\t{day0} is {shift0} shift (day/shift0)')
+        #     self.log(f'\t{day1} is {shift1} shift (day/shift1)')
 
-        override = self.get_state('input_boolean.override') == 'on'
+        # override = self.get_state('input_boolean.override') == 'on'
 
-        if override:
-            # must be set specifically, don't change
-            hour = self.get_state('input_datetime.early_alarm', attribute='hour')
-            minute = self.get_state('input_datetime.early_alarm', attribute='minute')
-            alarm_time = f'{hour:02d}:{minute:02d}'
-        else:
-            hour = self.const.NIGHT_DELIVER[0]
-            minute = self.const.NIGHT_DELIVER[1]
-            if shift1 == 'Night' and shift0 == 'Night':
-                hour = self.const.NIGHT_COLLECT[0]
-                minute = self.const.NIGHT_COLLECT[1]
-            if backup:
-                minute += 1
-            alarm_time = f'{hour:02d}:{minute:02d}'
+        # if override:
+        #     # must be set specifically, don't change
+        #     hour = self.get_state('input_datetime.early_alarm', attribute='hour')
+        #     minute = self.get_state('input_datetime.early_alarm', attribute='minute')
+        #     alarm_time = f'{hour:02d}:{minute:02d}'
+        # else:
+        #     hour = self.const.NIGHT_DELIVER[0]
+        #     minute = self.const.NIGHT_DELIVER[1]
+        #     if shift1 == 'Night' and shift0 == 'Night':
+        #         hour = self.const.NIGHT_COLLECT[0]
+        #         minute = self.const.NIGHT_COLLECT[1]
+        #     if backup:
+        #         minute += 1
+        #     alarm_time = f'{hour:02d}:{minute:02d}'
 
-        if override:
-            self.log('\toverride is set', level='WARNING')
-            state = 'on'
-        else:
-            if shift0 == 'Off' and shift1 == 'Night':
-                # transition shift
-                state = 'off'
-                hour = self.const.DEFAULT[0]
-                minute = self.const.DEFAULT[1]
-                self.log('\tdisabling due to transition shift off->night', level='WARNING')
-            elif shift0 == 'Night' and shift1 == 'Off':
-                # transition shift
-                state = 'on'
-                hour = self.const.NIGHT_COLLECT[0]
-                minute = self.const.NIGHT_COLLECT[1]
-                self.log('\tenabling due to transition shift night->off', level='WARNING')
-            elif shift0 == 'Off' and shift1 == 'Off':
-                # transition shift
-                state = 'off'
-                hour = self.const.DEFAULT[0]
-                minute = self.const.DEFAULT[1]
-            elif shift1 == shift0 == 'Night':
-                state = 'on'
-                hour = self.const.NIGHT_COLLECT[0]
-                minute = self.const.NIGHT_COLLECT[1]
-            elif shift1 == shift0 == 'Day': # elif shift0 == 'Day' and shift1 == 'Day':
-                state = 'on'
-                hour = self.const.NIGHT_DELIVER[0]
-                minute = self.const.NIGHT_DELIVER[1]
-            elif shift0 == 'Off' and shift1 == 'Day':
-                state = 'on'
-                hour = self.const.NIGHT_DELIVER[0]
-                minute = self.const.NIGHT_DELIVER[1]
-            elif shift0 == 'Day' and shift1 == 'Off':
-                state = 'off'
-                hour = self.const.NIGHT_DELIVER[0]
-                minute = self.const.NIGHT_DELIVER[1]
-            else:
-                # just use tomorrows shift
-                state = 'off' if shift1 == 'Off' else 'on'
-                self.log(f'defaukt time would be wrong if shift was \'on\'. shift={state}')
-                hour = self.const.DEFAULT[0]
-                minute = self.const.DEFAULT[1]
+        # if override:
+        #     self.log('\toverride is set', level='WARNING')
+        #     state = 'on'
+        # else:
+        #     if shift0 == 'Off' and shift1 == 'Night':
+        #         # transition shift
+        #         state = 'off'
+        #         hour = self.const.DEFAULT[0]
+        #         minute = self.const.DEFAULT[1]
+        #         self.log('\tdisabling due to transition shift off->night', level='WARNING')
+        #     elif shift0 == 'Night' and shift1 == 'Off':
+        #         # transition shift
+        #         state = 'on'
+        #         hour = self.const.NIGHT_COLLECT[0]
+        #         minute = self.const.NIGHT_COLLECT[1]
+        #         self.log('\tenabling due to transition shift night->off', level='WARNING')
+        #     elif shift0 == 'Off' and shift1 == 'Off':
+        #         # transition shift
+        #         state = 'off'
+        #         hour = self.const.DEFAULT[0]
+        #         minute = self.const.DEFAULT[1]
+        #     elif shift1 == shift0 == 'Night':
+        #         state = 'on'
+        #         hour = self.const.NIGHT_COLLECT[0]
+        #         minute = self.const.NIGHT_COLLECT[1]
+        #     elif shift1 == shift0 == 'Day': # elif shift0 == 'Day' and shift1 == 'Day':
+        #         state = 'on'
+        #         hour = self.const.NIGHT_DELIVER[0]
+        #         minute = self.const.NIGHT_DELIVER[1]
+        #     elif shift0 == 'Off' and shift1 == 'Day':
+        #         state = 'on'
+        #         hour = self.const.NIGHT_DELIVER[0]
+        #         minute = self.const.NIGHT_DELIVER[1]
+        #     elif shift0 == 'Day' and shift1 == 'Off':
+        #         state = 'off'
+        #         hour = self.const.NIGHT_DELIVER[0]
+        #         minute = self.const.NIGHT_DELIVER[1]
+        #     else:
+        #         # just use tomorrows shift
+        #         state = 'off' if shift1 == 'Off' else 'on'
+        #         self.log(f'defaukt time would be wrong if shift was \'on\'. shift={state}')
+        #         hour = self.const.DEFAULT[0]
+        #         minute = self.const.DEFAULT[1]
 
-            if backup:
-                minute += 1
+        #     if backup:
+        #         minute += 1
 
-            alarm_time = f'{hour:02d}:{minute:02d}'
+        #     alarm_time = f'{hour:02d}:{minute:02d}'
 
-        return state, alarm_time, hour, minute
+        # return state, alarm_time, hour, minute
+        hour = 7
+        minute = 45
+        alarm_time = f'{hour:02d}:{minute:02d}'
+        return 'off', alarm_time, hour, minute
 
 # -----------------------------------------------------------------------------------
 
@@ -233,7 +236,9 @@ class Alarms(Hass):
         dow = self.lib.dow()
 
         # (06-00 on tuesday or friday/saturday) or (00-06 on wednesday or saturday/sunday) -> set alarm later
-        later = (self.now_is_between('06:00:00', '23:59:59') and ((dow == 2) or (5 <= dow <= 6))) or (self.now_is_between('00:00:00', '05:59:59') and ((dow == 3) or (6 <= dow <= 7)))
+        # later = (self.now_is_between('06:00:00', '23:59:59') and ((dow == 2) or (5 <= dow <= 6))) or (self.now_is_between('00:00:00', '05:59:59') and ((dow == 3) or (6 <= dow <= 7)))
+        # dow: 1 - mon, 2 - tue, 3 - wed, 4 - thu, 5 - fri, 6 - sat, 7 - sun
+        later = not (self.now_is_between('06:00:00', '23:59:59') and (dow in (1,2))) or (self.now_is_between('00:00:00', '05:59:59') and (dow in (2,3)))
 
         if later:
             hour = 10
@@ -416,60 +421,16 @@ class Alarms(Hass):
 
     def _alarm(self, kwargs):
 
-        self.lib.log_function_name()
+        self.lib.log_function_name(start=True)
 
         alarm_type = kwargs['alarm_type']
-        _alarm_type = alarm_type
-        backup = alarm_type == 'backup'
-        test = self.is_test(kwargs)
-        entity_id = self.const.STUDY_SPEAKER if test else self.const.BEDROOM_SPEAKER
-
-        self.call_service('sonos/unjoin_entity', entity_id=entity_id)
-        self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
-        self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=0)
-        self.call_service('media_player/repeat_set', entity_id=entity_id, repeat='off')
+        entity_id = self.const.STUDY_SPEAKER if self.is_test(kwargs) else self.const.BEDROOM_SPEAKER
 
         media_content_id = self.select_alarm(alarm_type=alarm_type)
 
-        verbose = self.lib.get_verbose_debug()
+        self.call_service('sonos/play_thing', entity_id=entity_id, media_content_id=media_content_id, volume_level=self.const.ALARM_VOLUME, delayed=True)
 
-        if verbose:
-            self.log(f'\talarm_type={_alarm_type} test={test} entity_id={entity_id} media_content_id={media_content_id}', level='DEBUG')
-
-        for attempt in range(self.const.ATTEMPTS):
-            state = self.get_state(entity_id, attribute="attributes")
-            if not self.lib.is_playing(entity_id):
-                media = media_content_id if attempt < 10 else self.const.BACKUP_STREAM
-                if verbose:
-                    self.log(f'attempt={attempt} media={media} entity_id={entity_id} isplaying={self.lib.is_playing(entity_id)}', level='DEBUG')
-                    self.log(f'state={state}', level='DEBUG')
-                self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
-                self.call_service('media_player/play_media', entity_id=entity_id, media_content_type="music", media_content_id=media)
-                time.sleep(1.0)
-            else:
-                break
-
-        if not backup:
-            divisor = 100
-            target_volume = self.const.TARGET_VOLUME  # deal in integers for convenience
-
-            if test:
-                span = 1 * divisor # 1s increments
-            else:
-                span = 4 * divisor # 4s incremnets
-
-            volume = 0
-            incr_volume = target_volume * (2.5/100.0)  # 2.5% increase in volume
-            sleeptime = span/divisor
-
-            while volume < target_volume:
-                volume += incr_volume
-                self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=volume/100.0)
-                time.sleep(sleeptime)
-
-        self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=volume/200.0)
-
-        self.lib.log_function_name(False)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -482,7 +443,8 @@ class Alarms(Hass):
         elif alarm_type == 'test':
             ids = self.const.NORMAL_ALARM
         else:
-            ids = self.const.EARLY_ALARM
+            # ids = self.const.EARLY_ALARM
+            ids = self.const.NORMAL_ALARM
 
         return ids[random.randint(0, len(ids) - 1)]  # randomise choice.
 

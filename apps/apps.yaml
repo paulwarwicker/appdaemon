@@ -6,20 +6,31 @@ const:
   module: const
   global: true
 
+# const:
+#   module: const
+#   class: ConstantsManagement
+#   log_level: INFO
+#   priority: 1
+
+# automationlib:
+#   module: automationlib
+#   class: AutomationLib
+#   log_level: INFO
+#   priority: 2
+
 announcer:
   module: announcer
   class: Announcer
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
-    # causes cyclic dependency
-    # - timestamp
     - const
+    # - timestamp # causes cyclic dependency
 
 automation:
   module: automation
   class: Automation
-  # log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -29,7 +40,7 @@ automation:
 timestamp:
   module: timestamp
   class: Timestamp
-  # log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -38,7 +49,7 @@ timestamp:
 location:
   module: location
   class: Location
-  # log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -49,7 +60,7 @@ location:
 alarms:
   module: alarms
   class: Alarms
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -58,7 +69,7 @@ alarms:
 sonos:
   module: sonos
   class: Sonos
-  # log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -67,7 +78,7 @@ sonos:
 timers:
   module: timers
   class: Timers
-  # log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -77,7 +88,7 @@ motion:
   module: motion
   class: Motion
   reset_on_off: false
-  # log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -87,7 +98,7 @@ motion:
 lighting:
   module: lighting
   class: Lighting
-  # log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -97,17 +108,16 @@ lighting:
 front_door:
   module: front_door
   class: FrontDoor
-  # log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
     - announcer
 
-# --
 garage:
   module: garage
   class: Garage
-  log_level: INFO # DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -117,17 +127,17 @@ garage:
 weather:
   module: weather
   class: Weather
-  log_level: INFO # DEBUG
+  log_level: INFO
   # location: 78704 US
   dependencies:
-    # - automationlib
+    - automationlib
     - const
     - announcer
 
 tap:
   module: tap
   class: Tap
-  log_level: INFO # DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -137,7 +147,7 @@ tap:
 car:
   module: car
   class: Car
-  log_level: INFO # DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -147,17 +157,25 @@ car:
 vacuum:
   module: vacuum
   class: Vacuum
-  # log_level: DEBUG
+  log_level: INFO
   dependencies:
     - automationlib
     - const
     - announcer
     - timestamp
-
 shelly:
   module: shelly
   class: Shelly
-  # log_level: DEBUG
+  log_level: INFO
+  dependencies:
+    - automationlib
+    - const
+    - announcer
+
+snoozer:
+  module: snoozer
+  class: Snoozer
+  log_level: INFO
   dependencies:
     - automationlib
     - const
@@ -167,31 +185,14 @@ shelly:
 # doorbell:
 #   module: doorbell
 #   class: DoorBell
-#   # log_level: DEBUG
+#   log_level: INFO
 #   dependencies:
 #     - automationlib
 #     - announcer
 # starling:
 #   module: starling
 #   class: Starling
-#   # log_level: DEBUG
+#   log_level: INFO
 #   dependencies:
 #     - automationlib
 #     - announcer
-# alarms2:
-#   module: alarms_async
-#   class: Alarms2
-#   log_level: DEBUG
-#   dependencies:
-#     - automationlib
-#     - const
-#     - announcer
-
-snoozer:
-  module: snoozer
-  class: Snoozer
-  log_level: DEBUG
-  dependencies:
-    - automationlib
-    - const
-    - announcer

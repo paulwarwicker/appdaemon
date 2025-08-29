@@ -29,56 +29,59 @@ class Shelly(Hass):
 
         self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        self.log('initialised --------------------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
     def button_event(self, event, data, kwargs) -> None:
 
-        device = data['device']
+        self.lib.log_function_name(force=True)
 
-        if self.lib.get_verbose_debug():
-            self.log(f'\tbutton press on {device}')
+        device = data['device']
 
         if device == self.const.BEDROOM_BUTTON:
             self.bedroom_button(data, kwargs)
         elif device == self.const.GARAGE_BUTTON:
             self.garage_button(data, kwargs)
 
+        self.lib.log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
 
     def bedroom_button(self, data, kwargs) -> None:
+
+        self.lib.log_function_name(force=True)
 
         event_type  = None
         click_type = data['click_type']
 
         if self.lib.get_verbose_debug():
             self.log(f'\t{click_type} press on {self.const.BEDROOM_BUTTON}')
-            # self.log(f'\t{data}')
 
         if click_type == 'single':
-            event_type  = 'all_off'
-        elif click_type == 'long':
             event_type  = 'snooze'
+        elif click_type == 'long':
+            event_type  = 'stop_bedroom'
         elif click_type == 'double':
-            event_type  = 'lumie_on'
+            event_type  = 'all_off'
         elif click_type == 'triple':
-            pass
+            event_type  = 'stop_bedroom'
 
         if event_type is not None:
             self.fire_event(event_type)
 
+        self.lib.log_function_name(start=False, force=True)
+
 # -----------------------------------------------------------------------------------
 
     def garage_button(self, data, kwargs) -> None:
+
+        self.lib.log_function_name(force=True)
 
         event_type  = None
         click_type = data['click_type']
 
         if self.lib.get_verbose_debug():
             self.log(f'\t{click_type} press on {self.const.GARAGE_BUTTON}')
-            # self.log(f'\t{data}')
 
         if click_type == 'single':
             event_type  = 'garage_close'
@@ -95,5 +98,7 @@ class Shelly(Hass):
 
         if event_type is not None:
             self.fire_event(event_type)
+
+        self.lib.log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------

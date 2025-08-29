@@ -1,0 +1,2 @@
+PYTHONPATH=/root/appdaemon-testing:/root/appdaemon-testing/appdaemon_testing:/root/appdaemon/appdaemon/plugins/hass:/root/appdaemon:/addon_configs/a0d7b954_appdaemon/apps pytest tests/test_loc.py
+PYTHONPATH=/root/appdaemon-testing:/root/appdaemon-testing/appdaemon_testing:/root/appdaemon/appdaemon/plugins/hass:/root/appdaemon pytest /root/appdaemon-testing/appdaemon_testing_tests/test_hass_driver.py
