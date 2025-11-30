@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=unused-argument disable=unused-variable disable=broad-exception-caught disable=line-too-long
+
+"""Montion detection and lighting control"""
 
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
@@ -7,30 +10,37 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-# import typing
 from datetime import datetime
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 
+from typing import TYPE_CHECKING, cast
+
+import constants as const
+import automationlib as _helpers  # type: ignore
+
+from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
 
 class Motion(Hass):
-    """Documentation for Motion"""
+    """Class documentation for Location"""
 
     override = False
     upstairs_motion_flag = False
     upstairs_motion_active = False
     downstairs_motion_flag = False
-    lib = None
-    const = None
+    lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
-        """initialise"""
+        """initialise location class"""
 
-        self.lib = AutomationLib(self)
-        self.const = ConstantsManagement(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # type: ignore
 
         # self.register_service('motion/set_motion_flag', self.set_motion_flag_service)
         # self.register_service('motion/reset_motion_flag', self.reset_motion_flag_service)
@@ -60,7 +70,6 @@ class Motion(Hass):
         self.listen_state(self.downstairs_motion, 'binary_sensor.downstairs_sensor_motion',   new='on')
         self.listen_state(self.upstairs_motion,   'binary_sensor.upstairs_sensor_motion',     new='on')
 
-        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
@@ -89,21 +98,27 @@ class Motion(Hass):
     def garage_motion_service(self, namespace:str, domain:str, service:str, kwargs) -> None:
         """garage motion detected"""
 
-        ts = self.call_service('timestamp/get', name='garage', return_result=True)
+        if self.get_state('input_boolean.ignore_sensors') == 'on':
+            self.log('Ignoring garage motion due to ignore_sensors', level='WARNING')
+            return
+
+        ts = self.call_service('timestamp/get', name='garage')
         diff = (datetime.now() - ts).seconds
 
-        if diff > self.lib.interval(seconds=10):
-            self.call_service('light/turn_on', entity_id=self.const.GARAGE2)
+        if diff > self.lib.interval(self, seconds=10):
+            self.call_service('light/turn_on', entity_id=const.GARAGE2)
 
 # -----------------------------------------------------------------------------------
 
     def status_event(self, event:str, data:dict, kwargs) -> None:
+        """status event"""
 
         self.status('','','','',{})
 
 # -----------------------------------------------------------------------------------
 
     def front_door_motion_event(self, event:str, data:dict, kwargs) -> None:
+        """front door motion event"""
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -113,6 +128,7 @@ class Motion(Hass):
 # -----------------------------------------------------------------------------------
 
     def downstairs_motion_event(self, event:str, data:dict, kwargs) -> None:
+        """downstairs motion event"""
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -122,6 +138,7 @@ class Motion(Hass):
 # -----------------------------------------------------------------------------------
 
     def upstairs_motion_event(self, event:str, data:dict, kwargs) -> None:
+        """upstairs motion event"""
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -131,17 +148,19 @@ class Motion(Hass):
 # -----------------------------------------------------------------------------------
 
     def stairs_motion_event(self, event:str, data:dict, kwargs) -> None:
+        """stairs motion event"""
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
         self.downstairs_motion('', '', '', '', {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
-        self.lib.delay(15)
+        self.lib.delay(self, 15)
         self.upstairs_motion('', '', '', '', {'seconds': 10, 'key': 'upstairs', 'cb': 'bannister_off'})
 
 # -----------------------------------------------------------------------------------
 
     def kitchen_motion_event(self, event:str, data:dict, kwargs) -> None:
+        """kitchen motion event"""
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -151,6 +170,7 @@ class Motion(Hass):
 # -----------------------------------------------------------------------------------
 
     def utility_motion_event(self, event:str, data:dict, kwargs) -> None:
+        """utility motion event"""
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -160,17 +180,19 @@ class Motion(Hass):
 # -----------------------------------------------------------------------------------
 
     def garage_motion_event(self, event:str, data:dict, kwargs) -> None:
+        """garage motion event"""
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
         self.garage_motion('', '', 'off', 'on', {})
-        self.lib.delay(15)
+        self.lib.delay(self, 15)
         self.garage_motion('', '', 'on', 'off', {'test': True})
 
 # -----------------------------------------------------------------------------------
 
     def motion_motion_event(self, event:str, data:dict, kwargs) -> None:
+        """motion motion event"""
 
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
@@ -178,24 +200,30 @@ class Motion(Hass):
         entity_id = 'light.hallway_1'
         self.downstairs_motion_event('',{},{})
 
-        self.lib.delay(15)
+        self.lib.delay(self, 15)
         self.upstairs_motion_event('',{},{})
-        self.lib.delay(15)
+        self.lib.delay(self, 15)
         self.garage_motion_event('',{},{})
-        self.lib.delay(15)
+        self.lib.delay(self, 15)
         self.front_door_motion_event('',{},{})
-        self.lib.delay(15)
+        self.lib.delay(self, 15)
         self.call_service('light/turn_off', entity_id=entity_id)
         self.kitchen_motion_event('',{},{})
-        self.lib.delay(15)
+        self.lib.delay(self, 15)
         self.utility_motion_event('',{},{})
 
 # -----------------------------------------------------------------------------------
 
     def upstairs_motion(self, entity, attribute, old, new, kwargs) -> None:
+        """upstairs motion"""
 
         self.lib.log_function_name(start=True)
         # self.lib.log_function_name(force=True)
+
+        if self.get_state('input_boolean.ignore_sensors') == 'on':
+            self.log('Ignoring upstairs motion due to ignore_sensors', level='WARNING')
+            self.lib.log_function_name(start=False)
+            return
 
         if self.upstairs_motion_active:
             self.log('upstairs_motion_active is active', level='WARNING')
@@ -203,12 +231,12 @@ class Motion(Hass):
             self.upstairs_motion_active = True
             self.run_in(self.reset_upstairs_motion_active, 10*60)
 
-            ts = self.call_service('timestamp/get', name='upstairs_motion', return_result=True)
+            ts = self.call_service('timestamp/get', name='upstairs_motion')
             # nomotion = (datetime.now() - ts).seconds > 1*60*60
 
             self.call_service('timestamp/set', name='upstairs_motion', value=datetime.now())
 
-            ts = self.call_service('timestamp/get', name='upstairs', return_result=True)
+            ts = self.call_service('timestamp/get', name='upstairs')
             self.call_service('timestamp/set', name='prev_upstairs', value=ts)
             self.call_service('timestamp/set', name='upstairs', value=datetime.now())
 
@@ -227,12 +255,17 @@ class Motion(Hass):
 
         self.lib.log_function_name(**force)
 
+        if self.get_state('input_boolean.ignore_sensors') == 'on':
+            self.log('Ignoring upstairs motion due to ignore_sensors', level='WARNING')
+            self.lib.log_function_name(start=False)
+            return
+
         self.downstairs_motion_flag = True
         self.call_service('timestamp/set', name='downstairs')
 
         if self.lib.is_below_horizon():
-            self.call_service('lighting/downstairs_on', cb='downstairs_off', seconds=self.const.LONGER_TIMEOUT)
-            self.call_service('lighting/bannister_on', cb='bannister_off', seconds=self.const.BANNISTER_TIMEOUT)
+            self.call_service('lighting/downstairs_on', cb='downstairs_off', seconds=const.LONGER_TIMEOUT)
+            self.call_service('lighting/bannister_on', cb='bannister_off', seconds=const.BANNISTER_TIMEOUT)
 
         self.lib.log_function_name(start=False, **force)
 
@@ -240,19 +273,18 @@ class Motion(Hass):
 
     def check_downstairs_motion(self) -> None:
 
-        downstairs_ts = self.call_service('timestamp/get', name='downstairs', return_result=True)
-        front_door_ts = self.call_service('timestamp/get', name='front_door_motion', return_result=True)
+        downstairs_ts = self.call_service('timestamp/get', name='downstairs')
+        front_door_ts = self.call_service('timestamp/get', name='front_door_motion')
 
         if (downstairs_ts - front_door_ts).seconds < 60:
             self.call_service('lighting/front_door_off')
-            # self.call_service('light/turn_off', entity_id=self.const.STANDARD_LAMP)
+            # self.call_service('light/turn_off', entity_id=const.STANDARD_LAMP)
 
 # -----------------------------------------------------------------------------------
 
     def check_upstairs_motion(self) -> None:
-
-        upstairs_ts = self.call_service('timestamp/get', name='upstairs', return_result=True)
-        front_door_ts = self.call_service('timestamp/get', name='front_door_motion', return_result=True)
+        upstairs_ts = self.call_service('timestamp/get', name='upstairs')
+        front_door_ts = self.call_service('timestamp/get', name='front_door_motion')
 
         if (upstairs_ts - front_door_ts).seconds < 120:
             self.run_in(self.all_off, 60)
@@ -263,8 +295,13 @@ class Motion(Hass):
 
         self.lib.log_function_name(start=True)
 
+        if self.get_state('input_boolean.ignore_sensors') == 'on':
+            self.log('Ignoring kitchen motion due to ignore_sensors', level='WARNING')
+            self.lib.log_function_name(start=False)
+            return
+
         cb = kwargs.get('cb', 'noop')
-        seconds = kwargs.get('seconds', self.const.LONG_TIMEOUT)
+        seconds = kwargs.get('seconds', const.LONG_TIMEOUT)
 
         self.call_service(f'lighting/kitchen_{new}', cb=cb, seconds=seconds)
 
@@ -276,14 +313,19 @@ class Motion(Hass):
 
         self.lib.log_function_name(start=True)
 
+        if self.get_state('input_boolean.ignore_sensors') == 'on':
+            self.log('Ignoring upstairs motion due to ignore_sensors', level='WARNING')
+            self.lib.log_function_name(start=False)
+            return
+
         cb = kwargs.get('cb', 'noop')
-        seconds = kwargs.get('seconds', self.const.DEFAULT_TIMEOUT)
+        seconds = kwargs.get('seconds', const.DEFAULT_TIMEOUT)
 
         if self.now_is_between('sunset + 00:15:00', 'sunrise'):
             if new == 'off':
                 self.call_service('lighting/utility_off', cb=cb, seconds=seconds)
             elif new == 'on':
-                self.call_service('lighting/turn_on_if_off', entity_id=self.const.UTILITY, cb=cb, seconds=seconds, brightness=self.const.QUARTER_ON)
+                self.call_service('lighting/turn_on_if_off', entity_id=const.UTILITY, cb=cb, seconds=seconds, brightness=const.QUARTER_ON)
 
         self.lib.log_function_name(start=False)
 
@@ -293,10 +335,15 @@ class Motion(Hass):
 
         self.lib.log_function_name(start=True)
 
-        cb = kwargs.get('cb', None)
-        seconds = kwargs.get('seconds', self.const.LONG_TIMEOUT)
+        if self.get_state('input_boolean.ignore_sensors') == 'on':
+            self.log('Ignoring bathroom motion due to ignore_sensors', level='WARNING')
+            self.lib.log_function_name(start=False)
+            return
 
-        self.call_service(f'lighting/bathroom_{new}', entity_id=self.const.BATHROOM_LIGHTS, cb=cb, seconds=seconds)
+        cb = kwargs.get('cb', None)
+        seconds = kwargs.get('seconds', const.LONG_TIMEOUT)
+
+        self.call_service(f'lighting/bathroom_{new}', entity_id=const.BATHROOM_LIGHTS, cb=cb, seconds=seconds)
 
         self.lib.log_function_name(start=False)
 
@@ -309,10 +356,15 @@ class Motion(Hass):
 
         self.lib.log_function_name(**force)
 
-        cb = kwargs.get('cb', None)
-        seconds = kwargs.get('seconds', self.const.DEFAULT_TIMEOUT)
+        if self.get_state('input_boolean.ignore_sensors') == 'on':
+            self.log('Ignoring cloakroom motion due to ignore_sensors', level='WARNING')
+            self.lib.log_function_name(start=False)
+            return
 
-        self.call_service(f'lighting/cloakroom_{new}', entity_id=self.const.CLOAKROOM, seconds=seconds, cb=cb)
+        cb = kwargs.get('cb', None)
+        seconds = kwargs.get('seconds', const.DEFAULT_TIMEOUT)
+
+        self.call_service(f'lighting/cloakroom_{new}', entity_id=const.CLOAKROOM, seconds=seconds, cb=cb)
 
         self.lib.log_function_name(start=False, **force)
 
@@ -321,6 +373,11 @@ class Motion(Hass):
     def garage_motion(self, entity_id, attribute, old, new, kwargs) -> None:
 
         self.lib.log_function_name(start=True)
+
+        if self.get_state('input_boolean.ignore_sensors') == 'on':
+            self.log('Ignoring garage motion due to ignore_sensors', level='WARNING')
+            self.lib.log_function_name(start=False)
+            return
 
         if self.lib.get_verbose_debug():
             self.log(f'\tentity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
@@ -334,35 +391,19 @@ class Motion(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    # def stairs_motion(self, **kwargs) -> None:
-
-    #     cb = kwargs['cb']
-    #     seconds = kwargs['seconds']
-    #     key = kwargs['key']
-    #     verbose = self.lib.get_verbose_debug()
-
-    #     downstairs_ts = self.call_service('timestamp/get', name='downstairs', return_result=True)
-    #     upstairs_ts = self.call_service('timestamp/get', name='upstairs', return_result=True)
-
-    #     if verbose:
-    #         self.log(
-    #             f'\tcb={cb} seconds={seconds} key={key} ' +
-    #             f'downstairs_ts={downstairs_ts.ctime()} ({downstairs_ts.timestamp():6.3f}) ' +
-    #             f'upstairs_ts={upstairs_ts.ctime()} ({upstairs_ts.timestamp():6.3f})', level='DEBUG')
-
-    #     if self.lib.is_below_horizon() or self.lib.get_testing():
-    #         self.call_service('lighting/bannister_on', seconds=seconds, cb=cb, key=key)
-
-# -----------------------------------------------------------------------------------
-
     def front_door_motion(self, entity_id, attribute, old, new, kwargs) -> None:
 
         self.lib.log_function_name(start=True)
 
+        if self.get_state('input_boolean.ignore_sensors') == 'on':
+            self.log('Ignoring front door motion due to ignore_sensors', level='WARNING')
+            self.lib.log_function_name(start=False)
+            return
+
         cb = kwargs.get('cb', None)
 
         if self.now_is_between('sunset', 'sunrise'):
-            self.call_service(f'lighting/front_door_{new}', entity_id=self.const.FRONT_DOOR_LIGHTS, cb=cb)
+            self.call_service(f'lighting/front_door_{new}', entity_id=const.FRONT_DOOR_LIGHTS, cb=cb)
 
         self.lib.log_function_name(start=False)
 

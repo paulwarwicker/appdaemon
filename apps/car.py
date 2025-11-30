@@ -8,10 +8,10 @@
 # https://github.com/nickw444/appdaemon-testing
 
 from datetime import datetime
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 
+from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+import constants as const
+import automationlib as self.lib
 
 class Car(Hass):
     """Documentation for Car"""
@@ -25,14 +25,12 @@ class Car(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def initialize(self) -> None:
+    async def initialize(self) -> None:
         """initialise"""
 
-        self.lib = AutomationLib(self)
-        self.const = ConstantsManagement(self)
-        self.locked = self.get_state(self.const.SENSOR_ENTITY_ID) == 'off'
+        self.locked = await self.get_state(const.SENSOR_ENTITY_ID) == 'off'
 
-        self.listen_state(self.car_door, self.const.SENSOR_ENTITY_ID)
+        self.listen_state(self.car_door, const.SENSOR_ENTITY_ID)
 
         self.run_minutely(self.check_status, datetime(2024, 1, 1))
 
@@ -50,18 +48,18 @@ class Car(Hass):
 
         # self.update()
 
-        # state = self.get_state(self.const.SENSOR_ENTITY_ID) # binary_sensor.skoda_karoq_vehicle_locked
+        # state = await self.get_state(const.SENSOR_ENTITY_ID) # binary_sensor.skoda_karoq_vehicle_locked
 
         # if state == 'unknown' or state == 'unavailable':
         #     return # check again next iteration
 
-        # tracker = self.get_state(self.const.DEVICE_TRACKER_ID, attribute='all') # device_tracker.skoda_karoq_position
+        # tracker = await self.get_state(const.DEVICE_TRACKER_ID, attribute='all') # device_tracker.skoda_karoq_position
         # location = tracker['state']
         # latitude = tracker['attributes'].get('latitude', None)
         # longitude = tracker['attributes'].get('longitude', None)
         # home = location == 'home'
 
-        # ts = self.call_service('timestamp/get', name='karoq_home', return_result=True)
+        # ts = self.call_service('timestamp/get', name='karoq_home')
 
         # if home:
         #     if ts is None:
@@ -88,7 +86,7 @@ class Car(Hass):
         #     return # not interested if not at home
 
         # if not locked and not self.locked and self.lib.is_after(16):
-        #     ts = self.call_service('timestamp/get', name='karoq_home', return_result=True)
+        #     ts = self.call_service('timestamp/get', name='karoq_home')
 
         #     if ts is None:
         #         self.log('\thome but karoq_home timestamp is not set', level='ERROR')
@@ -96,22 +94,22 @@ class Car(Hass):
 
         #     diff1 = (datetime.now() - ts).seconds
 
-        #     ts = self.call_service('timestamp/get', name='karoq_notification', return_result=True)
+        #     ts = self.call_service('timestamp/get', name='karoq_notification')
         #     diff2 = (datetime.now() - ts).seconds
 
         #     message='The car door is unlocked'
 
-        #     if diff2 > self.lib.interval(minutes=10):
+        #     if diff2 > self.lib.interval(self, minutes=10):
         #         self.call_service('announcer/notification', message=message, type='desktop', timestamp='karoq_notification')
 
-        #     if diff1 > self.lib.interval(minutes=60):
+        #     if diff1 > self.lib.interval(self, minutes=60):
         #         # been at home for more than 1h
 
-        #         # ts = self.call_service('timestamp/get', name='karoq_announce', return_result=True)
+        #         # ts = self.call_service('timestamp/get', name='karoq_announce')
         #         # diff = (datetime.now() - ts).seconds
 
         #         # message='The car door is unlocked. A lock request has been sent'
-        #         # self.call_service('lock/lock', entity_id=self.const.LOCK_ENTITY_ID)
+        #         # self.call_service('lock/lock', entity_id=const.LOCK_ENTITY_ID)
         #         # message='The car door is unlocked'
         #         self.call_service('announcer/announce', message=message, timestamp='karoq_announce')
         # else:
@@ -119,10 +117,10 @@ class Car(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def announce(self) -> None:
+    async def announce(self) -> None:
         """door announcement"""
 
-        state = self.get_state(self.const.SENSOR_ENTITY_ID)
+        state = await self.get_state(const.SENSOR_ENTITY_ID)
         self.log(f'\tstate={state}', level='DEBUG')
         message = None
 
@@ -147,7 +145,7 @@ class Car(Hass):
     def update(self) -> None:
 
         pass
-        # self.call_service('homeassistant/update_entity', entity_id=self.const.SENSOR_ENTITY_LIST)
-        # self.call_service('homeassistant/update_entity', entity_id=self.const.DEVICE_TRACKER_ID)
+        # self.call_service('homeassistant/update_entity', entity_id=const.SENSOR_ENTITY_LIST)
+        # self.call_service('homeassistant/update_entity', entity_id=const.DEVICE_TRACKER_ID)
 
 # -----------------------------------------------------------------------------------

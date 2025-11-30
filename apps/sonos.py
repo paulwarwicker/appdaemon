@@ -11,28 +11,37 @@ import pprint
 import random
 import textwrap
 from io import StringIO
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 
-        # # Cancel any existing playback task
-        # if hasattr(self, "playback_task") and self.playback_task is not None:
+from typing import TYPE_CHECKING, cast
+
+import constants as const
+import automationlib as _helpers  # type: ignore
+
+from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
+
+# # Cancel any existing playback task
+# if hasattr(self, "playback_task") and self.playback_task is not None:
 
 class Sonos(Hass):
     """Documentation for Sonos"""
 
-    lib = None
-    const = None
     task = None
     timer = None
+    lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self):
-        """."""
+        """Documentation for sonos app"""
 
-        self.lib = AutomationLib(self)
-        self.const = ConstantsManagement(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # type: ignore
 
         self.register_service('sonos/snooze', self.snooze_service)
         self.register_service('sonos/mute_all', self.mute_all_service)
@@ -40,10 +49,14 @@ class Sonos(Hass):
         self.register_service('sonos/unjoin_entity', self.unjoin_entity_service)
         self.register_service('sonos/mute_unjoin_all', self.mute_unjoin_all_service)
         self.register_service('sonos/set_configuration', self.set_configuration_service)
+        # self.register_service('sonos/stop_bedroom', self.stop_service, entity_id=const.BEDROOM_SPEAKER)
+        # self.register_service('sonos/stop_hallway', self.stop_service, entity_id=const.HALLWAY_SPEAKER)
+        # self.register_service('sonos/stop_study', self.stop_service, entity_id=const.STUDY_SPEAKER)
         self.register_service('sonos/stop_bedroom', self.stop_bedroom_service)
         self.register_service('sonos/stop_hallway', self.stop_hallway_service)
-        # self.register_service('sonos/play_thing', self.play_thing_service)
-        self.register_service('sonos/play_thing', self.play_thing_service_async)
+        self.register_service('sonos/stop_study', self.stop_study_service)
+        self.register_service('sonos/play_thing', self.play_thing_service)
+        self.register_service('sonos/stop', self.stop_service)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.snooze_event, 'snooze')
@@ -56,7 +69,7 @@ class Sonos(Hass):
         self.listen_event(self.play_hallway_event, 'play_hallway')
         self.listen_event(self.stop_hallway_event, 'stop_hallway')
         self.listen_event(self.stop_bedroom_event, 'stop_bedroom')
-        self.listen_event(self.snooze_event, 'snooze')
+        self.listen_event(self.stop_study_event, 'stop_study')
 
         self.run_daily(self.play_hallway, '08:00:00')
         self.run_daily(self.stop_hallway, '21:00:00')
@@ -67,25 +80,25 @@ class Sonos(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def mute_all_service(self, namespace, domain, service, kwargs) -> None:
+    def mute_all_service(self, namespace, domain, service, kwargs) -> None:
 
-        self._configure(self.const.BROADCAST_ENTITY_ID, {}, unjoin=False, join=False, mute=True)
-
-# -----------------------------------------------------------------------------------
-
-    async def unjoin_all_service(self, namespace, domain, service, kwargs) -> None:
-
-        self._configure(self.const.BROADCAST_ENTITY_ID, {}, unjoin=True, join=False, mute=False)
+        self._configure(const.BROADCAST_ENTITY_ID, {}, unjoin=False, join=False, mute=True)
 
 # -----------------------------------------------------------------------------------
 
-    async def mute_unjoin_all_service(self, namespace, domain, service, kwargs) -> None:
+    def unjoin_all_service(self, namespace, domain, service, kwargs) -> None:
 
-        self._configure(self.const.BROADCAST_ENTITY_ID, {}, unjoin=True, join=False, mute=True)
+        self._configure(const.BROADCAST_ENTITY_ID, {}, unjoin=True, join=False, mute=False)
 
 # -----------------------------------------------------------------------------------
 
-    async def unjoin_entity_service(self, namespace, domain, service, kwargs) -> None:
+    def mute_unjoin_all_service(self, namespace, domain, service, kwargs) -> None:
+
+        self._configure(const.BROADCAST_ENTITY_ID, {}, unjoin=True, join=False, mute=True)
+
+# -----------------------------------------------------------------------------------
+
+    def unjoin_entity_service(self, namespace, domain, service, kwargs) -> None:
 
         entity_id = kwargs['entity_id']
 
@@ -95,7 +108,7 @@ class Sonos(Hass):
 
     async def snooze_service(self, namespace, domain, service, kwargs) -> None:
 
-        self.lib.log_function_name(force=True)
+        self.lib.log_function_name(start=True, force=True)
 
         entity_id = kwargs.get('entity_id', None)
         seconds = kwargs.get('seconds', 10*60)
@@ -103,14 +116,9 @@ class Sonos(Hass):
         if entity_id is None:
             return
 
-        ts = await self.call_service('timestamp/get', name='snooze', return_result=True)
+        # ts = self.call_service('timestamp/get', name='snooze')
 
-        # diff = (datetime.now() - ts).seconds
-
-        # if diff < self.lib.interval(minutes=9):
-        #     return
-
-        await self.call_service('timestamp/set', name='snooze')
+        self.call_service('timestamp/set', name='snooze')
 
         all_attributes = await self.get_state(entity_id=entity_id, attribute="all")
 
@@ -123,17 +131,18 @@ class Sonos(Hass):
         shuffle = attributes.get('shuffle', None)
         repeat = attributes.get('repeat', None)
 
-        volume_level = self.const.ALARM_VOLUME
+        volume_level = const.ALARM_VOLUME
 
         self.log(f'entity_id={entity_id} volume_level={volume_level}', level='DEBUG')
         self.log(f'media_content_id={media_content_id} media_content_type={media_content_type}', level='DEBUG')
         self.log(f'shuffle={shuffle} repeat={repeat}', level='DEBUG')
 
-        if self.task is not None and not self.task.done():
-            self.log("Cancelling existing playback task", level="WARNING")
-            self.task.cancel()
+        self.call_service('media_player/media_stop', entity_id=entity_id)
+        # self.call_service('media_player/pause', entity_id=entity_id)
 
-        await self.call_service('media_player/media_stop', entity_id=entity_id)
+        # if self.task is not None and not self.task.done():
+        #     self.log("Cancelling existing playback task", level="WARNING")
+        #     self.task.cancel()
 
         kwargs = {
             'entity_id': entity_id,
@@ -145,49 +154,41 @@ class Sonos(Hass):
             'set_repeat': repeat
         }
 
-        # print(f'kwargs={kwargs}')
+        # await self.sleep(seconds)
 
-        # self.timer = await self.run_in(
-        #     self.play_thing_async,
-        #     seconds,
-        #     **kwargs)
+        # self.task = self.create_task(self.play_thing(**kwargs))
+        # self.log(f"Started new playback task: task={self.task}", level="DEBUG")
 
-        await self.sleep(seconds)
-
-        self.task = await self.create_task(self.play_thing_async(**kwargs))
-        self.log("Started new playback task", level="DEBUG")
+        self.run_in(self.play_thing, seconds, **kwargs)
 
         self.lib.log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
 
-    async def play_thing_service_async(self, namespace, domain, service, kwargs) -> None:
+    async def play_thing_service(self, namespace, domain, service, kwargs) -> None:
 
-        # self.lib.log_function_name(force=True)
+        self.lib.log_function_name(start=True, force=True)
 
-        app = await self.get_app("sonos")
-        if app is not None:
-            level = "DEBUG" if await self.get_state('input_boolean.debug') == 'on' else "INFO"
-            app.set_log_level(level)
+        # if self.task is not None and not self.task.done():
+        #     self.log("Cancelling existing playback task", level="WARNING")
+        #     self.task.cancel()
 
-        if self.task is not None and not self.task.done():
-            self.log("Cancelling existing playback task", level="WARNING")
-            self.task.cancel()
+        # self.task = self.create_task(self.play_thing(**kwargs))
+        # self.log(f"Started new playback task: task={self.task}", level="DEBUG")
 
-        self.task = await self.create_task(self.play_thing_async(**kwargs))
-        self.log("Started new playback task", level="DEBUG")
+        self.run_in(self.play_thing, 0, **kwargs)
 
-        # self.lib.log_function_name(start=False, force=True)
+        self.lib.log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
 
-    async def play_thing_async(self, **kwargs) -> None:
+    async def play_thing(self, **kwargs) -> None:
 
-        # self.lib.log_function_name(force=True)
+        self.lib.log_function_name(start=True, force=True)
 
         entity_id = kwargs.get('entity_id')
-        volume_level = kwargs.get('volume_level', 0.3)
-        ramp_time = kwargs.get('ramp_time', 20.0)
+        volume_level = kwargs.get('volume_level', const.ALARM_VOLUME)
+        ramp_time = kwargs.get('ramp_time', const.RAMP_TIME)
         media_content_id = kwargs.get('media_content_id')
         delayed = kwargs.get('delayed', True)
         shuffle = kwargs.get("set_shuffle", False)
@@ -208,7 +209,7 @@ class Sonos(Hass):
         await self.call_service("media_player/repeat_set", entity_id=entity_id, repeat=repeat)
         await self.call_service("media_player/shuffle_set", entity_id=entity_id, shuffle=shuffle)
 
-        for attempt in range(self.const.ATTEMPTS):
+        for attempt in range(const.ATTEMPTS):
             state = await self.get_state(entity_id, attribute="state")
 
             if state != "playing":
@@ -222,26 +223,6 @@ class Sonos(Hass):
                 break
 
         if delayed:
-            # start_volume = 0.0
-            # target_volume = float(volume_level)
-
-            # smoothness = 0.01  # Volume step size (~1% of full scale)
-            # steps = max(1, int(target_volume / smoothness))  # e.g. for 0.5 target, ~25 steps
-            # step_volume = target_volume / steps
-            # step_delay = ramp_time / steps
-
-            # self.log(f"steps={steps}  step_volume={step_volume:.4f} step_delay={step_delay:.3f}", level="DEBUG")
-
-            # current_volume = start_volume
-
-            # for i in range(steps):
-            #     current_volume += step_volume
-            #     clamped_volume = self.truncate_2dp(min(current_volume, target_volume))
-
-            #     self.log(f"volume step {i+1}/{steps}: setting volume to {clamped_volume:.3f}", level="DEBUG")
-            #     await self.call_service("media_player/volume_set", entity_id=entity_id, volume_level=clamped_volume)
-            #     await self.sleep(step_delay)
-
             factor = 100
             volume = 0
             target_volume = int(volume_level * factor)  # deal in integers for convenience
@@ -261,13 +242,6 @@ class Sonos(Hass):
                 await self.sleep(step_delay)
 
             await self.sleep(ramp_time / 2.0)  # Wait for half the ramp time before setting final volume of half the target_volume
-            # await self.call_service("media_player/volume_set", entity_id=entity_id, volume_level=volume_level / 2)
-
-            # target_volume = volume_level / 2
-            # steps = max(1, int(target_volume / smoothness))
-            # step_volume = target_volume / steps
-            # step_delay = ramp_time / steps
-            # self.log(f"steps={steps} step_volume={step_volume} step_delay={step_delay:.3f}", level="DEBUG")
 
             for i in range(steps):
                 volume -= (step_volume / 2)
@@ -277,11 +251,11 @@ class Sonos(Hass):
         else:
             await self.call_service("media_player/volume_set", entity_id=entity_id, volume_level=volume_level)
 
-        # self.lib.log_function_name(start=False, force=True)
+        self.lib.log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
 
-    async def set_configuration_service(self, namespace, domain, service, kwargs) -> None:
+    def set_configuration_service(self, namespace, domain, service, kwargs) -> None:
 
         config = kwargs['config']
 
@@ -296,19 +270,36 @@ class Sonos(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def stop_bedroom_service(self, namespace, domain, service, kwargs) -> None:
+    def stop_service(self, namespace, domain, service, kwargs) -> None:
 
-        self.lib.log_function_name(force=True)
+        self.lib.log_function_name(start=True, force=True)
 
-        self.call_service('media_player/media_stop', entity_id=self.const.BEDROOM_SPEAKER)
+        entity_id = kwargs.get('entity_id', None)
+
+        if entity_id is not None:
+            self.call_service('media_player/media_stop', entity_id=entity_id)
+        else:
+            self.log('stop_service: entity_id is None', level='ERROR')
 
         self.lib.log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
 
+    def stop_bedroom_service(self, namespace, domain, service, kwargs) -> None:
+
+        self.call_service('sonos/stop', entity_id=const.BEDROOM_SPEAKER)
+
+# -----------------------------------------------------------------------------------
+
     def stop_hallway_service(self, namespace, domain, service, kwargs) -> None:
 
-        self.call_service('media_player/media_stop', entity_id=self.const.HALLWAY_SPEAKER)
+        self.call_service('sonos/stop', entity_id=const.HALLWAY_SPEAKER)
+
+# -----------------------------------------------------------------------------------
+
+    def stop_study_service(self, namespace, domain, service, kwargs) -> None:
+
+        self.call_service('sonos/stop', entity_id=const.STUDY_SPEAKER)
 
 # -----------------------------------------------------------------------------------
 
@@ -316,7 +307,7 @@ class Sonos(Hass):
 
         status = '\n'
 
-        for entity_id in self.const.BROADCAST_ENTITY_ID:
+        for entity_id in const.BROADCAST_ENTITY_ID:
             playing = self.lib.is_playing(entity_id)
             status += f'\n\tentity_id={entity_id} is_playing={playing}\n\n'
             attributes = self.get_state(entity_id=entity_id, attribute="all")
@@ -330,7 +321,14 @@ class Sonos(Hass):
 
     def play_hallway_event(self, event, data, kwargs):
 
-        self.play_spotify({'entity_id': self.const.STUDY_SPEAKER, 'volume_level': 0.2, 'media_content_id': self.const.SUMMER_HITS_PLAYLIST, 'delayed': False, 'shuffle': True}) # self.const.SUMMER_VIBES_ALBUM
+        self.play_spotify({
+            'entity_id': const.STUDY_SPEAKER,
+            'volume_level': 0.2,
+            'media_content_id': const.SUMMER_HITS_PLAYLIST,
+            # 'media_content_id': const.SUMMER_VIBES_ALBUM,
+            'delayed': False,
+            'shuffle': True
+            })
 
 # -----------------------------------------------------------------------------------
 
@@ -346,102 +344,110 @@ class Sonos(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def stop_study_event(self, event, data, kwargs):
+
+        # self.call_service('sonos/stop_study')
+        self.call_service('sonos/stop', entity_id=const.STUDY_SPEAKER)
+
+# -----------------------------------------------------------------------------------
+
     def snooze_event(self, event, data, kwargs):
 
         if self.lib.get_alarm_testing():
-            entity_id = self.const.STUDY_SPEAKER
+            entity_id = const.STUDY_SPEAKER
             seconds = 10
         else:
-            entity_id = self.const.BEDROOM_SPEAKER
+            entity_id = const.BEDROOM_SPEAKER
             seconds = 10*60
 
         self.call_service('sonos/snooze', seconds=seconds, entity_id=entity_id)
 
 # -----------------------------------------------------------------------------------
 
-    async def mute_all_event(self, event, data, kwargs):
+    def mute_all_event(self, event, data, kwargs):
 
-        await self.mute_all_service('', '', '', {})
-
-# -----------------------------------------------------------------------------------
-
-    async def unjoin_all_event(self, event, data, kwargs):
-
-        await self.unjoin_all_service('', '', '', {})
+        self.mute_all_service('', '', '', {})
 
 # -----------------------------------------------------------------------------------
 
-    async def join_test_event(self, event, data, kwargs):
+    def unjoin_all_event(self, event, data, kwargs):
+
+        self.unjoin_all_service('', '', '', {})
+
+# -----------------------------------------------------------------------------------
+
+    def join_test_event(self, event, data, kwargs):
 
         s=5
         print(100)
-        await self.unjoin_all_service('', '', '', {})
-        await self.sleep(s)
-        await self.configuration_1({})
-        await self.sleep(s)
-        await self.unjoin_all_service('', '', '', {})
-        await self.sleep(s)
-        await self.configuration_2({})
-        await self.sleep(s)
-        await self.unjoin_all_service('', '', '', {})
-        await self.sleep(s)
-        await self.configuration_3({})
-        await self.sleep(s)
-        await self.unjoin_all_service('', '', '', {})
-        await self.sleep(s)
-        await self.configuration_4({})
-        await self.sleep(s)
-        await self.unjoin_all_service('', '', '', {})
+        self.unjoin_all_service('', '', '', {})
+        self.lib.delay(s)
+        self.configuration_1({})
+        self.lib.delay(s)
+        self.unjoin_all_service('', '', '', {})
+        self.lib.delay(s)
+        self.configuration_2({})
+        self.lib.delay(s)
+        self.unjoin_all_service('', '', '', {})
+        self.lib.delay(s)
+        self.configuration_3({})
+        self.lib.delay(s)
+        self.unjoin_all_service('', '', '', {})
+        self.lib.delay(s)
+        self.configuration_4({})
+        self.lib.delay(s)
+        self.unjoin_all_service('', '', '', {})
         print(200)
 
 # -----------------------------------------------------------------------------------
 
     def test_sonos_event(self, event, data, kwargs):
 
-        entity_id = self.const.BEDROOM_SPEAKER
+        entity_id = const.BEDROOM_SPEAKER
 
         self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
         self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=0.01)
         self.call_service('media_player/repeat_set', entity_id=entity_id, repeat='off')
-        self.call_service('media_player/play_media',
-                            entity_id=entity_id,
-                            media_content_type='music',
-                            # media_content_id='http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1',
-                            media_content_id='http://prem2.zenradio.com:80/zrsoundsofrain_aac?5fba91be81f6da5b573f89c1',
-                        )
+        self.call_service(
+            'media_player/play_media',
+            entity_id=entity_id,
+            media_content_type='music',
+            # media_content_id='http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1',
+            media_content_id='http://prem2.zenradio.com:80/zrsoundsofrain_aac?5fba91be81f6da5b573f89c1',
+        )
 
 # -----------------------------------------------------------------------------------
 
     def test_event(self, event, data, kwargs):
 
-        self.log(f'study_playing={self.lib.is_playing(self.const.STUDY_SPEAKER)}')
-        self.log(f'bedroom_playing={self.lib.is_playing(self.const.BEDROOM_SPEAKER)}')
-        self.log(f'hallyway_playing={self.lib.is_playing(self.const.HALLWAY_SPEAKER)}')
+        self.log(f'study_playing={self.lib.is_playing(const.STUDY_SPEAKER)}')
+        self.log(f'bedroom_playing={self.lib.is_playing(const.BEDROOM_SPEAKER)}')
+        self.log(f'hallyway_playing={self.lib.is_playing(const.HALLWAY_SPEAKER)}')
 
 # -----------------------------------------------------------------------------------
 
     def play_thing_event(self, event, data, kwargs):
 
-        # media_content_id = self.const.SUMMER_VIBES_ALBUM
-        # media_content_id = self.const.SUMMER_VIBES_PLAYLIST
+        # media_content_id = const.SUMMER_VIBES_ALBUM
+        # media_content_id = const.SUMMER_VIBES_PLAYLIST
 
-        # media_content_id = self.const.SUMMER_HITS_PLAYLIST
-        # self.play_spotify({'entity_id': self.const.STUDY_SPEAKER, 'volume_level': self.const.ALARM_VOLUME, 'media_content_id': media_content_id, 'delay': True, 'shuffle': True})
+        # media_content_id = const.SUMMER_HITS_PLAYLIST
+        # self.play_spotify({'entity_id': const.STUDY_SPEAKER, 'volume_level': const.ALARM_VOLUME, 'media_content_id': media_content_id, 'delay': True, 'shuffle': True})
 
-        media_content_id = self.const.PROGRESSIVE_STREAM
-        self.call_service('sonos/play_thing', entity_id=self.const.STUDY_SPEAKER, volume_level=self.const.ALARM_VOLUME, media_content_id=media_content_id, delayed=True)
+        media_content_id = const.PROGRESSIVE_STREAM
+        self.call_service('sonos/play_thing', entity_id=const.STUDY_SPEAKER, volume_level=const.ALARM_VOLUME, media_content_id=media_content_id, delayed=True)
 
 # -----------------------------------------------------------------------------------
 
     def play_hallway(self, kwargs):
 
-        # media_content_id = self.const.BOSSANOVA_STREAM
-        media_content_id = self.select_stream(self.const.HALLWAY_STREAMS)
+        # media_content_id = const.BOSSANOVA_STREAM
+        media_content_id = self.select_stream(const.HALLWAY_STREAMS)
 
         if media_content_id.startswith('spotify:'):
-            self.play_spotify({'entity_id': self.const.HALLWAY_SPEAKER, 'volume_level': 0.02, 'media_content_id': media_content_id, 'delayed': False, 'shuffle': True})
+            self.play_spotify({'entity_id': const.HALLWAY_SPEAKER, 'volume_level': 0.02, 'media_content_id': media_content_id, 'delayed': False, 'shuffle': True})
         else:
-            self.call_service('sonos/play_thing', entity_id=self.const.HALLWAY_SPEAKER, volume_level=0.02, media_content_id=media_content_id, delayed=False, shuffle=True)
+            self.call_service('sonos/play_thing', entity_id=const.HALLWAY_SPEAKER, volume_level=0.02, media_content_id=media_content_id, delayed=False, shuffle=True)
 
 # -----------------------------------------------------------------------------------
 
@@ -451,7 +457,7 @@ class Sonos(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def _configure(self, speakers: list, volumes: list, unjoin: bool, join: bool, mute: bool):
+    def _configure(self, speakers: list, volumes: dict, unjoin: bool, join: bool, mute: bool):
 
         default_volume = 0.01
         xmute = not True
@@ -485,107 +491,46 @@ class Sonos(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def configuration_1(self, kwargs):
+    def configuration_1(self, kwargs):
         # bedroom/bathroom
 
-        speakers = [self.const.BEDROOM_SPEAKER, self.const.BATHROOM_SPEAKER]
+        speakers = [const.BEDROOM_SPEAKER, const.BATHROOM_SPEAKER]
         volume = {
-            'media_player.bedroom': 0.01,
-            'media_player.bathroom': self.const.ALARM_VOLUME,
+            const.BEDROOM_SPEAKER: 0.01,
+            const.BATHROOM_SPEAKER: const.ALARM_VOLUME,
         }
 
         self._configure(speakers, volume, unjoin=True, join=True, mute=False)
 
 # -----------------------------------------------------------------------------------
 
-    async def configuration_2(self, kwargs):
+    def configuration_2(self, kwargs):
         # bedroom with join
 
-        speakers = [self.const.BEDROOM_SPEAKER]
-        volume = {self.const.BEDROOM_SPEAKER: 0.01}
+        speakers = [const.BEDROOM_SPEAKER]
+        volume = {const.BEDROOM_SPEAKER: 0.01}
 
         self._configure(speakers, volume, unjoin=True, join=True, mute=False)
 
 # -----------------------------------------------------------------------------------
 
-    async def configuration_3(self, kwargs):
+    def configuration_3(self, kwargs):
         # bedroom no join
 
-        speakers = [self.const.BEDROOM_SPEAKER]
-        volume = {self.const.BEDROOM_SPEAKER: 0.01}
+        speakers = [const.BEDROOM_SPEAKER]
+        volume = {const.BEDROOM_SPEAKER: 0.01}
 
         self._configure(speakers, volume, unjoin=True, join=False, mute=False)
 
 # -----------------------------------------------------------------------------------
 
-    async def configuration_4(self, kwargs):
+    def configuration_4(self, kwargs):
         # bedroom/kitchen
 
-        speakers = [self.const.KITCHEN_SPEAKER, self.const.BEDROOM_SPEAKER]
-        volume = {self.const.KITCHEN_SPEAKER: 0.05, self.const.BEDROOM_SPEAKER: 0.05}
+        speakers = [const.KITCHEN_SPEAKER, const.BEDROOM_SPEAKER]
+        volume = {const.KITCHEN_SPEAKER: 0.05, const.BEDROOM_SPEAKER: 0.05}
 
         self._configure(speakers, volume, unjoin=True, join=True, mute=False)
-
-# -----------------------------------------------------------------------------------
-
-    # def play_thing(self, kwargs):
-
-    #     self.lib.log_function_name(force=True)
-
-    #     print(kwargs)
-    #     entity_id = kwargs.get('entity_id', None)
-    #     volume_level = kwargs.get('volume_level', 0.15)
-    #     media_content_id = kwargs.get('media_content_id', None)
-    #     delayed = kwargs.get('delayed', True)
-    #     shuffle = kwargs.get("set_shuffle", False)
-    #     repeat = kwargs.get("set_repeat", "all")
-    #     media_content_type = kwargs.get("media_content_type", "music")
-
-    #     if entity_id is None:
-    #         self.log('entity_id not specified', level='ERROR')
-    #         return
-
-    #     if media_content_id is None:
-    #         self.log('media_content_id not specified', level='ERROR')
-    #         return
-
-    #     self.call_service('sonos/unjoin_entity', entity_id=entity_id)
-    #     self.call_service('media_player/media_stop', entity_id=entity_id)
-    #     self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
-    #     self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=0)
-    #     self.call_service('media_player/repeat_set', entity_id=entity_id, repeat=repeat)
-    #     self.call_service("media_player/shuffle_set", entity_id=entity_id, shuffle=shuffle)
-
-    #     self.log(f'\tentity_id={entity_id} volume_level={volume_level} media_content_id={media_content_id} delayed={delayed}', level='DEBUG')
-
-    #     for attempt in range(self.const.ATTEMPTS):
-    #         state = self.get_state(entity_id, attribute="state")
-    #         if not state == 'playing':
-    #             self.log(f'state={state} attempt={attempt}', level='DEBUG')
-    #             self.call_service('media_player/volume_mute', entity_id=entity_id, is_volume_muted=False)
-    #             time.sleep(0.5)
-    #             self.call_service('media_player/play_media', entity_id=entity_id, media_content_type=media_content_type, media_content_id=media_content_id)
-    #             time.sleep(0.5)
-    #         else:
-    #             break
-
-    #     divisor = 100
-    #     target_volume = int(volume_level * 100)  # deal in integers for convenience
-    #     span = 4 * divisor # 4s incremnets
-
-    #     volume = 0
-    #     incr_volume = target_volume * (2.5/100.0)  # 2.5% increase in volume
-    #     sleeptime = span/divisor
-
-    #     if delayed:
-    #         while volume < target_volume:
-    #             volume += incr_volume
-    #             self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=volume/100.0)
-    #             time.sleep(sleeptime)
-    #     else:
-    #         self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=volume_level)
-
-    #     self.lib.log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
 
@@ -605,14 +550,7 @@ class Sonos(Hass):
 
         kwargs["content_type"] = content_type
 
-        self.call_service(
-            'sonos/play_thing',
-            **kwargs)
-            # entity_id=self.const.STUDY_SPEAKER,
-            # volume_level=self.const.ALARM_VOLUME,
-            # media_content_id=media_content_id,
-            # media_content_type=media_content_type,
-            # delayed=True)
+        self.call_service('sonos/play_thing', **kwargs)
 
         self.lib.log_function_name(start=False)
 

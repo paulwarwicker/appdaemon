@@ -30,7 +30,7 @@ def automation() -> Automation:
     # def delay(self, s) -> None:
     # def set_debug(self, torf) -> bool:
     # def log_debug(self, message) -> None:
-    # def log_function_name(self, start=True) -> None:
+    # def log_function_name(start=True) -> None:
     # def is_playing(self, entity_id=None) -> bool:
     # def interval(self, minutes) -> int:
 

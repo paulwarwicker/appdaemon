@@ -11,24 +11,32 @@
 # import traceback
 # import asyncio
 from datetime import datetime
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 
+from typing import TYPE_CHECKING, cast
+
+import constants as const
+import automationlib as _helpers  # type: ignore
+
+from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
 
 class Vacuum(Hass):
     """Documentation for Vacuum"""
 
-    lib = None
-    const = None
+    lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
 
-        self.lib = AutomationLib(self)
-        self.const = ConstantsManagement(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # type: ignore
 
         self.listen_state(self.vacuum_debug, 'vacuum.s7_max_ultra')
 
@@ -75,11 +83,11 @@ class Vacuum(Hass):
             self.desktop_notification(f'Roborock has an unknown error {state}')
             return
 
-        ts = self.call_service('timestamp/get', name='vacuum', return_result=True)
+        ts = self.call_service('timestamp/get', name='vacuum')
         diff = (datetime.now() - ts).seconds
 
-        self.call_service('announcer/announce', entity_id=self.const.STUDY_SPEAKER, message=message)
-        self.call_service('announcer/announce', entity_id=self.const.KITCHEN_SPEAKER, message=message)
+        self.call_service('announcer/announce', entity_id=const.STUDY_SPEAKER, message=message)
+        self.call_service('announcer/announce', entity_id=const.KITCHEN_SPEAKER, message=message)
 
         # if diff > ( 3 * 60 ):
         #     self.call_service('announcer/broadcast', message=message, timestamp='vacuum')

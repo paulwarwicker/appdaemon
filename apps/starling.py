@@ -14,8 +14,9 @@ import json
 import requests  # type: ignore # pylint: disable=E0401
 import urllib3  # type: ignore # pylint: disable=E0401 disable=E0611
 
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+import constants as const
+import automationlib as self.lib
 
 BASE_URL = "https://api.starlingbank.com/api/v2"
 BASE_URL_SANDBOX = "https://api-sandbox.starlingbank.com/api/v2"
@@ -29,10 +30,8 @@ class Starling(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def initialize(self):
+    async def initialize(self):
         """."""
-
-        self.lib = AutomationLib(self)
 
         self.listen_event(self.delete_calendar_events, 'delete_calendar_events')
         self.listen_event(self.add_calendar_events, 'add_calendar_events')
@@ -75,7 +74,7 @@ class Starling(Hass):
         # account_uid = account.account_uid
         # default_category_uid = account.default_category_uid
 
-        # state = self.get_state('sensor.starling_events', attribute='scheduled_events')
+        # state = await self.get_state('sensor.starling_events', attribute='scheduled_events')
         # # self.log(state)
 
         # data = helper.get_request("/direct-debit/mandates")
@@ -142,14 +141,14 @@ class Starling(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def _check_starling_balance(self, kwargs):
+    async def _check_starling_balance(self, kwargs):
 
         helper = self.starling
         account = helper.account()
         account_uid = account.account_uid
         default_category_uid = account.default_category_uid
 
-        state = self.get_state('sensor.starling_events', attribute='scheduled_events')
+        state = await self.get_state('sensor.starling_events', attribute='scheduled_events')
         # self.log(state)
 
         now=(datetime.now() - timedelta(days=4)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -310,11 +309,11 @@ class Starling(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def delete_calendar_events(self, event, data, kwargs):
+    async def delete_calendar_events(self, event, data, kwargs):
 
         self.lib.log_function_name(start=True)
 
-        state = self.get_state('sensor.starling_events', attribute='scheduled_events')
+        state = await self.get_state('sensor.starling_events', attribute='scheduled_events')
         for el in state["calendar.starling"]["events"]:
             print(el)
 

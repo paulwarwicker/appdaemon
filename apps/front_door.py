@@ -7,24 +7,31 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 
+from typing import TYPE_CHECKING, cast
+
+import constants as const # pylint: disable=unused-import
+import automationlib as _helpers  # type: ignore
+
+from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
 
 class FrontDoor(Hass):
     """Documentation for Front Door"""
 
-    lib = None
-    const = None
-
+    lib: "AutomationLib" = _helpers  # type: ignore
 # -----------------------------------------------------------------------------------
 
-    def initialize(self) -> None:
+    async def initialize(self) -> None:
         """initialise"""
 
-        self.lib = AutomationLib(self)
-        self.const = ConstantsManagement(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # type: ignore
 
         self.register_service('front_door/battery', self.front_door_battery_service)
 
@@ -61,9 +68,9 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def front_door_battery(self, kwargs) -> None:
+    async def front_door_battery(self, kwargs) -> None:
 
-        level = self.get_state('sensor.front_door_battery')
+        level = await self.get_state('sensor.front_door_battery')
 
         if level == 'unavailable':
             self.log('Battery level not available', level='ERROR')
@@ -93,16 +100,18 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
+    async def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
+        """front door ding"""
 
-        self.run_in_thread(self.siren_on, self.const.APP_THREADS - 1)
-        self.run_in_thread(self.front_door_announce, self.const.APP_THREADS - 2)
+        self.run_in_thread(self.siren_on, const.APP_THREADS - 1)
+        self.run_in_thread(self.front_door_announce, const.APP_THREADS - 2)
         if self.lib.is_night():
             self.call_service('lighting/front_door_ding', seconds=300, cb='front_door_hallway_off', key='front_door_ding')
 
 # -----------------------------------------------------------------------------------
 
-    def siren_on(self, kwargs) -> None:
+    async def siren_on(self, kwargs) -> None:
+        """turn on siren for front door ding"""
 
         delay = 1 if self.lib.get_testing() else 5
         self.call_service('siren/turn_on', entity_id='siren.tapo_hub_siren')
@@ -110,26 +119,28 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def siren_off(self, kwargs) -> None:
+    async def siren_off(self, kwargs) -> None:
+        """turn off siren for front door ding"""
 
         self.call_service('siren/turn_off', entity_id='siren.tapo_hub_siren')
 
 # -----------------------------------------------------------------------------------
 
-    def front_door_announce(self, kwargs) -> None:
+    async def front_door_announce(self, kwargs) -> None:
+        """front door announcement"""
 
-        message = 'Someone is at the front door' if not self.get_state('input_boolean.testing') == 'on' else 'just testing'
+        message = 'Someone is at the front door' if not (await self.get_state('input_boolean.testing')) == 'on' else 'just testing'
         self.call_service('announcer/broadcast', message=message, timestamp='front_door')
 
 # -----------------------------------------------------------------------------------
 
-    def ding_front_door_light(self, kwargs) -> None:
+    async def ding_front_door_light(self, kwargs) -> None:
         """Turn on front door light when dark when someone calls. see also front_door_light_on/off"""
 
         if self.now_is_between('sunset', 'sunrise'):
             # TODO: return to previous level if was previously on
-            brightness = self.get_state('light.front_door_1', attribute='brightness')
-            state = self.get_state('light.front_door_1')
+            brightness = await self.get_state('light.front_door_1', attribute='brightness')
+            state = await self.get_state('light.front_door_1')
             self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=0)
             self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=192, transition=10)
             # self.turn_on('scene.front_door_ding_2') # FIXME: not working - scenes dont allow transitiona
@@ -140,7 +151,7 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def ding_hallway_light(self, kwargs) -> None:
+    async def ding_hallway_light(self, kwargs) -> None:
         """Turn on hallway light when dark"""
 
         if self.lib.is_night():  # civil dusk till civil dawn
@@ -157,7 +168,7 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def _front_door_light_on(self, kwargs) -> None:
+    async def _front_door_light_on(self, kwargs) -> None:
 
         if self.now_is_between('sunset', 'sunrise + 1:00:00'):
             if self.lib.is_below_horizon():
@@ -169,7 +180,7 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def front_door_light_off(self, kwargs) -> None:
+    async def front_door_light_off(self, kwargs) -> None:
 
         # scene = 'scene.front_door_ding_2'
         # self.log(f'\tscene={scene}', level='DEBUG')

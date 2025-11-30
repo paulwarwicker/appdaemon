@@ -2,29 +2,40 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import math
-import json # keep enabled for debug. DO NOT COMMENT OUT
+import json  # keep enabled for debug. DO NOT COMMENT OUT # pylint: disable=W0611
+
+from typing import TYPE_CHECKING, cast
+
 import yaml
 import aiohttp  # type: ignore # pylint: disable=E0401 disable=E0611
+
+import constants as const  # pylinkint: disable=unused-import
+import automationlib as _helpers  # type: ignore
+
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
+
 
 class Weather(Hass):
     """Weather app using tomorrow.io data"""
 
-    lib = None
-    const = None
     request_kwargs = {}
+    lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
-    def initialize(self):
+    async def initialize(self):
 
-        self.lib = AutomationLib(self)
-        self.const = ConstantsManagement(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # type: ignore
 
         path = Path(f'{self.AD.config_dir}/secrets.yaml')
-        path = path if path.is_file() else Path('/homeassistant/secrets.yaml') # HAOS
+        path = path if path.is_file() else Path('/homeassistant/secrets.yaml')  # HAOS
         with path.open('r', encoding='utf8') as f:
             apikey = yaml.safe_load(f)['tomorrow_api_key']
         self.log('API key loaded', level="DEBUG")
@@ -53,11 +64,12 @@ class Weather(Hass):
         interval = timedelta(minutes=10)
         # runtime = datetime(2024, 1, 1, 0, 0, 0)
 
-        self.run_every(self.get_weather, 'now', interval.total_seconds()) # FIXME: would be nice if on 10 minutes exactly
+        # FIXME: would be nice if on 10 minutes exactly
+        self.run_every(self.get_weather, 'now', interval.total_seconds())
         self.log(f'Getting weather every {interval}', level='DEBUG')
 
-        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
-        self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
+        self.call_service('announcer/initialised',
+                          name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -117,15 +129,21 @@ class Weather(Hass):
             if count == 24:
                 break
 
-        await self.set_state(
-            'sensor.weather_tomorrowio_forecast_low_12h',
-            state=round(low_temp12,1),  # one decimal place
-            device_class='temperature',
-        )
+        low_temp12_val = low_temp12 if low_temp12 != float('inf') else None
+        if low_temp12_val is not None:
+            try:
+                await self.set_state(
+                    'sensor.weather_tomorrowio_forecast_low_12h',
+                    state=round(low_temp12_val, 1),
+                    device_class='temperature'
+                )
+            except Exception as exc:
+                self.log(
+                    f'Failed to set weather_tomorrowio_forecast_low_12h: {exc}', level='ERROR')
 
         await self.set_state(
             'sensor.weather_tomorrowio_forecast_low_24h',
-            state=round(low_temp24,1),  # one decimal place
+            state=round(low_temp24, 1),  # one decimal place
             device_class='temperature',
         )
 
@@ -150,18 +168,18 @@ class Weather(Hass):
 
         index = 0
         data = {}
-        data[0] = json_data['timelines']['hourly'][index] # previous/current hour
-        data[1] = json_data['timelines']['hourly'][index + 1] # next hour
-        data[2] = json_data['timelines']['hourly'][index + 2] # hour after
-        data[3] = json_data['timelines']['hourly'][index + 3] # hour after
+        # previous/current hour
+        data[0] = json_data['timelines']['hourly'][index]
+        data[1] = json_data['timelines']['hourly'][index + 1]  # next hour
+        data[2] = json_data['timelines']['hourly'][index + 2]  # hour after
+        data[3] = json_data['timelines']['hourly'][index + 3]  # hour after
 
-        # if self.lib.get_verbose_debug():
         #     print(json.dumps(data[0], indent=2))
         #     print(json.dumps(data[1], indent=2))
         #     print(json.dumps(data[2], indent=2))
         #     print(json.dumps(data[3], indent=2))
 
-        code  = data[0]['values']['weatherCode']
+        code = data[0]['values']['weatherCode']
 
         # cum_prob_1h = math.ceil((data[0]['values']['precipitationProbability'] +
         #                          data[1]['values']['precipitationProbability']) / 2)
@@ -169,35 +187,65 @@ class Weather(Hass):
         #                          data[1]['values']['precipitationProbability'] +
         #                          data[2]['values']['precipitationProbability'] +
         #                          data[3]['values']['precipitationProbability'] ) / 4)
-        cum_prob_1h = math.ceil(data[1]['values']['precipitationProbability'])
-        cum_prob_3h = math.ceil((data[1]['values']['precipitationProbability'] +
-                                 data[2]['values']['precipitationProbability'] +
-                                 data[3]['values']['precipitationProbability']) / 3)
+        cum_prob_1h = math.floor(math.ceil(
+            data[1]['values']['precipitationProbability']
+        ))
+
+        cum_prob_3h = math.floor(math.ceil(
+            (
+                (
+                    data[1]['values']['precipitationProbability'] +
+                    data[2]['values']['precipitationProbability'] +
+                    data[3]['values']['precipitationProbability']
+                ) / 3
+            )
+        ))
 
         if cum_prob_1h != 0 and cum_prob_3h != 0:
             self.log(f'\tcode={code} probability of rain1h={cum_prob_1h}, rain3h={cum_prob_3h}', level='DEBUG')
 
-        await self.set_state(
-            'sensor.weather_tomorrowio_forecast_rain_probability_1h',
-            state=cum_prob_1h,
-            device_class='probability')
+        try:
+            entity_id = 'sensor.weather_tomorrowio_forecast_rain_probability_1h'
+            await self.set_state(
+                entity_id,
+                state=cum_prob_1h,
+                attributes={
+                    "friendly_name": "1 hour probability",
+                    "unit_of_measurement": "%",
+                    "device_class": "measurement"
+                }                # device_class='probability'
+            )
+        except Exception as exc:
+            # Home Assistant rejected the request (bad attributes or other error)
+            self.log(f'Failed to set {entity_id}: {exc}', level='ERROR')
 
-        await self.set_state(
-            'sensor.weather_tomorrowio_forecast_rain_probability_3h',
-            state=math.floor(cum_prob_3h),
-            device_class='probability')
+        try:
+            entity_id = 'sensor.weather_tomorrowio_forecast_rain_probability_3h'
+            await self.set_state(
+                entity_id,
+                state=cum_prob_3h,
+                attributes={
+                    "friendly_name": "3 hour probability",
+                    "unit_of_measurement": "%",
+                    "device_class": "measurement"
+                }                # device_class='probability'
+            )
+        except Exception as exc:
+            # Home Assistant rejected the request (bad attributes or other error)
+            self.log(f'Failed to set {entity_id}: {exc}', level='ERROR')
 
         if cum_prob_1h >= 35:
-            pct = math.floor(cum_prob_1h)
-            if not code in (4000, 4001, 4200, 4201): # if not raining - announce
-                self.call_service('announcer/announce', entity_id='media_player.study', message=f"There is a {pct} percent probability of rain in the next hour")
+            if not code in (4000, 4001, 4200, 4201):  # if not raining - announce
+                self.call_service(
+                    'announcer/announce', entity_id='media_player.study',
+                    message=f"There is a {cum_prob_1h} percent probability of rain in the next hour"
+                )
 
 # -----------------------------------------------------------------------------------
 
     def convert_zulu(self, zulu) -> datetime:
-
         """Convert a Zulu based timestring to datetime"""
-        utc_dt = zulu.replace("Z","UTC")
+        utc_dt = zulu.replace("Z", "UTC")
         return datetime.strptime(utc_dt, "%Y-%m-%dT%H:%M:%S%Z")
 
 # -----------------------------------------------------------------------------------
@@ -213,7 +261,10 @@ class Weather(Hass):
 
         if warning or testing:
             self.log(f'\tfrost warning ({temp})', level='WARNING')
-            self.call_service('announcer/broadcast', message='There is a chance of frost overnight')
+            self.call_service(
+                'announcer/broadcast',
+                message='There is a chance of frost overnight'
+            )
 
         return warning
 

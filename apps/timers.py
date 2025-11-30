@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=unused-argument disable=unused-variable disable=broad-exception-caught
 
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
@@ -7,22 +8,32 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+from typing import TYPE_CHECKING, cast
+
+import constants as const # pylint: disable=unused-import
+import automationlib as _helpers  # type: ignore
+
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
 
 class Timers(Hass):
     """Documentation for Timers"""
 
-    lib = None
-    # timers = {'empty': (None, None)}
     timers = {}
+    lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
 
-        self.lib = AutomationLib(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # type: ignore
 
         self.register_service('timers/set', self.set_timer_service)
         self.register_service('timers/get', self.get_timer_service)
@@ -44,7 +55,7 @@ class Timers(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def get_timer_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> str: # None:
+    def get_timer_service(self, namespace:str, domain:str, service:str, kwargs:dict): # None:
         """get a timer service"""
 
         name = kwargs.get('name', None)
@@ -81,7 +92,7 @@ class Timers(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def set_timer(self, name:str, timer:str) -> None:
+    def set_timer(self, name, timer) -> None:
         """set a timer"""
 
         self.lib.log_function_name(start=True)
@@ -115,7 +126,7 @@ class Timers(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def get_timer(self, name:str) -> str:
+    def get_timer(self, name):
         """get a timer"""
 
         self.lib.log_function_name(start=True)
@@ -138,7 +149,7 @@ class Timers(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def _cancel_timer(self, name:str) -> None:
+    def _cancel_timer(self, name) -> None:
         """cancel a timer callback"""
 
         self.lib.log_function_name(start=True)

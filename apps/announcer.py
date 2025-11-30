@@ -1,41 +1,54 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=unused-argument disable=broad-exception-caught
 
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.get_state
+
+# https://nickwhyte.com/appdaemon-testing
+# https://github.com/nickw444/appdaemon-testing
 
 import threading
 import time
 import json
 import re
 import uuid
-import yaml
-import arrow  # pylint: disable=E0401
-import requests  # type: ignore # pylint: disable=E0401
+
+from typing import Optional
+from typing import TYPE_CHECKING, cast
 
 from ics import Calendar # type: ignore # pylint: disable=E0401
 
+import yaml
+import requests  # type: ignore # pylint: disable=E0401
+
+import constants as const
+import automationlib as _helpers  # type: ignore
+
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
-from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 # app_lock decorator
 import adbase as ad # type: ignore pylint: disable=E0401 disable=W0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
 
 class Announcer(Hass): # pylint: disable=W0212 disable=W0621
     """This is the documentation for Announcer"""
 
-    lib = None
-    const = None
-    announce_lock = None
+    announce_lock: Optional[threading.Lock] = None
     cache = True
+    lib = None
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """Documentation for Announcer"""
 
-        self.lib = AutomationLib(self)
-        self.const = ConstantsManagement(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # type: ignore
 
         self.register_service('announcer/announce', self.announce_service)
         self.register_service('announcer/broadcast', self.broadcast_service)
@@ -58,9 +71,6 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         self.announce_lock = threading.Lock()
 
-        # self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
-        self.set_log_level('INFO')
-        # self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
         self.log('announcer initialised -----------------------------------------------------------', level='INFO')
 
 # -----------------------------------------------------------------------------------
@@ -69,7 +79,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         self.log(f'namespace={namespace}, domain={domain}, service={service}, kwargs={kwargs}', level='DEBUG')
 
-        entity_id = kwargs.get('entity_id', self.const.STUDY)
+        entity_id = kwargs.get('entity_id', const.STUDY)
         message = kwargs.get('message', 'Default message')
         announce = kwargs.get('announce', True)
         timestamp = kwargs.get('timestamp', None)
@@ -78,7 +88,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         entry = self.prepare(entity_id, message, timestamp, announce, force, volume)
 
-        with self.announce_lock:
+        with self._ensure_announce_lock():
             self.announce(entry)
 
 # -----------------------------------------------------------------------------------
@@ -95,7 +105,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         entry = self.prepare(None, message, timestamp, announce, force, volume)
 
-        with self.announce_lock:
+        with self._ensure_announce_lock():
             self.announce(entry)
 
 # -----------------------------------------------------------------------------------
@@ -135,7 +145,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             elif attempt == 2:
                 message = 'third announce message'
 
-            self.call_service('announcer/announce', entity_id=self.const.STUDY_SPEAKER, message=message, volume=0.2)
+            self.call_service('announcer/announce', entity_id=const.STUDY_SPEAKER, message=message, volume=const.ANNOUNCE_VOLUME)
             time.sleep(2.0)
 
 # -----------------------------------------------------------------------------------
@@ -179,9 +189,9 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         (uu_id, entity_id, message, timestamp, announce, force, volume) = entry
 
         if self.lib.get_testing():
-            entity_ids = [self.const.STUDY_SPEAKER]
+            entity_ids = [const.STUDY_SPEAKER]
         else:
-            entity_ids = self.const.BROADCAST_ENTITY_ID if entity_id is None else [entity_id]
+            entity_ids = const.BROADCAST_ENTITY_ID if entity_id is None else [entity_id]
 
         if self.announceable(announce) or force:
 
@@ -201,7 +211,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
                               announce=True,
                               extra={'volume': volume})
 
-            time.sleep(max(len(message) * self.const.SECONDS_PER_CHARACTER, self.const.MINIMUM_MESSAGE_LENGTH))
+            time.sleep(max(len(message) * const.SECONDS_PER_CHARACTER, const.MINIMUM_MESSAGE_LENGTH))
 
             if timestamp:
                 self.call_service('timestamp/set', name=timestamp)
@@ -243,17 +253,26 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         bins = []
 
         # 6am day after tomorrow or 6am tomorrow
-        dow = self.now().floor('day').shift(hours=6).shift(days=2) if event == 'preannounce' else self.now().floor('day').shift(hours=6).shift(days=1)
+        dow = self.lib.now().floor('day').shift(hours=6).shift(days=2) if event == 'preannounce' else self.lib.now().floor('day').shift(hours=6).shift(days=1)
 
         loop = True
 
         while loop:
-            t = requests.get(url).text
+            try:
+                resp = requests.get(url=url, timeout=5.0)
+                loop = False
+                resp.raise_for_status()
+                # data = resp.json()  # https://requests.readthedocs.io/en/master/user/quickstart/#json-response-content
+            except requests.RequestException as exc:
+                self.log(f'Failed to fetch bin caldendar: {exc}', level='ERROR')
+                return False
+
+            t = resp.text
             if t[0] == '{':
                 y = json.loads(t)
                 a = re.search(r'^Rate limit is exceeded. Try again in (\d+) seconds.$', y['message'])
                 s = a.groups(1)[0]
-                self.lib.delay(int(s))
+                self.lib.delay(self, int(s))
             else:
                 loop = False
 
@@ -284,7 +303,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
                 phrase = 'An error has occured in bins announce'
 
             entry = self.prepare(None, phrase, f'bins_{event}', announce=True, force=False)
-            with self.announce_lock:
+            with self._ensure_announce_lock():
                 self.announce(entry)
 
 # -----------------------------------------------------------------------------------
@@ -311,7 +330,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         if dow in (2,5) or force:
             if value > 0:
                 message = ' '.join([str(value), 'pounds', 'of', 'vouchers', 'expiring', 'end', 'of', expiry])
-                entry = self.prepare(None, message, 'vouchers', announce=True, force=False)
+                entry = self.prepare(None, message, 'vouchers', announce=True, force=force)
                 with self.announce_lock:
                     self.announce(entry)
             else:
@@ -319,20 +338,14 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
 # -----------------------------------------------------------------------------------
 
-    def prepare(self, entity_id, message, timestamp, announce, force, volume) -> list: # pylint: disable=R0913
+    def prepare(self, entity_id, message, timestamp, announce, force=False, volume=0.3) -> list: # pylint: disable=R0913
 
         uu_id = uuid.uuid4()
 
         if self.lib.get_testing():
-            entity_id = self.const.STUDY_SPEAKER
+            entity_id = const.STUDY_SPEAKER
 
         return [uu_id, entity_id, message, timestamp, announce, force, volume]
-
-# -----------------------------------------------------------------------------------
-
-    def now(self):
-
-        return arrow.now() # pylint: disable=E1101
 
 # -----------------------------------------------------------------------------------
 
@@ -348,7 +361,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         dow = self.lib.dow()
 
-        announceable1 = self.now_is_between(f'{self.const.START_HOUR:02d}:30:00', f'{self.const.END_HOUR:02d}:30:00')
+        announceable1 = self.now_is_between(f'{const.START_HOUR:02d}:30:00', f'{const.END_HOUR:02d}:30:00')
         announceable2 = (dow in (2,4) and self.now_is_between('09:27:00', '09:58:00')) or (dow in (1,5) and self.now_is_between('16:27:00', '16:58:00'))
 
         if self.lib.get_verbose_debug():
@@ -363,3 +376,13 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         self.log('\n\n')
 
         return
+
+# -----------------------------------------------------------------------------------
+
+    def _ensure_announce_lock(self) -> threading.Lock:
+        """Ensure announce_lock exists and return it."""
+        if self.announce_lock is None:
+            self.announce_lock = threading.Lock()
+        return self.announce_lock
+
+# -----------------------------------------------------------------------------------

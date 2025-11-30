@@ -18,10 +18,10 @@ from apps.announcer import Announcer
 def announcer() -> Announcer: # pylint: disable=W0212 disable=W0621
     pass
 
-# if self.get_state('input_boolean.force_announcement') == 'on':
+# if await self.get_state('input_boolean.force_announcement') == 'on':
 #             return True
 
-#         if hint is False or self.get_state('input_boolean.mute_announcement') == 'on':
+#         if hint is False or await self.get_state('input_boolean.mute_announcement') == 'on':
 
 # -----------------------------------------------------------------------------------
 

@@ -99,7 +99,7 @@ class Hass(ADBase, ADAPI):
         """
         namespace = namespace or self.namespace
         self._check_entity(namespace, entity_id)
-        return await self.call_service(
+        return self.call_service(
             service=service,
             namespace=namespace,
             entity_id=entity_id,
@@ -132,7 +132,7 @@ class Hass(ADBase, ADAPI):
                     assert domain == e.split('.')[0], f'{e} does not match domain for {service}'
                     self._check_entity(namespace, e)
 
-        return await self.call_service(
+        return self.call_service(
             service=service,
             namespace=namespace,
             entity_id=entity_id,
@@ -169,7 +169,7 @@ class Hass(ADBase, ADAPI):
             )
         else:
             self.log(f'Entity already exists: {friendly_name}')
-            return self.get_state(entity_id, 'all')
+            return await self.get_state(entity_id, 'all')
 
     #
     # Device Trackers
@@ -195,7 +195,7 @@ class Hass(ADBase, ADAPI):
 
         """
         device = "person" if person else "device_tracker"
-        return self.get_state(device, namespace=namespace, copy=copy)
+        return await self.get_state(device, namespace=namespace, copy=copy)
 
     def get_trackers(self, person: bool = True, namespace: str | None = None) -> list[str]:
         """Returns a list of all device tracker names.
@@ -262,7 +262,7 @@ class Hass(ADBase, ADAPI):
             >>>     self.log(f"state is {state}")
 
         """
-        return self.get_state(*args, **kwargs)
+        return await self.get_state(*args, **kwargs)
 
     @utils.sync_decorator
     async def anyone_home(self, person: bool = True, namespace: str | None = None) -> bool:
@@ -402,7 +402,7 @@ class Hass(ADBase, ADAPI):
                     entity = constraint
                     desired_state = "on"
 
-            if self.get_state(entity, copy=False) != desired_state.strip():
+            if await self.get_state(entity, copy=False) != desired_state.strip():
                 return False
 
         return True
@@ -422,7 +422,7 @@ class Hass(ADBase, ADAPI):
             parts = re.split(r',\s*', constraint)
             entity = parts[0]
             desired_states = parts[1:]
-            if self.get_state(entity, copy=False) not in desired_states:
+            if await self.get_state(entity, copy=False) not in desired_states:
                 return False
 
         return True
@@ -996,7 +996,7 @@ class Hass(ADBase, ADAPI):
     def last_pressed(self, button_id: str, namespace: str | None = None) -> datetime:
         """Only works on entities in the input_button domain"""
         assert button_id.split('.')[0] == 'input_button'
-        state = self.get_state(button_id, namespace=namespace)
+        state = await self.get_state(button_id, namespace=namespace)
         match state:
             case str():
                 return datetime.fromisoformat(state).astimezone(self.AD.tz)
@@ -1047,7 +1047,7 @@ class Hass(ADBase, ADAPI):
 
         """
         service = f'notify/{name}' if name is not None else 'notify/notify'
-        return await self.call_service(
+        return self.call_service(
             service=service,
             message=message,
             title=title,
@@ -1062,7 +1062,7 @@ class Hass(ADBase, ADAPI):
             kwargs["title"] = title
         if id is not None:
             kwargs["notification_id"] = id
-        await self.call_service("persistent_notification/create", **kwargs)
+        self.call_service("persistent_notification/create", **kwargs)
 
     @overload
     def notify_android(
@@ -1147,7 +1147,7 @@ class Hass(ADBase, ADAPI):
     @utils.sync_decorator
     async def backup_full(self, name=None, timeout: int | float = 30, **kwargs) -> dict:
         # https://www.home-assistant.io/integrations/hassio/#action-hassiobackup_full
-        return await self.call_service("hassio/backup_full", name=name, **kwargs)
+        return self.call_service("hassio/backup_full", name=name, **kwargs)
 
     @overload
     async def backup_partial(
@@ -1166,7 +1166,7 @@ class Hass(ADBase, ADAPI):
     @utils.sync_decorator
     async def backup_partial(self, name=None, timeout: int | float = 30, **kwargs) -> dict:
         # https://www.home-assistant.io/integrations/hassio/#action-hassiobackup_partial
-        return await self.call_service("hassio/backup_partial", name=name, **kwargs)
+        return self.call_service("hassio/backup_partial", name=name, **kwargs)
 
     @utils.sync_decorator
     async def restore_full(
@@ -1176,7 +1176,7 @@ class Hass(ADBase, ADAPI):
         timeout: int | float = 30 # Used by sync_decorator
     ) -> dict:
         # https://www.home-assistant.io/integrations/hassio/#action-hassiorestore_full
-        return await self.call_service("hassio/restore_full", slug=slug, password=password)
+        return self.call_service("hassio/restore_full", slug=slug, password=password)
 
     @overload
     async def restore_parial(
@@ -1191,7 +1191,7 @@ class Hass(ADBase, ADAPI):
 
     async def restore_parial(self, slug: str, timeout: int | float = 30, **kwargs) -> dict:
         # https://www.home-assistant.io/integrations/hassio/#action-hassiorestore_partial
-        return await self.call_service("hassio/restore_parial", slug=slug, **kwargs)
+        return self.call_service("hassio/restore_parial", slug=slug, **kwargs)
 
     # Media
 

@@ -24,7 +24,7 @@
     def test(self, kwargs={}):
     def test_kwargs(self, **kwargs):
     def reset(self, kwargs={}):
-    def log_function_name(self, start=True):
+    def log_function_name(start=True):
     def delay(self, s):
     def notification_test(self, entity, attribute, old, new, kwargs={}):
     def int_notification_test(self, kwargs={}):

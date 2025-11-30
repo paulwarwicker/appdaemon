@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=unused-argument disable=broad-exception-caught
 
-# Dave55
-# mDqF3fGKGm9Z
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.get_state
@@ -12,10 +11,18 @@
 from datetime import datetime
 import pprint
 import textwrap
+import traceback # pylint: disable=unused-import
 from io import StringIO
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+
+from typing import TYPE_CHECKING, cast
+
+import constants as const
+import automationlib as _helpers  # type: ignore
+
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
 
 class Automation(Hass):
     """Documentation for Automation"""
@@ -26,8 +33,7 @@ class Automation(Hass):
     trace = False
     override = False
 
-    lib = None
-    const = None
+    lib: "AutomationLib" = _helpers  # type: ignore
     state = 'Not Driving'
     log_level = None
 
@@ -38,18 +44,21 @@ class Automation(Hass):
     def initialize(self) -> None:
         """initialise"""
 
-        self.lib = AutomationLib(self)
-        self.const = ConstantsManagement(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # type: ignore
+
+        self.lib.initialize()
+
+        self.debug = self.get_state('input_boolean.debug') == 'on'
+        self.verbose = self.get_state('input_boolean.verbose') == 'on'
+        self.testing = self.get_state('input_boolean.testing') == 'on'
+        self.trace = self.get_state('input_boolean.trace') == 'on'
+        self.log(f"\tautomation state: debug={self.debug} verbose={self.verbose} testing={self.testing} trace={self.trace}", level='INFO')
 
         self.call_service('scene/reload')
-
-        self.debug = self.get_state('input_boolean.default_debug_state') == 'on'
-        self.verbose = self.get_state('input_boolean.default_verbose_state') == 'on'
-        self.testing = self.get_state('input_boolean.default_testing_state') == 'on'
-        self.trace = self.get_state('input_boolean.default_trace_state') == 'on'
-        self.debug = False
-        self.verbose = False
-        # print(f'\tdebug={self.debug} verbose={self.verbose} testing={self.testing} trace={self.trace}')
 
         self.listen_event(self.set_all_state_event, 'set_all_state')
         self.listen_event(self.status_event, 'status')
@@ -57,8 +66,11 @@ class Automation(Hass):
 
         self.listen_state(self.set_console_log_level, 'input_boolean.debug')
         self.listen_state(self.set_console_log_level, 'input_boolean.verbose')
+        self.listen_state(self.set_console_log_level, 'input_boolean.trace')
         self.listen_state(self.set_debug_flag, 'input_boolean.debug')
         self.listen_state(self.set_verbose_flag, 'input_boolean.verbose')
+        self.listen_state(self.set_testing_flag, 'input_boolean.testing')
+        self.listen_state(self.set_trace_flag, 'input_boolean.trace')
 
         self.listen_state(self.reset_test1, 'input_boolean.test_1', new='on')
         self.listen_state(self.reset_test2, 'input_boolean.test_2', new='on')
@@ -76,32 +88,35 @@ class Automation(Hass):
 
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.maxine_travel_time_to_home, runtime)
-        self.run_minutely(self.fix_audio_delay, runtime)
+        # self.run_minutely(self.fix_audio_delay, runtime)
+        self.run_minutely(self.test, runtime)
 
         # runtime = datetime(2024, 1, 1, 0, 0, 0)
         # self.run_hourly(...)
 
+        self.test({})
+
         self.set_all_state({})
         self._set_console_log_level()
 
-        self.log('initialising timestamps', level='WARNING')
-        self.call_service('timestamp/init')
+        # self.log('initialising timestamps HACK', level='WARNING')
+        # self.call_service('timestamp/init')
+        self.log('timestamp status', level='INFO')
+        self.call_service('timestamp/status')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        # self.log('initialised --------------------------------------------------------------------', level='INFO')
-
-        self.test({})
 
 # -----------------------------------------------------------------------------------
 
     def test(self, kwargs) -> None:
         """test method"""
 
-        self.lib.log_function_name(start=True)
+        # self.lib.log_function_name(start=True)
 
+        # print(self.lib.dow())
         # traceback.print_stack() # leave
 
-        self.lib.log_function_name(start=False)
+        # self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -119,14 +134,16 @@ class Automation(Hass):
         self.lib.log_function_name(start=True)
 
         booleans = {
-            # !!! do NOT include debug/verbose/testing !!!
-            # 'early_alarm', 'normal_alarm', 'test_alarm',
-            'lumie', 'test_1', 'test_2', 'test_3', 'sonos',
+            'override', 'sonos', 'lumie', 'test_1', 'test_2', 'test_3',
             'water_garden_1', 'water_garden_15', 'water_garden_20', 'water_garden_30', 'bedtime',
-            'reset_alarms', 'test_utility_motion', 'test_kitchen_motion', 'test_bins_announce', 'test_frost_warning', 'test_notification',
-            'test_announcement', 'test_maxine_home', 'test_reset', 'test_front_door_ding', 'test_front_door_light_on', 'test_test',
+            'reset_alarms', 'test_utility_motion', 'test_kitchen_motion', 'test_bins_announce',
+            'test_frost_warning', 'test_notification', 'test_announcement', 'test_maxine_home',
+            'test_reset', 'test_front_door_ding', 'test_front_door_light_on', 'test_test',
             'test_early_alarm', 'mock_run', 'alarm_debug'
         }
+
+        # ensure certain booleans are not reset whether defined or not
+        booleans -= {'debug', 'verbose', 'early_alarm', 'normal_alarm', 'test_alarm'}
 
         for boolean in booleans:
             self.set_state(f'input_boolean.{boolean}', state='off')
@@ -140,7 +157,7 @@ class Automation(Hass):
     def set_console_log_level(self, entity, attribute, old, new, kwargs) -> None:
         """set console log level depending on the debug or verboseflag"""
 
-        # separate method required because we are listening to the state of the input_boolean.debug and input_boolean.verbose
+        # separate method required because we are listening to the state of the input_boolean.debug and input_boolean.verbose and needs a specific signature
         self._set_console_log_level()
 
 # -----------------------------------------------------------------------------------
@@ -149,18 +166,18 @@ class Automation(Hass):
         """internal method to set console level using the debug flag. set the property log_level and report a change"""
 
         level = "DEBUG" if self.get_state('input_boolean.debug') == 'on' else "INFO"
+        level = "DEBUG"
         prefix = "VERBOSE " if self.get_state('input_boolean.verbose') == 'on' else ""
         log_level = level+prefix
 
         if self.log_level != log_level:
             self.log(f'\tchanging log level to {prefix}{level} (now {log_level} was {self.log_level})', level='INFO')
-            self.set_log_level(level)
             self.log_level = level+prefix
 
-            for module in self.const.MODULES:
-                self.log(f'setting log level {prefix}{level} on app {module}')
+            for module in const.MODULES:
                 app = self.get_app(module)
                 if app is not None:
+                    self.log(f'setting log level {prefix}{level} on app {module} (app={app})', level='INFO')
                     app.set_log_level(level)
 
 # -----------------------------------------------------------------------------------
@@ -195,6 +212,16 @@ class Automation(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def set_trace_flag(self, entity, attribute, old, new, kwargs) -> None:
+        """set trace flag"""
+
+        self.trace = new == 'on'
+        self.log(f'\tautomation trace now {self.trace}', level='INFO')
+        self._set_console_log_level()
+        self.lib.set_trace(self.trace)
+
+# -----------------------------------------------------------------------------------
+
     def reset_test1(self, entity, attribute, old, new, kwargs) -> None:
         """reset test_1 flag"""
 
@@ -222,14 +249,13 @@ class Automation(Hass):
     def set_default_state(self) -> None:
         """set default values from backstop default values"""
 
-        # FIXME: bool
-        # # self.set_state('input_boolean.early_alarm', state=self.get_state('input_boolean.default_early_alarm_state'))
-        # self.set_state('input_boolean.normal_alarm', state=self.get_state('input_boolean.default_normal_alarm_state'))
-        # self.set_state('input_boolean.lumie', state=self.get_state('input_boolean.default_lumie_state'))
-        # self.set_state('input_boolean.debug', state=self.get_state('input_boolean.default_debug_state'))
-        # self.set_state('input_boolean.verbose', state=self.get_state('input_boolean.default_verbose_state'))
-        # self.set_state('input_boolean.testing', state=self.get_state('input_boolean.default_testing_state'))
-        # self.set_state('input_boolean.trace', state=self.get_state('input_boolean.default_trace_state'))
+        # self.set_state('input_boolean.early_alarm', state=self.get_state('input_boolean.default_early_alarm_state'))
+        self.set_state('input_boolean.normal_alarm', state=self.get_state('input_boolean.default_normal_alarm_state'))
+        self.set_state('input_boolean.lumie', state=self.get_state('input_boolean.default_lumie_state'))
+        self.set_state('input_boolean.debug', state=self.get_state('input_boolean.default_debug_state'))
+        self.set_state('input_boolean.verbose', state=self.get_state('input_boolean.default_verbose_state'))
+        self.set_state('input_boolean.testing', state=self.get_state('input_boolean.default_testing_state'))
+        self.set_state('input_boolean.trace', state=self.get_state('input_boolean.default_trace_state'))
 
 # -----------------------------------------------------------------------------------
 
@@ -302,6 +328,10 @@ class Automation(Hass):
         self.run_in(self.test, 0)
         self.lib.log_function_name(start=False)
 
+        self.lib.log_function_name(start=True, force=True)
+        self.run_in(self.test, 0)
+        self.lib.log_function_name(start=False, force=True)
+
 # -----------------------------------------------------------------------------------
 
     def reset(self, kwargs) -> None:
@@ -362,17 +392,47 @@ class Automation(Hass):
     def maxine_travel_time_to_home(self, kwargs) -> None:
         """set travel time to home for maxine. set maxine_driving_status sensor"""
 
+        # self.lib.log_function_name(start=True)
+        # self.lib.log_function_name(start=True, force=True)
+
         home = self.get_state('person.maxine') == 'home'
 
         if not home:
+            # fetch raw values
             result = self.get_state('sensor.google_travel_time')
-            if result == 'unknown':
-                self.log('\tmaxine travel time is unknown', level='ERROR')
-                return
-            minutes = int(result)
-            message = f'Max is {minutes} minutes away'
             direction = self.get_state('sensor.home_maxine_direction_of_travel')
             state = self.get_state('sensor.maxine_iphone_activity')
+
+            for name, val in (('result', result), ('direction', direction), ('state', state)):
+                if name == 'result':
+                    result = val
+                elif name == 'direction':
+                    direction = val
+                else:
+                    state = val
+
+            # debug types
+            if self.lib.get_debug():
+                self.log(f'\ttypes: result={type(result)} direction={type(direction)} state={type(state)}', level='DEBUG')
+                self.log(f'\ttypes: result={result} direction={direction} state={state}', level='DEBUG')
+
+            if result == 'unknown' or result is None:
+                self.log('\tmaxine travel time is unknown', level='ERROR')
+                # self.lib.log_function_name(start=False)
+                return
+
+            try:
+                minutes = int(result)
+            except (TypeError, ValueError):
+                self.log(f'\tUnable to parse travel time: {result!r}', level='ERROR')
+                # self.lib.log_function_name(start=False)
+                self.lib.log_function_name(start=False, force=True)
+                return
+
+            message = f'Max is {minutes} minutes away'
+
+            direction = '' if direction is None else str(direction)
+            state = '' if state is None else str(state)
 
             if state == "Automotive":
                 if self.state != 'Driving':
@@ -383,16 +443,35 @@ class Automation(Hass):
                     self.state = 'Not Driving'
                     self.set_state('sensor.maxine_driving_status', state=self.state)
 
-            ts = self.call_service('timestamp/get', name='travel', return_result=True)
-            diff = (datetime.now() - ts).seconds
-            announce = direction in ('towards') and self.now_is_between('10:00:00', '02:00:00') and (10 <= minutes <= 15) and (diff >= 4 * 60)
+            ts = self.call_service('timestamp/get', name='travel')
+
+            # compute diff safely
+            if ts is None:
+                diff = 0
+            else:
+                try:
+                    diff = int((datetime.now() - ts).total_seconds())
+                except Exception: # pylint: disable=broad-exception-caught
+                    diff = 0
+
+            # ensure direction is compared correctly (avoid using "in" on strings)
+            announce = (direction == 'towards') and self.now_is_between('08:00:00', '02:00:00') and (10 <= minutes <= 15) and (diff >= 4 * 60)
 
             if announce:
-                self.log(f'\tmessage={message} ts={ts.ctime()} ({ts.timestamp():6.3f})', level='DEBUG')
+                try:
+                    ts_str = ts.ctime() if hasattr(ts, 'ctime') else str(ts)
+                    ts_ts = ts.timestamp() if hasattr(ts, 'timestamp') else float(diff)
+                except Exception: # pylint: disable=broad-exception-caught
+                    ts_str = str(ts)
+                    ts_ts = float(diff)
+                self.log(f'\tmessage={message} ts={ts_str} ({ts_ts:6.3f})', level='DEBUG')
                 self.call_service('announcer/announce', entity_id='media_player.study', message=message, timestamp='travel')
         else:
             if self.state != 'Not Driving':
                 self.set_state('sensor.maxine_driving_status', state=self.state)
+
+        # self.lib.log_function_name(start=False)
+        # self.lib.log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
 
@@ -404,6 +483,7 @@ class Automation(Hass):
 # -----------------------------------------------------------------------------------
 
     def set_bins_test(self, entity, attribute, old, new, kwargs) -> None:
+        """set bins test"""
 
         action = kwargs['action']
 
@@ -415,6 +495,7 @@ class Automation(Hass):
 # -----------------------------------------------------------------------------------
 
     def set_notification_test(self, entity, attribute, old, new, kwargs) -> None:
+        """set notification test"""
 
         action = kwargs['action']
 
@@ -426,6 +507,7 @@ class Automation(Hass):
 # -----------------------------------------------------------------------------------
 
     def set_announcement_test(self, entity, attribute, old, new, kwargs) -> None:
+        """set announcement test"""
 
         action = kwargs['action']
 
@@ -437,6 +519,7 @@ class Automation(Hass):
 # -----------------------------------------------------------------------------------
 
     def set_front_door_ding_test(self, entity, attribute, old, new, kwargs) -> None:
+        """set front door ding test"""
 
         action = kwargs['action']
 
@@ -448,6 +531,7 @@ class Automation(Hass):
 # -----------------------------------------------------------------------------------
 
     def set_front_door_light_on_test(self, entity, attribute, old, new, kwargs) -> None:
+        """set front door light on test"""
 
         action = kwargs['action']
 
@@ -459,23 +543,30 @@ class Automation(Hass):
 # -----------------------------------------------------------------------------------
 
     def set_test_test(self, entity, attribute, old, new, kwargs) -> None:
+        """set test test"""
 
         action = kwargs['action']
 
         if action == 'set':
-            self.register_test_3(self.test_test)
+            print('set test test')
+            pass # pylint: disable=unnecessary-pass
+            # self.register_test_3(self.test_test)
         elif action == 'cancel':
-            self.deregister_test_3()
+            print('cancel test test')
+            pass # pylint: disable=unnecessary-pass
+            # self.deregister_test_3()
 
 # -----------------------------------------------------------------------------------
 
     def backup(self, kwargs) -> None:
+        """backup"""
 
         self.call_service('hassio/backup_full', compressed=True, homeassistant_exclude_database=True)
 
 # -----------------------------------------------------------------------------------
 
     def status(self, entity, attribute, old, new, kwargs) -> None:
+        """status"""
 
         status = '\n\n'
         state = self.get_state('input_boolean.default_debug_state')
@@ -502,19 +593,46 @@ class Automation(Hass):
 # -----------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs) -> None:
+        """status event"""
 
         self.status('','','','',{})
 
 # -----------------------------------------------------------------------------------
 
     def test_event(self, event, data, kwargs) -> None:
+        """test event"""
 
-        print(self.lib.is_playing('media_player.study'))
+        print(self.lib.is_playing(self, 'media_player.study'))
 
 # -----------------------------------------------------------------------------------
 
     def fire_status_event(self, entity, attribute, old, new, kwargs) -> None:
+        """fire status event"""
 
         self.fire_event("status")
+
+# -----------------------------------------------------------------------------------
+
+    # def _call_lib(self, name: str, *args, **kwargs):
+    #     """Call a function on self.lib (app instance) or a module function.
+
+    #     - If the attribute is a bound method on the app instance, call it.
+    #     - If it's a module-level function expecting (app, ...), call with self first.
+    #     - Await if the result is a coroutine/Task.
+    #     """
+    #     fn = getattr(self.lib, name, None)
+    #     if fn is None:
+    #         return None
+
+    #     try:
+    #         result = fn(*args, **kwargs)
+    #     except TypeError:
+    #         # probably module function that expects app first
+    #         result = fn(self, *args, **kwargs)
+
+    #     if asyncio.iscoroutine(result) or isinstance(result, asyncio.Task):
+    #         return await result
+
+    #     return result
 
 # -----------------------------------------------------------------------------------

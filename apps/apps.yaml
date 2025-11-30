@@ -1,58 +1,82 @@
 automationlib:
   module: automationlib
-  global: true
-
-const:
-  module: const
-  global: true
-
-# const:
-#   module: const
-#   class: ConstantsManagement
-#   log_level: INFO
-#   priority: 1
-
-# automationlib:
-#   module: automationlib
-#   class: AutomationLib
-#   log_level: INFO
-#   priority: 2
-
-announcer:
-  module: announcer
-  class: Announcer
-  log_level: INFO
-  dependencies:
-    - automationlib
-    - const
-    # - timestamp # causes cyclic dependency
+  class: AutomationLib
+  log_level: DEBUG
 
 automation:
   module: automation
   class: Automation
-  log_level: INFO
+  log_level: DEBUG
   dependencies:
     - automationlib
-    - const
     - announcer
     - timestamp
+    - motion
+    - lighting
+    - timers
+    - location
+    - alarms
+    - sonos
+    - garage
+    - weather
+    - tap
+    - vacuum
+    - shelly
+    # - fan
+    # - doorbell
+    # - front_door
+    # - starling
+    # - car
+
+announcer:
+  module: announcer
+  class: Announcer
+  log_level: DEBUG
+  dependencies: # timestamp causes cyclic dependency
+    - automationlib
 
 timestamp:
   module: timestamp
   class: Timestamp
-  log_level: INFO
+  log_level: DEBUG
   dependencies:
     - automationlib
-    - const
     - announcer
+
+motion:
+  module: motion
+  class: Motion
+  reset_on_off: false
+  log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+    - timestamp
+
+lighting:
+  module: lighting
+  class: Lighting
+  log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+    - timestamp
+
+timers:
+  module: timers
+  class: Timers
+  log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+    - timestamp
 
 location:
   module: location
   class: Location
-  log_level: INFO
+  log_level: DEBUG
   dependencies:
     - automationlib
-    - const
     - announcer
     - timestamp
     - lighting
@@ -60,139 +84,110 @@ location:
 alarms:
   module: alarms
   class: Alarms
-  log_level: INFO
+  log_level: DEBUG
   dependencies:
     - automationlib
-    - const
     - announcer
+    - timestamp
 
 sonos:
   module: sonos
   class: Sonos
-  log_level: INFO
+  log_level: DEBUG
   dependencies:
     - automationlib
-    - const
-    - announcer
-
-timers:
-  module: timers
-  class: Timers
-  log_level: INFO
-  dependencies:
-    - automationlib
-    - const
-    - announcer
-
-motion:
-  module: motion
-  class: Motion
-  reset_on_off: false
-  log_level: INFO
-  dependencies:
-    - automationlib
-    - const
     - announcer
     - timestamp
-
-lighting:
-  module: lighting
-  class: Lighting
-  log_level: INFO
-  dependencies:
-    - automationlib
-    - const
-    - announcer
-    - timestamp
-
-front_door:
-  module: front_door
-  class: FrontDoor
-  log_level: INFO
-  dependencies:
-    - automationlib
-    - const
-    - announcer
 
 garage:
   module: garage
   class: Garage
-  log_level: INFO
+  log_level: DEBUG
   dependencies:
     - automationlib
-    - const
     - announcer
     - timestamp
 
 weather:
   module: weather
   class: Weather
-  log_level: INFO
+  log_level: DEBUG
   # location: 78704 US
   dependencies:
-    - automationlib
-    - const
     - announcer
 
 tap:
   module: tap
   class: Tap
-  log_level: INFO
+  log_level: DEBUG
   dependencies:
     - automationlib
-    - const
-    - announcer
-    - timestamp
-
-car:
-  module: car
-  class: Car
-  log_level: INFO
-  dependencies:
-    - automationlib
-    - const
     - announcer
     - timestamp
 
 vacuum:
   module: vacuum
   class: Vacuum
-  log_level: INFO
+  log_level: DEBUG
   dependencies:
     - automationlib
-    - const
     - announcer
     - timestamp
+
 shelly:
   module: shelly
   class: Shelly
-  log_level: INFO
+  log_level: DEBUG
   dependencies:
     - automationlib
-    - const
     - announcer
+    - timestamp
 
 snoozer:
   module: snoozer
   class: Snoozer
-  log_level: INFO
+  log_level: DEBUG
   dependencies:
     - automationlib
-    - const
     - announcer
+    - timestamp
 
-# --
+# fan:
+#   module: fan
+#   class: Fan
+#   log_level: DEBUG
+#   dependencies:
+#     - announcer
+#     - timestamp
+
+# # --
 # doorbell:
 #   module: doorbell
 #   class: DoorBell
-#   log_level: INFO
+#   log_level: DEBUG
 #   dependencies:
-#     - automationlib
 #     - announcer
+#
+
+# front_door:
+#   module: front_door
+#   class: FrontDoor
+#   log_level: DEBUG
+#   dependencies:
+#     - announcer
+#     - timestamp
+
 # starling:
 #   module: starling
 #   class: Starling
-#   log_level: INFO
+#   log_level: DEBUG
 #   dependencies:
-#     - automationlib
 #     - announcer
+#
+# car:
+#   module: car
+#   class: Car
+#   log_level: DEBUG
+#   dependencies:
+#     - announcer
+#     - timestamp

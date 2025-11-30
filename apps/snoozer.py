@@ -4,22 +4,32 @@
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.get_state
 
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+
+from typing import TYPE_CHECKING, cast
+
+import constants as const
+import automationlib as _helpers  # type: ignore
+
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
 
 class Snoozer(Hass):
     """Documentation for Snoozer"""
-    lib = None
-    const = None
+
+    lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise snoozer"""
 
-        self.lib = AutomationLib(self)
-        self.const = ConstantsManagement(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # type: ignore
 
         self.listen_event(self.snooze_event, "snooze_1", minutes=1)
         self.listen_event(self.snooze_event, "snooze_5", minutes=5)
@@ -34,7 +44,7 @@ class Snoozer(Hass):
     def snooze_event(self, event_name, data, kwargs):
 
         minutes = kwargs.get("minutes", 10)
-        entity_id = self.const.STUDY_SPEAKER if self.lib.get_alarm_testing() else self.const.BEDROOM_SPEAKER
+        entity_id = const.STUDY_SPEAKER if self.lib.get_alarm_testing() else const.BEDROOM_SPEAKER
 
         self.call_service("media_player/media_pause", entity_id=entity_id)
         self.log(f"\tsnooze activated: paused {entity_id}", level='WARNING')

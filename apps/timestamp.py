@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=unused-argument disable=unused-variable disable=broad-exception-caught
 
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
@@ -9,9 +10,16 @@
 
 import time
 from datetime import datetime, timedelta
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+
+from typing import TYPE_CHECKING, cast
+
+import constants as const
+import automationlib as _helpers  # type: ignore
+
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
 
 # from typing import Dict
 # from pprint import pprint
@@ -19,17 +27,19 @@ from const import ConstantsManagement  # pylint: disable=E0401 disable=E0611
 class Timestamp(Hass):
     """Documentation for Timestamp"""
 
-    lib = None
-    const = None
     ts = {}
+    lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
 
-        self.lib = AutomationLib(self)
-        self.const = ConstantsManagement(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # type: ignore
 
         self.register_service('timestamp/set', self.set_timestamp_service)
         self.register_service('timestamp/get', self.get_timestamp_service)
@@ -39,6 +49,7 @@ class Timestamp(Hass):
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.status_event, 'timestamps')
 
+        self.call_service('timestamp/init')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
@@ -86,7 +97,7 @@ class Timestamp(Hass):
     def init_timestamp_service(self, namespace, domain, service, kwargs) -> None:
         """initialise timestamps"""
 
-        for name in self.const.TIMESTAMPS:
+        for name in const.TIMESTAMPS:
             if name == 'tap' or name == 'karoq_home':
                 self.ts[name] = None
             elif name == 'upstairs_motion':
@@ -102,9 +113,11 @@ class Timestamp(Hass):
     def status_service(self, namespace, domain, service, kwargs):
         """status service"""
 
+        # self.lib.log_function_name(start=True, force=True)
+
         status = status = '\n\n'
 
-        for name in self.const.TIMESTAMPS:
+        for name in const.TIMESTAMPS:
             ts = self.ts[name]
             status += f'\t{name}_ts={ts}\n'
 
@@ -118,30 +131,13 @@ class Timestamp(Hass):
 
         self.set_state('input_boolean.status', state='off')
 
+        # self.lib.log_function_name(start=False, force=True)
+
 # -----------------------------------------------------------------------------------
 
     def status_event(self, event, data, kwargs) -> None:
+        """status event"""
 
         self.call_service('timestamp/status')
-
-# -----------------------------------------------------------------------------------
-
-    # def status(self, entity, attribute, old, new, kwargs) -> None:
-
-    #     status = status = '\n\n'
-
-    #     for name in self.const.TIMESTAMPS:
-    #         ts = self.ts[name]
-    #         status += f'\t{name}_ts={ts}\n'
-
-    #     diff1 = (self.ts['upstairs'] - self.ts['downstairs']).seconds
-    #     diff2 = (self.ts['upstairs'] - self.ts['prev_upstairs']).seconds
-
-    #     status += f'\n\tupstairs vs downstairs diff={diff1}\n'
-    #     status += f'\tupstairs vs prev_upstairs diff={diff2}\n'
-
-    #     self.log(f'{status}')
-
-    #     self.set_state('input_boolean.status', state='off')
 
 # -----------------------------------------------------------------------------------

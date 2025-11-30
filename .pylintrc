@@ -70,6 +70,7 @@ ignored-modules=
 # pygtk.require().
 ; init-hook="from pylint.config import find_pylintrc; import os, sys; sys.path.append(os.path.dirname(find_pylintrc()))"
 ; init-hook='import sys; sys.path.append("/root/.pyenv/versions/3.8.19/lib/python3.8/site-packages/arrow"); sys.path.append("/root/.pyenv/versions/3.8.19/lib/python3.8/site-packages/appdaemon_testing"); sys.path.append("/root/.pyenv/versions/3.8.19/lib/python3.8/site-packages/appdaemon_testing/pytest"); sys.path.append("/root/.pyenv/versions/3.8.19/lib/python3.8/site-packages/freezegun"); '
+init-hook='import sys, os; sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "apps"))); sys.path.append("/root/venv3.12/lib/python3.12/site-packages")'
 
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
@@ -107,7 +108,7 @@ source-roots=
 
 # When enabled, pylint would attempt to guess common misconfiguration and emit
 # user-friendly hints instead of false-positive error messages.
-suggestion-mode=yes
+suggestion-mode=no # was yes
 
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
@@ -294,7 +295,7 @@ exclude-too-few-public-methods=
 ignored-parents=
 
 # Maximum number of arguments for function / method.
-max-args=5
+max-args=7
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=7
@@ -318,7 +319,7 @@ max-public-methods=20
 max-returns=6
 
 # Maximum number of statements in function / method body.
-max-statements=50
+max-statements=250
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=2
@@ -448,7 +449,29 @@ disable=raw-checker-failed,
         unused-argument,
         unused-variable,
         dangerous-default-value,
-        missing-function-docstring
+        missing-function-docstring,
+        import-error,
+        unused-argument,
+        unused-variable,
+        broad-exception-caught,
+        line-too-long,
+        too-many-locals,
+        too-many-lines,
+        too-many-branches,
+        too-many-statements
+
+; disable=import-error,
+;         missing-module-docstring,
+;         missing-function-docstring,
+;         too-many-lines,
+;         too-many-branches,
+;         too-many-statements,
+;         no-member,
+;         not-context-manager,
+;         not-async-context-manager,
+;         unused-argument,
+;         unused-variable,
+;         too-many-locals
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

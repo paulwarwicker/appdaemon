@@ -7,20 +7,32 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-from automationlib import AutomationLib  # pylint: disable=E0401 disable=E0611
+
+from typing import TYPE_CHECKING, cast
+
+import constants as const # pylint: disable=unused-import
+import automationlib as _helpers  # type: ignore
+
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+
+if TYPE_CHECKING:
+    from automationlib import AutomationLib  # type: ignore
 
 class DoorBell(Hass):
     """Documentation for Doorbell"""
 
-    lib = None
+    lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
 
-        self.lib = AutomationLib(self)
+        # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        self.lib = cast("AutomationLib", self.get_app('automationlib'))  # type: ignore
+        if self.lib is None:
+            # defensive fallback to module if app not present (optional)
+            self.lib = _helpers  # fallback
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
@@ -52,7 +64,7 @@ class DoorBell(Hass):
 
 #     def front_door_announce(self, kwargs) -> None:
 
-#         message = 'Someone is at the front door' if not self.get_state('input_boolean.testing') == 'on' else 'just testing'
+#         message = 'Someone is at the front door' if not await self.get_state('input_boolean.testing') == 'on' else 'just testing'
 #         self.call_service('announcer/broadcast', message=message, timestamp='front door')
 
 # # -----------------------------------------------------------------------------------
@@ -62,8 +74,8 @@ class DoorBell(Hass):
 
 #         if self.now_is_between('sunset', 'sunrise'):
 #             # TODO: return to previous level if was previously on
-#             brightness = self.get_state('light.front_door_1', attribute='brightness')
-#             state = self.get_state('light.front_door_1')
+#             brightness = await self.get_state('light.front_door_1', attribute='brightness')
+#             state = await self.get_state('light.front_door_1')
 #             self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=0)
 #             self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=192, transition=10)
 #             # self.turn_on('scene.front_door_ding_2') # FIXME: not working - scenes dont allow transitiona
