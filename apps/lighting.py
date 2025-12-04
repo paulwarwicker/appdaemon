@@ -237,6 +237,7 @@ class Lighting(Hass):
             self.kitchen_callback = callback
             self.kitchen_seconds = seconds
             self.log('\tdeferring kitchen off service', level='INFO')
+            self.run_in(self.deferred_kitchen_off, 60*60)
             self.lib.log_function_name(start=False)
             return
 
@@ -248,6 +249,27 @@ class Lighting(Hass):
         self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
+
+    def deferred_kitchen_off(self, kwargs) -> None:
+        """deferred kitchen off"""
+
+        self.log('\trunning deferred kitchen off', level='INFO')
+
+        if self.get_state('input_boolean.kitchen_override') == 'on' or self.any_light_on_full('kitchen'):
+            self.log('\tignoring deferred_kitchen_off', level='INFO')
+            self.run_in(self.deferred_kitchen_off, 60*60)
+            return
+
+        cb = self.kitchen_cb if self.kitchen_cb is not None else 'noop'
+        callback = self.kitchen_callback if self.kitchen_callback is not None else self.get_callback('noop')
+        seconds = self.kitchen_seconds if self.kitchen_seconds is not None else const.LONG_TIMEOUT
+
+        self.set_callback(cb, callback, seconds)
+        self.set_callback('kitchen_floor_off', self.get_callback('kitchen_floor_off'), const.KITCHEN_FLOOR_TIMEOUT)
+
+        self.kitchen_cb = None
+        self.kitchen_callback = None
+        self.kitchen_seconds = None
 
     def utility_on_service(self, namespace, domain, service, data) -> None:
         """turn on utility lights"""
@@ -372,8 +394,14 @@ class Lighting(Hass):
         sunrise = 'sunrise'
         plus1 = ' + 01:00:00'
 
-        if self.now_is_between(sunset, f'{sunrise}{plus1}'):
-            brightness = const.HALF_ON if self.now_is_between(sunset, f'{sunset}{plus1}') or self.now_is_between(sunrise, f'{sunrise}{plus1}') else const.QUARTER_ON
+        try:
+            lux = int(self.get_state(const.CLOAKROOM_SENSOR_ILLUMINANCE))
+        except (TypeError, ValueError):
+            lux = None
+
+        if self.now_is_between(sunset, f'{sunrise}{plus1}') or (lux is not None and lux < const.CLOAKROOM_LUX_THRESHOLD):
+            # brightness = const.HALF_ON if self.now_is_between(sunset, f'{sunset}{plus1}') or self.now_is_between(sunrise, f'{sunrise}{plus1}') else const.QUARTER_ON
+            brightness = const.QUARTER_ON if self.lib.is_summer() else const.HALF_ON
 
             self.show_service(namespace, domain, service, data, cb)
 
@@ -1328,7 +1356,7 @@ class Lighting(Hass):
 
         if new == 'on':
             self.call_service('lighting/cloakroom_on', entity_id=const.CLOAKROOM, cb='noop', seconds=const.SHORT_TIMEOUT, force=True)
-            self.cloakroom_callback_handle = self.run_in(self.cloakroom_off, 45 * 60, force=True)
+            self.cloakroom_callback_handle = self.run_in(self.cloakroom_off, 30 * 60, force=True)
         else:
             self.call_service('lighting/cloakroom_off', entity_id=const.CLOAKROOM, cb='cloakroom_off', seconds=0, force=True)
             if self.cloakroom_callback_handle is not None:

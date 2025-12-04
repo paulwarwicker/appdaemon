@@ -59,7 +59,9 @@ class Sonos(Hass):
         self.register_service('sonos/stop', self.stop_service)
 
         self.listen_event(self.status_event, 'status')
-        self.listen_event(self.snooze_event, 'snooze')
+        # self.listen_event(self.snooze_event, 'snooze')
+        self.listen_event(self.snooze_event, 'snooze10', seconds=10*60)
+        self.listen_event(self.snooze_event, 'snooze30', seconds=30*60)
         self.listen_event(self.play_thing_event, 'play_thing')
         self.listen_event(self.join_test_event, 'join_test')
         self.listen_event(self.test_event, 'test')
@@ -353,12 +355,13 @@ class Sonos(Hass):
 
     def snooze_event(self, event, data, kwargs):
 
+        seconds = kwargs.get('seconds', 10*60)
+
         if self.lib.get_alarm_testing():
             entity_id = const.STUDY_SPEAKER
             seconds = 10
         else:
             entity_id = const.BEDROOM_SPEAKER
-            seconds = 10*60
 
         self.call_service('sonos/snooze', seconds=seconds, entity_id=entity_id)
 

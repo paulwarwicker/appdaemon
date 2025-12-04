@@ -66,13 +66,13 @@ class Shelly(Hass):
             self.log(f'\t{click_type} press on {const.BEDROOM_BUTTON}')
 
         if click_type == 'single':
-            event_type  = 'snooze'
+            event_type  = 'snooze10'
         elif click_type == 'long':
-            event_type  = 'stop_bedroom'
+            event_type  = 'snooze30' # was 'stop_bedroom'
         elif click_type == 'double':
-            event_type  = 'all_off'
-        elif click_type == 'triple':
             event_type  = 'stop_bedroom'
+        elif click_type == 'triple':
+            event_type  = 'all_off'
 
         if event_type is not None:
             self.fire_event(event_type)

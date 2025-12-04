@@ -143,9 +143,9 @@ shelly:
     - announcer
     - timestamp
 
-snoozer:
-  module: snoozer
-  class: Snoozer
+front_door:
+  module: front_door
+  class: FrontDoor
   log_level: DEBUG
   dependencies:
     - automationlib
@@ -168,14 +168,6 @@ snoozer:
 #   dependencies:
 #     - announcer
 #
-
-# front_door:
-#   module: front_door
-#   class: FrontDoor
-#   log_level: DEBUG
-#   dependencies:
-#     - announcer
-#     - timestamp
 
 # starling:
 #   module: starling

@@ -135,10 +135,17 @@ class AutomationLib(Hass):
                     volume = const.STUDY_ANNOUNCE_VOLUME_LOW
             else:
                 entity_id = 'media_player.kitchen'
-                volume = const.ANNOUNCE_VOLUME
+
+                if self.now_is_between('08:00:00', '22:29:59'):
+                    volume = const.ANNOUNCE_VOLUME
+                elif self.now_is_between('22:30:00', '07:59:59'):
+                    volume = const.ANNOUNCE_VOLUME_LOW
         else:
             # just set volume
-            volume = const.ANNOUNCE_VOLUME
+            if self.now_is_between('08:00:00', '22:29:59'):
+                volume = const.ANNOUNCE_VOLUME
+            elif self.now_is_between('22:30:00', '07:59:59'):
+                volume = const.ANNOUNCE_VOLUME_LOW
 
         return (entity_id, volume)
 

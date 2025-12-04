@@ -1,7 +1,5 @@
 from typing import Final
-# from enum import Enum
-
-# GLOBAL_VAR = "Hello, World!"
+from enum import Enum # plyint: disable=unused-import
 
 # class ModeSelect(Enum):
 #     MODE_A = 'mode_a'
@@ -11,6 +9,13 @@ from typing import Final
 # GLOBAL_MODE = ModeSelect.MODE_B
 
 # SENSOR_IDS: Final[tuple[str, ...]] = ("sensor.a", "sensor.b")
+
+# automation
+MODULES: Final[list[str]] = [
+  "automationlib", "automation", "timers", "timestamp", "announcer", "motion", "lighting",
+  "alarms", "location", "sonos", "weather", "garage", "shelly", "vacuum", "tap", "front_door",
+  ]
+# "starling" "car"
 
 # announcer
 START_HOUR: Final[int] = 8 # :30
@@ -26,11 +31,6 @@ SENSOR_ENTITY_ID: Final[str] = 'binary_sensor.skoda_karoq_vehicle_locked'
 SENSOR_ENTITY_LIST: Final[list[str]] = ['binary_sensor.skoda_karoq_doors_locked', 'binary_sensor.skoda_karoq_bonnet', 'binary_sensor.skoda_karoq_vehicle_locked',
                       'binary_sensor.skoda_karoq_doors_open', 'binary_sensor.skoda_karoq_windows', 'binary_sensor.skoda_karoq_trunk']
 
-# automation
-# "starling", "tap", "weather", "garage", "car", "vacuum"
-MODULES: Final[list[str]] = ["automationlib", "automation", "timers", "timestamp", "announcer", "motion", "lighting", "alarms", "location", "sonos"]
-
-# front_door
 APP_THREADS: Final[int] = 20
 
 # lighting
@@ -132,7 +132,8 @@ BEDROOM2_SPEAKER: Final[str] = 'media_player.bedroom2'
 HALLWAY_SPEAKER: Final[str] = 'media_player.hallway'
 BATHROOM_SPEAKER: Final[str] = 'media_player.bathroom'
 SOUNDBAR_SPEAKER: Final[str] = 'media_player.living_room'
-BROADCAST_ENTITY_ID: Final[list[str]] = [STUDY_SPEAKER, KITCHEN_SPEAKER, BATHROOM_SPEAKER] # , HALLWAY_SPEAKER]
+# BROADCAST_ENTITY_ID: Final[list[str]] = [KITCHEN_SPEAKER, STUDY_SPEAKER, BATHROOM_SPEAKER] # , HALLWAY_SPEAKER]
+BROADCAST_ENTITY_ID: Final[list[str]] = [KITCHEN_SPEAKER]
 ALL_SPEAKER_ENTITY_ID: Final[list[str]] = [STUDY_SPEAKER, KITCHEN_SPEAKER, BEDROOM_SPEAKER, HALLWAY_SPEAKER, BATHROOM_SPEAKER, DINING_SPEAKER, SOUNDBAR_SPEAKER, BEDROOM2_SPEAKER]
 
 TARGET_VOLUME: Final[int] = 40
@@ -141,9 +142,10 @@ RAMP_TIME: Final[int] = 20
 PLAY_DELAY: Final[float] = 0.75
 DEFAULT_VOLUME: Final[float] = 0.15
 ALARM_VOLUME: Final[float] = 0.3
-ANNOUNCE_VOLUME: Final[float] = 0.5
-STUDY_ANNOUNCE_VOLUME: Final[float] = 0.1
-STUDY_ANNOUNCE_VOLUME_LOW: Final[float] = 0.2
+ANNOUNCE_VOLUME: Final[int] = 50
+ANNOUNCE_VOLUME_LOW: Final[int] = 30
+STUDY_ANNOUNCE_VOLUME: Final[int] = 20
+STUDY_ANNOUNCE_VOLUME_LOW: Final[int] = 10
 EARLY_ALARM_TIME: Final[str] = '07:00:00'
 NORMAL_ALARM_TIME: Final[str] = '07:45:00'
 LATE_ALARM_TIME: Final[str] = '10:00:00'
@@ -155,22 +157,22 @@ NORMAL_ALARM: Final[list[str]]  = [
 ]
 
 EARLY_ALARM: Final[list[str]] = [
-    OCEANS_STREAM := 'aac://http://prem2.zenradio.com:80/zroceansounds_aac?5fba91be81f6da5b573f89c1',
-    NATIVEAMERICAN_STREAM := 'aac://http://prem2.zenradio.com:80/zrnativeamericansounds_aac?5fba91be81f6da5b573f89c1',
-    SOUNDSOFRAIN_STREAM := 'aac://http://prem2.zenradio.com:80/zrsoundsofrain_aac?5fba91be81f6da5b573f89c1',
-    RELAXATION_STREAM := 'aac://http://prem2.zenradio.com:80/zrrelaxation_aac?5fba91be81f6da5b573f89c1',
-    RELAXINGSPA_STREAM := 'aac://http://prem2.zenradio.com:80/zrrelaxingspanmassage_aac?5fba91be81f6da5b573f89c1',
-    SHAMANICMUSIC_STREAM := 'aac://http://prem2.zenradio.com:80/zrshamanicmusic_aac?5fba91be81f6da5b573f89c1',
+    # OCEANS_STREAM := 'aac://http://prem2.zenradio.com:80/zroceansounds_aac?5fba91be81f6da5b573f89c1',
+    # NATIVEAMERICAN_STREAM := 'aac://http://prem2.zenradio.com:80/zrnativeamericansounds_aac?5fba91be81f6da5b573f89c1',
+    # SOUNDSOFRAIN_STREAM := 'aac://http://prem2.zenradio.com:80/zrsoundsofrain_aac?5fba91be81f6da5b573f89c1',
+    # RELAXATION_STREAM := 'aac://http://prem2.zenradio.com:80/zrrelaxation_aac?5fba91be81f6da5b573f89c1',
+    # RELAXINGSPA_STREAM := 'aac://http://prem2.zenradio.com:80/zrrelaxingspanmassage_aac?5fba91be81f6da5b573f89c1',
+    # SHAMANICMUSIC_STREAM := 'aac://http://prem2.zenradio.com:80/zrshamanicmusic_aac?5fba91be81f6da5b573f89c1',
     SUNSETS_STREAM := 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-    NATURE_STREAM := 'aac://http://prem2.zenradio.com:80/zrnature_aac?5fba91be81f6da5b573f89c1',
-    TIBETANMUSIC_STREAM := 'aac://http://prem2.zenradio.com:80/zrtibetanmusic_aac?5fba91be81f6da5b573f89c1',
-    SLEEPRELAXATION_STREAM := 'aac://http://prem2.zenradio.com:80/zrsleeprelaxation_aac?5fba91be81f6da5b573f89c1',
-    CHILLOUT_STREAM := 'aac://http://prem2.zenradio.com:80/zrchillout_aac?5fba91be81f6da5b573f89c1',
-    ATMOSPHERICDREAMS_STREAM := 'aac://http://prem2.zenradio.com:80/zratmosphericdreams_aac?5fba91be81f6da5b573f89c1',
-    SPACEDREAMS_STREAM := 'aac://http://prem2.zenradio.com:80/zrspacedreams_aac?5fba91be81f6da5b573f89c1',
-    BIRDSONG_STREAM := 'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1', # birdsong garden morning
-    EARLYMORNINGRAIN_STREAM := 'x-sonos-spotify:spotify%3atrack%3a2cwKtKEhPn6ZnJmlzbmpLQ?sid=9&flags=8224&sn=1', # the early morning rain
-    RAINDROPSDANCING_STREAM := 'x-sonos-spotify:spotify%3atrack%3a4G6Lz9Et6dhLKydPyY4N9a?sid=9&flags=8224&sn=1', # rain drops dancing on a tin roof
+    # NATURE_STREAM := 'aac://http://prem2.zenradio.com:80/zrnature_aac?5fba91be81f6da5b573f89c1',
+    # TIBETANMUSIC_STREAM := 'aac://http://prem2.zenradio.com:80/zrtibetanmusic_aac?5fba91be81f6da5b573f89c1',
+    # SLEEPRELAXATION_STREAM := 'aac://http://prem2.zenradio.com:80/zrsleeprelaxation_aac?5fba91be81f6da5b573f89c1',
+    # CHILLOUT_STREAM := 'aac://http://prem2.zenradio.com:80/zrchillout_aac?5fba91be81f6da5b573f89c1',
+    # ATMOSPHERICDREAMS_STREAM := 'aac://http://prem2.zenradio.com:80/zratmosphericdreams_aac?5fba91be81f6da5b573f89c1',
+    # SPACEDREAMS_STREAM := 'aac://http://prem2.zenradio.com:80/zrspacedreams_aac?5fba91be81f6da5b573f89c1',
+    # BIRDSONG_STREAM := 'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1', # birdsong garden morning
+    # EARLYMORNINGRAIN_STREAM := 'x-sonos-spotify:spotify%3atrack%3a2cwKtKEhPn6ZnJmlzbmpLQ?sid=9&flags=8224&sn=1', # the early morning rain
+    # RAINDROPSDANCING_STREAM := 'x-sonos-spotify:spotify%3atrack%3a4G6Lz9Et6dhLKydPyY4N9a?sid=9&flags=8224&sn=1', # rain drops dancing on a tin roof
 ]
 
 BACKUP_STREAM: Final[str] = SUNSETS_STREAM
@@ -237,10 +239,13 @@ DAILY_WATERING_MINUTES: Final[int] = 30
 
 # timestamps initialised in automation
 TIMESTAMPS: Final[list[str]] = [
-    'downstairs', 'prev_upstairs', 'upstairs', 'karoq_announce', 'karoq_notification', 'vacuum', 'general', 'travel',
-    'tap', 'karoq_home', 'upstairs_motion', 'garage_open', 'garage_close', 'garage_lights_on', 'garage_lights_off',
-    'snooze'
+        'prev_downstairs', 'downstairs', 'prev_upstairs', 'upstairs', 'karoq_announce', 'karoq_notification', 'vacuum', 'general', 'travel',
+        'tap', 'karoq_home', 'upstairs_motion', 'garage_open', 'garage_close', 'garage_lights_on', 'garage_lights_off',
+        'snooze', 'bedroom', 'prev_bedroom'
     ]
 
 BEDROOM_BUTTON: Final[str] = 'shellybutton1-C8C9A33CDF09'
 GARAGE_BUTTON: Final[str] = 'shellybutton1-EC64C9C4F038'
+
+CLOAKROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.garage_sensor_illuminance'
+CLOAKROOM_LUX_THRESHOLD: Final[int] = 30

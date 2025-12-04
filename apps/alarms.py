@@ -58,8 +58,6 @@ class Alarms(Hass):
         self.listen_state(self.set_normal_alarm_callback, 'input_boolean.normal_alarm', new='on', action='set')
         self.listen_state(self.set_normal_alarm_callback, 'input_boolean.normal_alarm', new='off', action='cancel')
         self.listen_state(self.reset_alarms, 'input_boolean.reset_alarms', new='on')
-        # self.listen_state(self.reset_alarms, 'input_boolean.alarm_testing', new='on')
-        # self.listen_state(self.reset_alarms, 'input_boolean.alarm_testing', new='off')
 
         # also can fire event set_alarm_state
         self.run_daily(self.set_alarm_state, '20:30:00') # make sure before max goes to bed
@@ -83,21 +81,12 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    # def set_alarm_state_async(self, kwargs):
-
-    #     # self.set_early_alarm()
-    #     # self.set_normal_alarm()
-    #     # self.show_alarm_time('early')
-    #     self.show_alarm_time('normal')
-
-# -----------------------------------------------------------------------------------
-
     def set_alarm_state(self, kwargs):
 
         self.lib.log_function_name(start=True)
 
         if self.get_state('input_boolean.alarms_disabled') == 'on':
-            self.cancel_alarms()
+            # self.cancel_alarms()
             self.set_state('input_boolean.early_alarm', state='off')
         else:
             self.set_early_alarm()
@@ -214,15 +203,20 @@ class Alarms(Hass):
 
         # return state, alarm_time, hour, minute
 
-        hour = minute = second = None
+        hour = minute = second = 12
         parts = const.EARLY_ALARM_TIME.split(':')
 
-        if len(parts) >= 2:
-            hour = int(parts[0])
-            minute = int(parts[1])
-            second = int(parts[2]) if len(parts) > 2 else 0
+        try:
+            if len(parts) >= 1:
+                hour = int(parts[0])
+            if len(parts) >= 2:
+                minute = int(parts[1])
+            if len(parts) >= 3:
+                second = int(parts[2])
+        except (ValueError, TypeError) as exc:
+            self.log(f'Invalid EARLY_ALARM_TIME "{const.EARLY_ALARM_TIME}" - using {hour:02d}:{minute:02d}:{second:02d}: {exc}', level='WARNING')
 
-        alarm_time = f'{hour:02d}:{minute:02d}'
+        alarm_time = f'{hour:02d}:{minute:02d}:{second:02d}'
         timestamp = hour * 3600 + minute * 60 + second
 
         self.lib.log_function_name(start=False)
@@ -272,27 +266,33 @@ class Alarms(Hass):
         # dow: 1 - mon, 2 - tue, 3 - wed, 4 - thu, 5 - fri, 6 - sat, 7 - sun
         later = not (self.now_is_between('06:00:00', '23:59:59') and (dow in (1,2))) or (self.now_is_between('00:00:00', '05:59:59') and (dow in (2,3)))
 
+        hour = minute = second = 12
+
         if later:
             parts = const.LATE_ALARM_TIME.split(':')
+            alarm_time = const.LATE_ALARM_TIME
+            desc = 'LATE_ALARM_TIME'
         else:
             parts = const.NORMAL_ALARM_TIME.split(':')
+            alarm_time = const.NORMAL_ALARM_TIME
+            desc = 'NORMAL_ALARM_TIME'
 
-        hour = minute = second = None
+        try:
+            if len(parts) >= 1:
+                hour = int(parts[0])
+            if len(parts) >= 2:
+                minute = int(parts[1])
+            if len(parts) >= 3:
+                second = int(parts[2])
+        except (ValueError, TypeError) as exc:
+            self.log(f'Invalid {desc} "{alarm_time}" - using {hour:02d}:{minute:02d}:{second:02d}: {exc}', level='WARNING')
 
-        if len(parts) >= 2:
-            hour = int(parts[0])
-            minute = int(parts[1])
-            second = int(parts[2]) if len(parts) > 2 else 0
-
-        alarm_time = f'{hour:02d}:{minute:02d}'
+        alarm_time = f'{hour:02d}:{minute:02d}:{second:02d}'
         timestamp = hour * 3600 + minute * 60 + second
 
         state = 'on'
 
-        override = self.get_state('input_boolean.override') == 'on'
-
-        if override:
-            state = 'on'
+        # state = 'on' if self.get_state('input_boolean.override') == 'on' else 'on' # 'off'
 
         self.lib.log_function_name(start=False)
 
@@ -483,28 +483,31 @@ class Alarms(Hass):
 
             if debug:
                 d = datetime.now() + timedelta(minutes=1)
+                hour = d.hour
+                minute = d.minute
+                timestamp = hour * 3600 + minute * 60
+                alarm_time = f"{hour:02d}:{minute:02d}:00"
 
                 if self.lib.get_verbose_debug():
                     self.log(f"\t{d}", level='DEBUG')
 
-                alarm_time = f"{d.hour:02d}:{d.minute:02d}"
-                self.set_state(time_entity_id, state=f'{alarm_time}:00', hour=d.hour, minute=d.minute, second=0)
-                hour = d.hour
-                minute = d.minute
-
-            alarm_time = f"{hour:02d}:{minute:02d}"
+                self.set_state(time_entity_id, state=alarm_time, attributes={"hour": hour, "timestamp": timestamp})
+            else:
+                alarm_time = f"{hour:02d}:{minute:02d}:00"
 
             kwargs.pop('action', None)
-            alarm = self.run_daily(self.alarm, f'{alarm_time}:00', **kwargs)
-            self.log(f'\t{_alarm_type} alarm set for {alarm_time}:00 using {time_entity_id}', level="INFO")
+            alarm = self.run_daily(self.alarm, alarm_time, **kwargs)
+            self.log(f'\t{_alarm_type} alarm set for {alarm_time} using {time_entity_id}', level="INFO")
         elif action == 'cancel':
             self.set_state(bool_entity_id, state='off')
             alarm_time = 'unset' # can trace in message below
 
-            if _alarm_type == 'early':
-                alarm = self.early_alarm_callback
-            elif alarm_type == 'normal':
-                alarm = self.normal_alarm_callback
+            alarm = {'early': self.early_alarm_callback, 'normal': self.normal_alarm_callback}.get(_alarm_type)
+
+            # if _alarm_type == 'early':
+            #     alarm = self.early_alarm_callback
+            # elif alarm_type == 'normal':
+            #     alarm = self.normal_alarm_callback
             self._cancel_timer(alarm, f'{_alarm_type} alarm')
             alarm = None
         else:
@@ -720,13 +723,13 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def check_shift(self, date_to_check):
+    # def check_shift(self, date_to_check):
 
-        for date, status in self.rota:
-            if date == date_to_check:
-                return status
+    #     for date, status in self.rota:
+    #         if date == date_to_check:
+    #             return status
 
-        return "Date out of range"
+    #     return "Date out of range"
 
 # -----------------------------------------------------------------------------------
 

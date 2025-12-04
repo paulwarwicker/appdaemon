@@ -24,7 +24,7 @@ class FrontDoor(Hass):
     lib: "AutomationLib" = _helpers  # type: ignore
 # -----------------------------------------------------------------------------------
 
-    async def initialize(self) -> None:
+    def initialize(self) -> None:
         """initialise"""
 
         # runtime: get the running AutomationLib app instance (do not instantiate directly)
@@ -41,9 +41,7 @@ class FrontDoor(Hass):
 
         self.run_daily(self.front_door_battery, 'sunset + 00:05:00')
 
-        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-        # self.call_service('announcer/announce', entity_id='media_player.study', message="DS Smith Fordem")
 
 # -----------------------------------------------------------------------------------
 
@@ -68,9 +66,9 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def front_door_battery(self, kwargs) -> None:
+    def front_door_battery(self, kwargs) -> None:
 
-        level = await self.get_state('sensor.front_door_battery')
+        level = self.get_state('sensor.front_door_battery')
 
         if level == 'unavailable':
             self.log('Battery level not available', level='ERROR')
@@ -100,47 +98,55 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
+    def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
         """front door ding"""
 
-        self.run_in_thread(self.siren_on, const.APP_THREADS - 1)
-        self.run_in_thread(self.front_door_announce, const.APP_THREADS - 2)
+        # self.run_in_thread(self.siren_on, const.APP_THREADS - 1)
+        # self.run_in_thread(self.front_door_announce, const.APP_THREADS - 2)
+        self.run_in(self.siren_on, 0)
+        self.run_in(self.front_door_announce, 0)
+
         if self.lib.is_night():
             self.call_service('lighting/front_door_ding', seconds=300, cb='front_door_hallway_off', key='front_door_ding')
 
 # -----------------------------------------------------------------------------------
 
-    async def siren_on(self, kwargs) -> None:
+    def siren_on(self, kwargs) -> None:
         """turn on siren for front door ding"""
 
         delay = 1 if self.lib.get_testing() else 5
-        self.call_service('siren/turn_on', entity_id='siren.tapo_hub_siren')
+
+        self.call_service('siren/turn_on', entity_id='siren.tapo_hub')
+        self.call_service('siren/turn_on', entity_id='siren.kasa_hub')
+
         self.run_in(self.siren_off, delay)
 
 # -----------------------------------------------------------------------------------
 
-    async def siren_off(self, kwargs) -> None:
+    def siren_off(self, kwargs) -> None:
         """turn off siren for front door ding"""
 
-        self.call_service('siren/turn_off', entity_id='siren.tapo_hub_siren')
+        self.call_service('siren/turn_off', entity_id='siren.tapo_hub')
+        self.call_service('siren/turn_off', entity_id='siren.kasa_hub')
 
 # -----------------------------------------------------------------------------------
 
-    async def front_door_announce(self, kwargs) -> None:
+
+    def front_door_announce(self, kwargs) -> None:
         """front door announcement"""
 
-        message = 'Someone is at the front door' if not (await self.get_state('input_boolean.testing')) == 'on' else 'just testing'
+        message = 'Someone is at the front door' if not (self.get_state('input_boolean.testing')) == 'on' else 'just testing'
         self.call_service('announcer/broadcast', message=message, timestamp='front_door')
 
 # -----------------------------------------------------------------------------------
 
-    async def ding_front_door_light(self, kwargs) -> None:
+    def ding_front_door_light(self, kwargs) -> None:
         """Turn on front door light when dark when someone calls. see also front_door_light_on/off"""
 
         if self.now_is_between('sunset', 'sunrise'):
             # TODO: return to previous level if was previously on
-            brightness = await self.get_state('light.front_door_1', attribute='brightness')
-            state = await self.get_state('light.front_door_1')
+            brightness = self.get_state('light.front_door_1', attribute='brightness')
+            state = self.get_state('light.front_door_1')
             self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=0)
             self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=192, transition=10)
             # self.turn_on('scene.front_door_ding_2') # FIXME: not working - scenes dont allow transitiona
@@ -151,7 +157,7 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def ding_hallway_light(self, kwargs) -> None:
+    def ding_hallway_light(self, kwargs) -> None:
         """Turn on hallway light when dark"""
 
         if self.lib.is_night():  # civil dusk till civil dawn
@@ -168,7 +174,7 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def _front_door_light_on(self, kwargs) -> None:
+    def _front_door_light_on(self, kwargs) -> None:
 
         if self.now_is_between('sunset', 'sunrise + 1:00:00'):
             if self.lib.is_below_horizon():
@@ -180,7 +186,7 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def front_door_light_off(self, kwargs) -> None:
+    def front_door_light_off(self, kwargs) -> None:
 
         # scene = 'scene.front_door_ding_2'
         # self.log(f'\tscene={scene}', level='DEBUG')

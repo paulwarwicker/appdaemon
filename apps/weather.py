@@ -98,7 +98,7 @@ class Weather(Hass):
         await self.set_state(
             'sensor.weather_tomorrowio_temperature',
             state=round(temp, 1),   # one decimal place
-            device_class='temperature',
+            state_class='temperature',
         )
 
 # -----------------------------------------------------------------------------------
@@ -135,7 +135,7 @@ class Weather(Hass):
                 await self.set_state(
                     'sensor.weather_tomorrowio_forecast_low_12h',
                     state=round(low_temp12_val, 1),
-                    device_class='temperature'
+                    state_class='temperature'
                 )
             except Exception as exc:
                 self.log(
@@ -144,19 +144,19 @@ class Weather(Hass):
         await self.set_state(
             'sensor.weather_tomorrowio_forecast_low_24h',
             state=round(low_temp24, 1),  # one decimal place
-            device_class='temperature',
+            state_class='temperature',
         )
 
         await self.set_state(
             'sensor.weather_tomorrowio_forecast_low_datetime_12h',
             state=low_dt12,
-            device_class='datetime',
+            state_class='datetime',
         )
 
         await self.set_state(
             'sensor.weather_tomorrowio_forecast_low_datetime_24h',
             state=low_dt24,
-            device_class='datetime',
+            state_class='datetime',
         )
 
 # -----------------------------------------------------------------------------------
@@ -212,8 +212,9 @@ class Weather(Hass):
                 attributes={
                     "friendly_name": "1 hour probability",
                     "unit_of_measurement": "%",
-                    "device_class": "measurement"
-                }                # device_class='probability'
+                    "state_class": "measurement",
+                    # "device_class": "weather"
+                }
             )
         except Exception as exc:
             # Home Assistant rejected the request (bad attributes or other error)
@@ -227,8 +228,9 @@ class Weather(Hass):
                 attributes={
                     "friendly_name": "3 hour probability",
                     "unit_of_measurement": "%",
-                    "device_class": "measurement"
-                }                # device_class='probability'
+                    "state_class": "measurement",
+                    # "device_class": "weather"
+                }
             )
         except Exception as exc:
             # Home Assistant rejected the request (bad attributes or other error)
