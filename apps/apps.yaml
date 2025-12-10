@@ -11,17 +11,18 @@ automation:
     - automationlib
     - announcer
     - timestamp
-    - motion
-    - lighting
-    - timers
-    - location
-    - alarms
-    - sonos
-    - garage
-    - weather
-    - tap
-    - vacuum
-    - shelly
+    # - motion
+    # - lighting
+    # - timers
+    # - location
+    # - alarms
+    # - sonos
+    # - garage
+    # - weather
+    # - tap
+    # - vacuum
+    # - shelly
+
     # - fan
     # - doorbell
     # - front_door

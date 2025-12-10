@@ -295,7 +295,8 @@ class Sonos(Hass):
 
     def stop_hallway_service(self, namespace, domain, service, kwargs) -> None:
 
-        self.call_service('sonos/stop', entity_id=const.HALLWAY_SPEAKER)
+        # self.call_service('sonos/stop', entity_id=const.HALLWAY_SPEAKER)
+        self.call_service("media_player/media_pause", entity_id=const.HALLWAY_SPEAKER)
 
 # -----------------------------------------------------------------------------------
 
@@ -323,14 +324,16 @@ class Sonos(Hass):
 
     def play_hallway_event(self, event, data, kwargs):
 
-        self.play_spotify({
-            'entity_id': const.STUDY_SPEAKER,
-            'volume_level': 0.2,
-            'media_content_id': const.SUMMER_HITS_PLAYLIST,
-            # 'media_content_id': const.SUMMER_VIBES_ALBUM,
-            'delayed': False,
-            'shuffle': True
-            })
+        # self.play_spotify({
+        #     'entity_id': const.STUDY_SPEAKER,
+        #     'volume_level': 0.2,
+        #     'media_content_id': const.SUMMER_HITS_PLAYLIST,
+        #     # 'media_content_id': const.SUMMER_VIBES_ALBUM,
+        #     'delayed': False,
+        #     'shuffle': True
+        #     })
+
+        self.play_hallway({})
 
 # -----------------------------------------------------------------------------------
 
@@ -444,19 +447,35 @@ class Sonos(Hass):
 
     def play_hallway(self, kwargs):
 
-        # media_content_id = const.BOSSANOVA_STREAM
-        media_content_id = self.select_stream(const.HALLWAY_STREAMS)
+        # # media_content_id = const.BOSSANOVA_STREAM
+        # media_content_id = self.select_stream(const.HALLWAY_STREAMS)
 
-        if media_content_id.startswith('spotify:'):
-            self.play_spotify({'entity_id': const.HALLWAY_SPEAKER, 'volume_level': 0.02, 'media_content_id': media_content_id, 'delayed': False, 'shuffle': True})
-        else:
-            self.call_service('sonos/play_thing', entity_id=const.HALLWAY_SPEAKER, volume_level=0.02, media_content_id=media_content_id, delayed=False, shuffle=True)
+        # if media_content_id.startswith('spotify:'):
+        #     self.play_spotify({'entity_id': const.HALLWAY_SPEAKER, 'volume_level': 0.02, 'media_content_id': media_content_id, 'delayed': False, 'shuffle': True})
+        # else:
+        #     self.call_service('sonos/play_thing', entity_id=const.HALLWAY_SPEAKER, volume_level=0.02, media_content_id=media_content_id, delayed=False, shuffle=True)
+
+        retries = 10
+        player = const.HALLWAY_SPEAKER
+        player = const.STUDY_SPEAKER
+        volume = 0.02
+
+        self.call_service("media_player/volume_set", entity_id=player, volume_level=volume)
+
+        for attempt in range(1, retries + 1):
+            try:
+                # Attempt to resume playback
+                self.call_service("media_player/media_play", entity_id=player, media_channel="ABBA to ZZ Top and everything in between")
+                break
+            except Exception as e:
+                self.log(f"play_hallway: failed to start playback in {attempt} attempts: {e}", level="WARNING")
 
 # -----------------------------------------------------------------------------------
 
     def stop_hallway(self, kwargs):
 
-        self.call_service('sonos/stop_hallway')
+        # self.call_service('sonos/stop_hallway')
+        self.call_service("media_player/media_pause", entity_id=const.HALLWAY_SPEAKER)
 
 # -----------------------------------------------------------------------------------
 

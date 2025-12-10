@@ -145,10 +145,10 @@ class FrontDoor(Hass):
 
         if self.now_is_between('sunset', 'sunrise'):
             # TODO: return to previous level if was previously on
-            brightness = self.get_state('light.front_door_1', attribute='brightness')
-            state = self.get_state('light.front_door_1')
-            self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=0)
-            self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=192, transition=10)
+            brightness = self.get_state(const.FRONT_DOOR, attribute='brightness')
+            state = self.get_state(const.FRONT_DOOR)
+            self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=0)
+            self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=192, transition=10)
             # self.turn_on('scene.front_door_ding_2') # FIXME: not working - scenes dont allow transitiona
             seconds = 12*60
             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
@@ -178,8 +178,8 @@ class FrontDoor(Hass):
 
         if self.now_is_between('sunset', 'sunrise + 1:00:00'):
             if self.lib.is_below_horizon():
-                self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=0)
-                self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=128, transition=10)
+                self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=0)
+                self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=128, transition=10)
                 self.call_service('light/turn_on', entity_id='light.garage_1', brightness=128, transition=10)
             else:
                 self.run_in(self.int_front_door_light_on, 60)  # respawn self in 60s
@@ -192,6 +192,6 @@ class FrontDoor(Hass):
         # self.log(f'\tscene={scene}', level='DEBUG')
         # self.turn_off(scene) # TODO: not working
         self.call_service('light/turn_off', entity_id='light.hallway_1', transition=10)
-        self.call_service('light/turn_off', entity_id='light.front_door_1', transition=10)
+        self.call_service('light/turn_off', entity_id=const.FRONT_DOOR, transition=10)
 
 # -----------------------------------------------------------------------------------

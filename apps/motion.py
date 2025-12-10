@@ -64,8 +64,10 @@ class Motion(Hass):
         self.listen_state(self.utility_motion,    'binary_sensor.utility_room_sensor_motion', new='off', cb='utility_off')
         self.listen_state(self.bathroom_motion,   'binary_sensor.bathroom_sensor_motion',     new='on')
         self.listen_state(self.bathroom_motion,   'binary_sensor.bathroom_sensor_motion',     new='off', cb='bathroom_off')
-        self.listen_state(self.cloakroom_motion,  'binary_sensor.garage_sensor_motion',       new='on')
-        self.listen_state(self.cloakroom_motion,  'binary_sensor.garage_sensor_motion',       new='off', cb='cloakroom_off')
+        self.listen_state(self.cloakroom_motion,  'binary_sensor.cloakroom_sensor_motion',    new='on')
+        self.listen_state(self.cloakroom_motion,  'binary_sensor.cloakroom_sensor_motion',    new='off', cb='cloakroom_off')
+        self.listen_state(self.garage_motion,     'binary_sensor.garage_sensor_motion',       new='on')
+        self.listen_state(self.garage_motion,     'binary_sensor.garage_sensor_motion',       new='off', cb='garage_off')
 
         self.listen_state(self.downstairs_motion, 'binary_sensor.downstairs_sensor_motion',   new='on')
         self.listen_state(self.upstairs_motion,   'binary_sensor.upstairs_sensor_motion',     new='on')
@@ -106,7 +108,7 @@ class Motion(Hass):
         ts = self.call_service('timestamp/get', name='garage')
         diff = (datetime.now() - ts).seconds
 
-        if diff > self.lib.interval(self, seconds=10):
+        if diff > self.lib.interval(seconds=10):
             self.call_service('light/turn_on', entity_id=const.GARAGE2)
 
 # -----------------------------------------------------------------------------------

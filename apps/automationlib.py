@@ -300,6 +300,13 @@ class AutomationLib(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    async def log_function_name_async(self, **kwargs) -> None:
+        """log function name as log message (async version)"""
+
+        self.log_function_name(**kwargs)
+
+# -----------------------------------------------------------------------------------
+
     def is_playing(self, entity_id) -> bool:
         """is entity id playing"""
 

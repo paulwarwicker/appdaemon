@@ -196,13 +196,13 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         (uu_id, entity_id, message, timestamp, announce, force, volume) = entry
 
-        entity_ids = [const.STUDY_SPEAKER, const.HALLWAY_SPEAKER] if self.lib.get_testing() else [const.KITCHEN_SPEAKER]
+        # entity_ids = [const.STUDY_SPEAKER, const.HALLWAY_SPEAKER] if self.lib.get_testing() else [const.KITCHEN_SPEAKER]
         # entity_ids = const.BROADCAST_ENTITY_ID if entity_id is None else [entity_id]
 
         if self.announceable(announce) or force:
 
             self.call_service('media_player/play_media',
-                              entity_id=entity_ids,
+                              entity_id=entity_id,
                               media_content_type='music',
                               media_content_id='http://homeassistant.local:8123/local/bing.mp3',
                               announce=True,
@@ -211,7 +211,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
             self.lib.delay(1.0) # give it time to play
 
             self.call_service('media_player/play_media',
-                              entity_id=entity_ids,
+                              entity_id=entity_id,
                               media_content_type='music',
                               media_content_id=f'media-source://tts/cloud?message="{message}"',
                               announce=True,

@@ -1,5 +1,5 @@
 from typing import Final
-from enum import Enum # plyint: disable=unused-import
+from enum import Enum # pylint: disable=unused-import
 
 # class ModeSelect(Enum):
 #     MODE_A = 'mode_a'
@@ -47,7 +47,7 @@ DINING2: Final[str] = 'light.dining_room_2'
 LIVING1: Final[str] = 'light.living_room_1'
 LIVING2: Final[str] = 'light.living_room_2'
 LIVING3: Final[str] = 'light.living_room_3'
-UTILITY: Final[str] = 'light.utility_room_1'
+UTILITY: Final[str] = 'light.utility_room'
 LANDING: Final[str] = 'light.hallway_3'
 RADIATOR: Final[str] = 'light.radiator'
 HALLWAY1: Final[str] = 'light.hallway_1'
@@ -58,9 +58,9 @@ BEDROOM2: Final[str] = 'light.bedroom_2'
 BEDROOM3: Final[str] = 'light.bedroom_3'
 UPSTAIRS: Final[str] = 'light.upstairs'
 BANNISTER: Final[str] = 'light.bannister'
-CLOAKROOM: Final[str] = 'light.cloakroom_1'
-TABLE_LAMP: Final[str] = 'light.table_lamp_1'
-FRONT_DOOR: Final[str] = 'light.front_door_1'
+CLOAKROOM: Final[str] = 'light.cloakroom'
+TABLE_LAMP: Final[str] = 'light.table_lamp'
+FRONT_DOOR: Final[str] = 'light.front_door'
 DOWNSTAIRS: Final[str] = 'light.downstairs'
 STANDARD_LAMP: Final[str] = 'light.standard_lamp'
 
@@ -142,8 +142,8 @@ RAMP_TIME: Final[int] = 20
 PLAY_DELAY: Final[float] = 0.75
 DEFAULT_VOLUME: Final[float] = 0.15
 ALARM_VOLUME: Final[float] = 0.3
-ANNOUNCE_VOLUME: Final[int] = 50
-ANNOUNCE_VOLUME_LOW: Final[int] = 30
+ANNOUNCE_VOLUME: Final[int] = 35
+ANNOUNCE_VOLUME_LOW: Final[int] = 20
 STUDY_ANNOUNCE_VOLUME: Final[int] = 20
 STUDY_ANNOUNCE_VOLUME_LOW: Final[int] = 10
 EARLY_ALARM_TIME: Final[str] = '07:00:00'
@@ -247,5 +247,5 @@ TIMESTAMPS: Final[list[str]] = [
 BEDROOM_BUTTON: Final[str] = 'shellybutton1-C8C9A33CDF09'
 GARAGE_BUTTON: Final[str] = 'shellybutton1-EC64C9C4F038'
 
-CLOAKROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.garage_sensor_illuminance'
-CLOAKROOM_LUX_THRESHOLD: Final[int] = 30
+CLOAKROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.cloakroom_sensor_illuminance'
+CLOAKROOM_LUX_THRESHOLD: Final[int] = 10

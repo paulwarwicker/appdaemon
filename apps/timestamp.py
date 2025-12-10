@@ -8,7 +8,6 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-import time
 from datetime import datetime, timedelta
 
 from typing import TYPE_CHECKING, cast
@@ -94,7 +93,7 @@ class Timestamp(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def init_timestamp_service(self, namespace, domain, service, kwargs) -> None:
+    async def init_timestamp_service(self, namespace, domain, service, kwargs) -> None:
         """initialise timestamps"""
 
         for name in const.TIMESTAMPS:
@@ -104,7 +103,7 @@ class Timestamp(Hass):
                 self.ts[name] = datetime.now() + timedelta(hours=-6)
             else:
                 self.ts[name] = datetime.now() + timedelta(minutes=-15)
-            time.sleep(2.0)
+            await self.sleep(2.0)
 
         self.call_service('timestamp/status')
 

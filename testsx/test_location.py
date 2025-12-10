@@ -213,8 +213,8 @@ def test_initialize(hass_driver, location: Location):
 #     automation.max_home('', 'attribute', 'old', 'new', {})
 
 #     call_service.assert_has_calls([
-#         mock.call('light/turn_on', entity_id=['light.standard_lamp_1'], brightness=128),
-#         mock.call('light/turn_on', entity_id=['light.front_door_1'], brightness=128),
+#         mock.call('light/turn_on', entity_id=[const.STANDARD_AMP], brightness=128),
+#         mock.call('light/turn_on', entity_id=[const.FRONT_DOOR], brightness=128),
 #         mock.call('light/turn_on', entity_id='light.hallway_1', brightness=64)
 #     ])
 
@@ -308,8 +308,8 @@ def test_initialize(hass_driver, location: Location):
 #         # mock.call('notify/pushbullet', title=MESSAGE_VILLAGE, message=''),
 #         mock.call('notify/disc0rd', title='', message=MESSAGE_VILLAGE, target='1250932196613685313'),
 #         mock.call('sonos/restore', entity_id=STUDY_ENTITY_ID, with_group=True),
-#         mock.call('light/turn_on', entity_id=['light.standard_lamp_1'], brightness=128),
-#         mock.call('light/turn_on', entity_id=['light.front_door_1'], brightness=128),
+#         mock.call('light/turn_on', entity_id=[const.STANDARD_AMP], brightness=128),
+#         mock.call('light/turn_on', entity_id=[const.FRONT_DOOR], brightness=128),
 #         mock.call('light/turn_on', entity_id='light.hallway_1', brightness=64)
 #     ])
 
@@ -340,8 +340,8 @@ def test_initialize(hass_driver, location: Location):
 #         # mock.call('notify/pushbullet', title=MESSAGE_VILLAGE, message=''),
 #         mock.call('notify/disc0rd', title='', message=MESSAGE_VILLAGE, target='1250932196613685313'),
 #         mock.call('sonos/restore', entity_id=STUDY_ENTITY_ID, with_group=True),
-#         mock.call('light/turn_on', entity_id=['light.standard_lamp_1'], brightness=128),
-#         mock.call('light/turn_on', entity_id=['light.front_door_1'], brightness=128),
+#         mock.call('light/turn_on', entity_id=[const.STANDARD_AMP], brightness=128),
+#         mock.call('light/turn_on', entity_id=[const.FRONT_DOOR], brightness=128),
 #         mock.call('light/turn_on', entity_id='light.hallway_1', brightness=64)
 #     ])
 

@@ -23,6 +23,7 @@ class Weather(Hass):
 
     request_kwargs = {}
     lib: "AutomationLib" = _helpers  # type: ignore
+    DEBUG = False
 
 # -----------------------------------------------------------------------------------
 
@@ -164,8 +165,6 @@ class Weather(Hass):
     async def publish_rain_forecast(self, json_data):
         """Publish forecasted rain outlook"""
 
-        # print(json.dumps(json_data, indent=2))
-
         index = 0
         data = {}
         # previous/current hour
@@ -174,74 +173,79 @@ class Weather(Hass):
         data[2] = json_data['timelines']['hourly'][index + 2]  # hour after
         data[3] = json_data['timelines']['hourly'][index + 3]  # hour after
 
-        #     print(json.dumps(data[0], indent=2))
-        #     print(json.dumps(data[1], indent=2))
-        #     print(json.dumps(data[2], indent=2))
-        #     print(json.dumps(data[3], indent=2))
+        if self.DEBUG:
+            # print(json.dumps(json_data, indent=2))
+            print(json.dumps(data[0], indent=2))
+            print(json.dumps(data[1], indent=2))
+            print(json.dumps(data[2], indent=2))
+            print(json.dumps(data[3], indent=2))
 
         code = data[0]['values']['weatherCode']
 
-        # cum_prob_1h = math.ceil((data[0]['values']['precipitationProbability'] +
-        #                          data[1]['values']['precipitationProbability']) / 2)
-        # cum_prob_3h = math.ceil((data[0]['values']['precipitationProbability'] +
-        #                          data[1]['values']['precipitationProbability'] +
-        #                          data[2]['values']['precipitationProbability'] +
-        #                          data[3]['values']['precipitationProbability'] ) / 4)
-        cum_prob_1h = math.floor(math.ceil(
-            data[1]['values']['precipitationProbability']
-        ))
+        cum_prob_1h = math.floor(
+            math.ceil(
+                data[1]['values']['precipitationProbability']
+            )
+        )
 
-        cum_prob_3h = math.floor(math.ceil(
-            (
+        cum_prob_3h = math.floor(
+            math.ceil(
                 (
                     data[1]['values']['precipitationProbability'] +
                     data[2]['values']['precipitationProbability'] +
                     data[3]['values']['precipitationProbability']
                 ) / 3
             )
-        ))
+        )
 
-        if cum_prob_1h != 0 and cum_prob_3h != 0:
+        if cum_prob_1h > 20 or cum_prob_3h > 20:
             self.log(f'\tcode={code} probability of rain1h={cum_prob_1h}, rain3h={cum_prob_3h}', level='DEBUG')
 
-        try:
-            entity_id = 'sensor.weather_tomorrowio_forecast_rain_probability_1h'
-            await self.set_state(
-                entity_id,
-                state=cum_prob_1h,
-                attributes={
-                    "friendly_name": "1 hour probability",
-                    "unit_of_measurement": "%",
-                    "state_class": "measurement",
-                    # "device_class": "weather"
-                }
-            )
-        except Exception as exc:
-            # Home Assistant rejected the request (bad attributes or other error)
-            self.log(f'Failed to set {entity_id}: {exc}', level='ERROR')
+        await self.call_service(
+            "input_number/set_value",
+            entity_id="input_number.rain_probability_1h_raw",
+            value=float(cum_prob_1h)
+        )
 
-        try:
-            entity_id = 'sensor.weather_tomorrowio_forecast_rain_probability_3h'
-            await self.set_state(
-                entity_id,
-                state=cum_prob_3h,
-                attributes={
-                    "friendly_name": "3 hour probability",
-                    "unit_of_measurement": "%",
-                    "state_class": "measurement",
-                    # "device_class": "weather"
-                }
-            )
-        except Exception as exc:
-            # Home Assistant rejected the request (bad attributes or other error)
-            self.log(f'Failed to set {entity_id}: {exc}', level='ERROR')
+        await self.call_service(
+            "input_number/set_value",
+            entity_id="input_number.rain_probability_3h_raw",
+            value=float(cum_prob_3h)
+        )
+        # try:
+        #     entity_id = 'sensor.rain_probability_1h_raw'
+        #     await self.set_state(
+        #         entity_id,
+        #         state=cum_prob_1h,
+        #         attributes={
+        #             "friendly_name": "Rain probability (1h) raw",
+        #             "unit_of_measurement": "%",
+        #         }
+        #     )
+        # except Exception as exc:
+        #     # Home Assistant rejected the request (bad attributes or other error)
+        #     self.log(f'Failed to set {entity_id}: {exc}', level='ERROR')
 
-        if cum_prob_1h >= 35:
-            if not code in (4000, 4001, 4200, 4201):  # if not raining - announce
-                self.call_service(
-                    'announcer/announce', entity_id='media_player.study',
-                    message=f"There is a {cum_prob_1h} percent probability of rain in the next hour"
-                )
+        # try:
+        #     entity_id = 'sensor.rain_probability_3h_raw'
+        #     await self.set_state(
+        #         entity_id,
+        #         state=cum_prob_3h,
+        #         attributes={
+        #             "friendly_name": "Rain probability (3h) raw",
+        #             "unit_of_measurement": "%",
+        #         }
+        #     )
+        # except Exception as exc:
+        #     # Home Assistant rejected the request (bad attributes or other error)
+        #     self.log(f'Failed to set {entity_id}: {exc}', level='ERROR')
+
+        if not code in (4000, 4001, 4200, 4201) and cum_prob_1h >= 33:  # if not raining - announce
+            self.call_service(
+                'announcer/announce',
+                entity_id=const.STUDY_SPEAKER,
+                message=f"There is a {cum_prob_1h} percent probability of rain in the next hour"
+            )
 
 # -----------------------------------------------------------------------------------
 

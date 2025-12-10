@@ -401,7 +401,7 @@ class Lighting(Hass):
 
         if self.now_is_between(sunset, f'{sunrise}{plus1}') or (lux is not None and lux < const.CLOAKROOM_LUX_THRESHOLD):
             # brightness = const.HALF_ON if self.now_is_between(sunset, f'{sunset}{plus1}') or self.now_is_between(sunrise, f'{sunrise}{plus1}') else const.QUARTER_ON
-            brightness = const.QUARTER_ON if self.lib.is_summer() else const.HALF_ON
+            brightness = const.HALF_ON # const.QUARTER_ON if self.lib.is_summer() else const.HALF_ON
 
             self.show_service(namespace, domain, service, data, cb)
 
@@ -499,12 +499,12 @@ class Lighting(Hass):
 
         self.lib.log_function_name(start=True)
 
-        if self.get_state('input_boolean.landing_disabled') == 'on' or not self.bedroom_on_window():
+        if self.get_state('input_boolean.disable_bedroom_lights') == 'on' or not self.bedroom_on_window():
             self.call_service('lighting/lumie_on')
             self.lib.log_function_name(start=False)
             return
 
-        self.set_state('input_boolean.landing_disabled', state='off')
+        self.set_state('input_boolean.disable_bedroom_lights', state='off')
 
         self.show_service(namespace, domain, service, data)
 
@@ -597,7 +597,7 @@ class Lighting(Hass):
         # force = {}
         # force = {'force': True}
 
-        self.lib.log_function_name(start=True)#force=True)
+        self.lib.log_function_name(start=True)
 
         cb = data.get('cb', 'noop')
         callback = self.get_callback(cb)
@@ -611,7 +611,7 @@ class Lighting(Hass):
         else:
             self.log('\toutside time window for bedroom', level='INFO')
 
-        self.lib.log_function_name(start=False)#, force=True)
+        self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 

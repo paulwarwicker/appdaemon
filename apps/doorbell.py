@@ -74,10 +74,10 @@ class DoorBell(Hass):
 
 #         if self.now_is_between('sunset', 'sunrise'):
 #             # TODO: return to previous level if was previously on
-#             brightness = await self.get_state('light.front_door_1', attribute='brightness')
-#             state = await self.get_state('light.front_door_1')
-#             self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=0)
-#             self.call_service('light/turn_on', entity_id='light.front_door_1', brightness=192, transition=10)
+#             brightness = await self.get_state(const.FRONT_DOOR, attribute='brightness')
+#             state = await self.get_state(const.FRONT_DOOR)
+#             self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=0)
+#             self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=192, transition=10)
 #             # self.turn_on('scene.front_door_ding_2') # FIXME: not working - scenes dont allow transitiona
 #             seconds = 12*60
 #             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')

@@ -88,42 +88,31 @@ class Automation(Hass):
 
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.maxine_travel_time_to_home, runtime)
-        # self.run_minutely(self.fix_audio_delay, runtime)
         self.run_minutely(self.test, runtime)
 
         # runtime = datetime(2024, 1, 1, 0, 0, 0)
         # self.run_hourly(...)
 
-        self.test({})
-
         self.set_all_state({})
         self._set_console_log_level()
 
-        # self.log('initialising timestamps HACK', level='WARNING')
-        # self.call_service('timestamp/init')
-        self.log('timestamp status', level='INFO')
-        self.call_service('timestamp/status')
+        # self.log('timestamp status', level='INFO')
+        # self.call_service('timestamp/status')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
+
+        self.test({})
 
 # -----------------------------------------------------------------------------------
 
     def test(self, kwargs) -> None:
         """test method"""
 
-        # self.lib.log_function_name(start=True)
+        self.lib.log_function_name(start=True)
 
         # print(self.lib.dow())
         # traceback.print_stack() # leave
 
-        # self.lib.log_function_name(start=False)
-
-# -----------------------------------------------------------------------------------
-
-    def dummy(self) -> None:
-        """dummy"""
-
-        self.lib.log_function_name(start=True)
         self.lib.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
@@ -392,7 +381,7 @@ class Automation(Hass):
     def maxine_travel_time_to_home(self, kwargs) -> None:
         """set travel time to home for maxine. set maxine_driving_status sensor"""
 
-        # self.lib.log_function_name(start=True)
+        self.lib.log_function_name(start=True)
         # self.lib.log_function_name(start=True, force=True)
 
         home = self.get_state('person.maxine') == 'home'
@@ -405,7 +394,10 @@ class Automation(Hass):
 
             for name, val in (('result', result), ('direction', direction), ('state', state)):
                 if name == 'result':
-                    result = val
+                    try:
+                        result = float(val)
+                    except (ValueError, TypeError):
+                        result = 'unknown'
                 elif name == 'direction':
                     direction = val
                 else:
@@ -418,15 +410,15 @@ class Automation(Hass):
 
             if result == 'unknown' or result is None:
                 self.log('\tmaxine travel time is unknown', level='ERROR')
-                # self.lib.log_function_name(start=False)
+                # self.lib.log_function_name(start=False, force=True)
                 return
 
             try:
                 minutes = int(result)
             except (TypeError, ValueError):
                 self.log(f'\tUnable to parse travel time: {result!r}', level='ERROR')
-                # self.lib.log_function_name(start=False)
-                self.lib.log_function_name(start=False, force=True)
+                self.lib.log_function_name(start=False)
+                # self.lib.log_function_name(start=False, force=True)
                 return
 
             message = f'Max is {minutes} minutes away'

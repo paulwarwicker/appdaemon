@@ -7,8 +7,8 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-import time
-from datetime import datetime
+import inspect
+from datetime import datetime,timedelta
 
 from typing import TYPE_CHECKING, cast
 
@@ -27,7 +27,7 @@ class Garage(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def initialize(self) -> None:
+    async def initialize(self) -> None:
         """initialise"""
 
         # runtime: get the running AutomationLib app instance (do not instantiate directly)
@@ -39,135 +39,144 @@ class Garage(Hass):
         self.register_service('garage/open', self.garage_open_service)
         self.register_service('garage/close', self.garage_close_service)
 
-        self.listen_state(self.garage_door_announce_open, const.GARAGE_ENTITY_ID, new='open')
-        self.listen_state(self.garage_door_announce_opening, const.GARAGE_ENTITY_ID, new='opening')
-        self.listen_state(self.garage_door_announce_closing, const.GARAGE_ENTITY_ID, new='closing')
-        self.listen_state(self.garage_door_announce_closed, const.GARAGE_ENTITY_ID, new='closed')
-        self.listen_state(self.garage_door_debug, const.GARAGE_ENTITY_ID)
+        garage = const.GARAGE_ENTITY_ID
+
+        self.listen_state(self.garage, garage, new='open')
+        self.listen_state(self.garage, garage, new='opening')
+        self.listen_state(self.garage, garage, new='closing')
+        self.listen_state(self.garage, garage, new='closed')
+        self.listen_state(self.garage_debug, garage)
 
         self.listen_event(self.garage_open_event, 'garage_open')
         self.listen_event(self.garage_close_event, 'garage_close')
         self.listen_event(self.garage_open_close_event, 'garage_open_close')
+        self.listen_event(self.garage_debug_event, 'garage_debug')
+        self.listen_event(self.garage_test_event, 'garage_test')
 
-        runtime = datetime(2024, 1, 1, 0, 0, 0)
-        self.run_hourly(self.close_garage_door, runtime)
+        runtime = datetime(2024, 1, 1, 21, 0, 0)
+        self.run_daily(self.close_garage, runtime)
 
         runtime = datetime(2024, 1, 1)
-        self.run_minutely(self.check_garage_door, runtime)
+        self.run_minutely(self.check_garage, runtime)
 
-        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
 
-    def garage_open_service(self, namespace, domain, service, kwargs) -> None:
+    async def garage_open_service(self, namespace, domain, service, kwargs) -> None:
         """open the garage"""
 
-        self.lib.log_function_name(start=True)
+        await self.log_function_name(start=True)
 
         self.call_service('timestamp/set', name='garage')
-        self.garage_door_open('','','','',{})
+        await self.garage_open('','','','',{})
 
-        self.lib.log_function_name(start=False)
+        await self.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
-    def garage_close_service(self, namespace, domain, service, kwargs) -> None:
+    async def garage_close_service(self, namespace, domain, service, kwargs) -> None:
         """close the garage"""
 
-        self.lib.log_function_name(start=True)
+        await self.log_function_name(start=True)
 
         self.call_service('timestamp/set', name='garage')
-        self.garage_door_close('','','','',{})
+        await self.garage_close('','','','',{})
 
-        self.lib.log_function_name(start=False)
+        await self.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
-    def garage_open_event(self, event, data, kwargs:dict) -> None:
+    async def garage_open_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('garage/open')
 
 # -----------------------------------------------------------------------------------
 
-    def garage_close_event(self, event, data, kwargs:dict) -> None:
+    async def garage_close_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('garage/close')
 
 # -----------------------------------------------------------------------------------
 
-    def garage_open_close_event(self, event, data, kwargs:dict) -> None:
+    async def garage_test_event(self, event, data, kwargs:dict) -> None:
 
-        self.lib.log_function_name(start=True)
+        await self.log_function_name(start=True, force=True)
+
+        await self.log_function_name(start=False, force=True)
+
+# -----------------------------------------------------------------------------------
+
+    async def garage_debug_event(self, event, data, kwargs:dict) -> None:
+
+        await self.garage_debug('','','','',{})
+
+# -----------------------------------------------------------------------------------
+
+    async def garage_open_close_event(self, event, data, kwargs:dict) -> None:
+
+        await self.log_function_name(start=True)
 
         self.call_service('garage/open')
-        time.sleep(30)
+        await self.sleep(30)
         self.call_service('garage/close')
+
+        await self.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
-    def garage_door_open(self, entity, attribute, old, new, kwargs) -> None:
+    async def garage_open(self, entity, attribute, old, new, kwargs) -> None:
         """open garage door"""
+
+        await self.log_function_name(start=True)
 
         self.call_service('cover/open_cover', entity_id=const.GARAGE_ENTITY_ID)
         self.call_service('lighting/garage_on')
 
+        await self.log_function_name(start=False)
+
 # -----------------------------------------------------------------------------------
 
-    def garage_door_close(self, entity, attribute, old, new, kwargs) -> None:
+    async def garage_close(self, entity, attribute, old, new, kwargs) -> None:
         """close garage door"""
+
+        await self.log_function_name(start=True)
 
         self.call_service('cover/close_cover', entity_id=const.GARAGE_ENTITY_ID)
         self.call_service('lighting/garage_off')
 
+        await self.log_function_name(start=False)
+
 # -----------------------------------------------------------------------------------
 
-    def garage_door(self, entity, attribute, old, new, kwargs) -> None:
+    async def garage(self, entity, attribute, old, new, kwargs) -> None:
         """listener for garage door"""
 
-        below = self.lib.is_below_horizon()
+        await self.log_function_name(start=True)
+
+        below = await self.is_below_horizon()
 
         if new == 'opening':
             if below:
-                self.call_service('lighting/garage_on', seconds=self.lib.interval(self, minutes=30), cb='garage_off')
+                self.call_service('lighting/garage_on', seconds=self.interval(minutes=30), cb='garage_off')
+        elif new == 'open':
+            pass
+        elif new == 'closing':
+            pass
         elif new == 'closed':
             if below:
-                self.call_service('lighting/garage_off', seconds=self.lib.interval(self, minutes=1), cb='garage_off')
+                self.call_service('lighting/garage_off', seconds=self.interval(minutes=1), cb='garage_off')
 
-        self.garage_door_announce(state=new)
+        await self.garage_announcement(state=new)
 
-# -----------------------------------------------------------------------------------
-
-    def garage_door_announce_opening(self, entity, attribute, old, new, kwargs) -> None:
-        """announce garage door opening"""
-
-        self.garage_door(const.GARAGE_ENTITY_ID, 'state', 'closed', 'opening', {})
+        await self.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
-    def garage_door_announce_closing(self, entity, attribute, old, new, kwargs) -> None:
-        """announce garage door closing"""
-
-        self.garage_door(const.GARAGE_ENTITY_ID, 'state', 'open', 'closing', {})
-
-# -----------------------------------------------------------------------------------
-
-    def garage_door_announce_open(self, entity, attribute, old, new, kwargs) -> None:
-        """announce garage door is now open"""
-
-        self.garage_door(const.GARAGE_ENTITY_ID, 'state', 'opening', 'open', {})
-
-# -----------------------------------------------------------------------------------
-
-    def garage_door_announce_closed(self, entity, attribute, old, new, kwargs) -> None:
-        """announce garage door is now closed"""
-
-        self.garage_door(const.GARAGE_ENTITY_ID, 'state', 'closing', 'closed', {})
-
-# -----------------------------------------------------------------------------------
-
-    def garage_door_announce(self, **kwargs) -> None:
+    async def garage_announcement(self, **kwargs) -> None:
         """garage door announcement"""
+
+        await self.log_function_name(start=True)
 
         state = kwargs['state']
 
@@ -179,61 +188,162 @@ class Garage(Hass):
             message = 'The garage door is closed'
         elif state == 'open':
             message = 'The garage door is open'
-            time.sleep(4.0) # just delay open announcement because this will be triggered immediately after opening
+            await self.sleep(6.0) # just delay open announcement because this will be triggered immediately after opening
         elif state == 'unavailable':
             return
         else:
-            state = self.get_state(const.GARAGE_ENTITY_ID)
+            state = await self.get_state(const.GARAGE_ENTITY_ID)
             message = f'The garage door is {state}'
 
         self.call_service('announcer/broadcast', message=message, timestamp='garage')
 
+        await self.log_function_name(start=False)
+
 # -----------------------------------------------------------------------------------
 
-    def is_garage_door_closed(self) -> bool:
+    async def is_garage_closed(self) -> bool:
         """is garage door closed"""
 
-        state = self.get_state(const.GARAGE_ENTITY_ID)
+        state = await self.get_state(const.GARAGE_ENTITY_ID)
 
         return state == 'closed'
 
 # -----------------------------------------------------------------------------------
 
-    def is_garage_door_open(self) -> bool:
+    async def is_garage_open(self) -> bool:
         """is garage door open"""
 
-        state = self.get_state(const.GARAGE_ENTITY_ID)
+        state = await self.get_state(const.GARAGE_ENTITY_ID)
 
         return state == 'open'
 
 # -----------------------------------------------------------------------------------
 
-    def check_garage_door(self, kwargs) -> None:
+    async def check_garage(self, kwargs) -> None:
         """check garage door state"""
 
-        if self.is_garage_door_open():
-            (state, ts) = self.garage_door_debug()
+        await self.log_function_name(start=True)
+
+        if await self.is_garage_open():
+            (state, ts) = await self.garage_state()
             diff = (datetime.now() - ts).seconds
 
-            if diff >= self.lib.interval(self, minutes=60):
-                self.garage_door_announce(state=state)
+            if diff >= self.interval(minutes=60):
+                await self.garage_announcement(state=state)
+
+        await self.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
-    def close_garage_door(self, kwargs) -> None:
+    async def close_garage(self, kwargs) -> None:
         """close garage door automatically"""
 
-        if self.is_garage_door_open() and self.now_is_between('21:00:00', '06:30:00'):
-            self.garage_door_close('','','','',{})
+        await self.log_function_name(start=True)
+
+        await self.garage_close('','','','',{})
+
+        await self.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
-    def garage_door_debug(self, entity='', attribute='', old='', new='', kwarg=None) -> tuple:
+    async def garage_state(self, entity='', attribute='', old='', new='', kwarg=None) -> tuple:
+        """get garage door state for debugging"""
 
-        state = self.get_state(const.GARAGE_ENTITY_ID)
-        ts = self.call_service('timestamp/get', name='garage')
+        await self.log_function_name(start=True)
+
+        state = await self.get_state(const.GARAGE_ENTITY_ID)
+        ts = await self.call_service('timestamp/get', name='garage')
         self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwarg} state={state} ts={ts}', level='INFO')
 
+        await self.log_function_name(start=False)
+
         return state,ts
+
+# -----------------------------------------------------------------------------------
+
+    async def garage_debug(self, entity='', attribute='', old='', new='', kwarg=None):
+
+        (state, ts) = await self.garage_state()
+        self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwarg} state={state} ts={ts}', level='INFO')
+
+# -----------------------------------------------------------------------------------
+
+    async def is_below_horizon(self) -> bool:
+        """is sun below the horizon (defensive: resolve awaitables, coerce to float)"""
+
+        elev = await self.get_state('sun.sun', attribute='elevation')
+        self.log(f'async is_below_horizon raw elev type={type(elev)} value={elev!r}', level='DEBUG')
+
+        if elev in (None, 'unknown'):
+            return False
+
+        try:
+            elev_val = float(elev)
+        except (TypeError, ValueError):
+            return False
+
+        below = elev_val <= 0
+
+        if await self.get_verbose_debug():
+            t = 'is' if below else 'is not'
+            self.log(f'{t} below horizon (elev={elev_val})', level='DEBUG')
+
+        return below
+
+# -----------------------------------------------------------------------------------
+
+    async def get_verbose_debug(self):
+        """get verbose debug setting"""
+
+        return await self.get_state('input_boolean.debug')  == 'on'and await self.get_state('input_boolean.verbose') == 'on'
+
+# -----------------------------------------------------------------------------------
+
+    def interval(self, minutes: int) -> int:
+        """return minutes as integer number """
+
+        return int(timedelta(minutes=minutes).total_seconds())
+
+# -----------------------------------------------------------------------------------
+
+
+    async def log_function_name(self, **kwargs) -> None:
+        """log function name as log message"""
+
+        start = kwargs.get('start', True)
+        separator = kwargs.get('separator', True)
+        notification = kwargs.get('notification', False)
+        stacktrace = kwargs.get('stacktrace', False)
+        force = kwargs.get('force', False)
+
+        if force:
+            trace = separator = notification = True
+        else:
+            trace = await self.get_state('input_boolean.trace') == 'on'
+
+        frame = inspect.currentframe()
+
+        if frame is not None and frame.f_back is not None:
+            name = frame.f_back.f_code.co_name
+        else:
+            name = "<unknown>"
+
+        prefix = '>>' if start else '<<'
+
+        if notification:
+            _ = self.call_service('announcer/notification', message=f'{prefix} {name}', type='desktop') # TODO: why needed to shutup pylint
+
+        if stacktrace:
+            frame = inspect.currentframe()
+            print(frame)
+            if frame is not None and frame.f_back is not None:
+                print(frame.f_back)
+
+        if trace:
+            if separator:
+                dashes = '-' * (80 - len(name))
+                self.log(f'{prefix} {name} {dashes}',level='INFO')
+            else:
+                self.log(f'\t{prefix} {name}', level='DEBUG')
 
 # -----------------------------------------------------------------------------------
