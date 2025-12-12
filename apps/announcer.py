@@ -206,7 +206,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
                               media_content_type='music',
                               media_content_id='http://homeassistant.local:8123/local/bing.mp3',
                               announce=True,
-                              extra={'volume': volume})
+                              extra={'volume': volume * 2})
 
             self.lib.delay(1.0) # give it time to play
 

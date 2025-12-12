@@ -100,8 +100,8 @@ class Alarms(Hass):
 
         self.lib.log_function_name(start=True)
 
-        state, alarm_time, timestamp = self.get_early_alarm_time()
-        self.set_early_alarm_time(state, alarm_time, timestamp)
+        state, alarm_time, timestamp, ids = self.get_early_alarm_time()
+        self.set_early_alarm_time(state, alarm_time, timestamp, ids)
 
         self.lib.log_function_name(start=False)
 
@@ -111,8 +111,8 @@ class Alarms(Hass):
 
         self.lib.log_function_name(start=True)
 
-        state, alarm_time, timestamp = self.get_normal_alarm_time()
-        self.set_normal_alarm_time(state, alarm_time, timestamp)
+        state, alarm_time, timestamp, ids = self.get_normal_alarm_time()
+        self.set_normal_alarm_time(state, alarm_time, timestamp, ids)
 
         self.lib.log_function_name(start=False)
 
@@ -228,7 +228,7 @@ class Alarms(Hass):
 
         state = 'on' if self.get_state('input_boolean.override') == 'on' else 'off'
 
-        return state, alarm_time, timestamp
+        return state, alarm_time, timestamp, const.SUNSET_ALARM
 
 # -----------------------------------------------------------------------------------
 
@@ -249,10 +249,12 @@ class Alarms(Hass):
             parts = const.LATE_ALARM_TIME.split(':')
             alarm_time = const.LATE_ALARM_TIME
             desc = 'LATE_ALARM_TIME'
+            ids = const.PROGRESSIVE_ALARM
         else:
             parts = const.NORMAL_ALARM_TIME.split(':')
             alarm_time = const.NORMAL_ALARM_TIME
             desc = 'NORMAL_ALARM_TIME'
+            ids = const.NORMAL_ALARM
 
         try:
             if len(parts) >= 1:
@@ -269,17 +271,13 @@ class Alarms(Hass):
 
         state = 'on'
 
-        print(f'get_normal_alarm_time alarm_time={alarm_time} later={later} dow={dow} timestamp={timestamp}')
-
-        # state = 'on' if self.get_state('input_boolean.override') == 'on' else 'on' # 'off'
-
         self.lib.log_function_name(start=False)
 
-        return state, alarm_time, timestamp
+        return state, alarm_time, timestamp, ids
 
 # -----------------------------------------------------------------------------------
 
-    def set_early_alarm_time(self, state, alarm_time, timestamp):
+    def set_early_alarm_time(self, state, alarm_time, timestamp, ids):
 
         self.lib.log_function_name(start=True)
 
@@ -292,14 +290,17 @@ class Alarms(Hass):
         minute = parts[1]
         seconds = parts[2] if len(parts) >=3 else 0
 
+        if ids is None:
+            ids = const.SUNSET_ALARM
+
         if self.lib.get_verbose_debug():
-            self.log(f'set_early_alarm_time state={state} alarm_time={alarm_time} timestamp={timestamp} hour={hour} minute={minute} seconds={seconds}', level="WARNING")
+            self.log(f'set_early_alarm_time state={state} alarm_time={alarm_time} timestamp={timestamp} hour={hour} minute={minute} seconds={seconds} ids={ids}', level="WARNING")
 
         self.set_state(time_entity_id, state=f"{alarm_time}", attributes={"timestamp": timestamp, "hour": hour, "minute": minute, "seconds": seconds})
         self.set_state(bool_entity_id, state=state)
 
         if state == 'on':
-            self.set_early_alarm_callback(bool_entity_id, 'state', 'off', 'on', {'action':'set'})
+            self.set_early_alarm_callback(bool_entity_id, 'state', 'off', 'on', {'action': 'set', 'ids': ids})
         else:
             self.set_early_alarm_callback(bool_entity_id, 'state', 'on', 'off', {'action':'cancel'})
 
@@ -307,7 +308,7 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def set_normal_alarm_time(self, state, alarm_time, timestamp):
+    def set_normal_alarm_time(self, state, alarm_time, timestamp, ids):
 
         self.lib.log_function_name(start=True)
 
@@ -320,14 +321,17 @@ class Alarms(Hass):
         minute = parts[1]
         seconds = parts[2] if len(parts) >=3 else 0
 
+        if ids is None:
+            ids = const.NORMAL_ALARM
+
         if self.lib.get_verbose_debug():
-            self.log(f'set_normal_alarm_time state={state} alarm_time={alarm_time} timestamp={timestamp} hour={hour} minute={minute} seconds={seconds}', level="WARNING")
+            self.log(f'set_normal_alarm_time state={state} alarm_time={alarm_time} timestamp={timestamp} hour={hour} minute={minute} seconds={seconds} ids={ids}', level="WARNING")
 
         self.set_state(time_entity_id, state=f"{alarm_time}", attributes={"timestamp": timestamp, "hour": hour, "minute": minute, "seconds": seconds})
         self.set_state(bool_entity_id, state=state)
 
         if state == 'on':
-            self.set_normal_alarm_callback(bool_entity_id, 'state', 'off', 'on', {'action':'set'})
+            self.set_normal_alarm_callback(bool_entity_id, 'state', 'off', 'on', {'action': 'set', 'ids': ids})
         else:
             self.set_normal_alarm_callback(bool_entity_id, 'state', 'on', 'off', {'action':'cancel'})
 
@@ -335,7 +339,7 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def show_alarm_time(self, alarm_type):
+    def show_alarm_time(self, alarm_type, override=None):
 
         self.lib.log_function_name(start=True)
 
@@ -344,15 +348,21 @@ class Alarms(Hass):
         time_entity_id = f'input_datetime.{alarm_type}_alarm'
         bool_entity_id = f'input_boolean.{alarm_type}_alarm'
 
-        tm = self._read_time_attrs(time_entity_id)
-        if tm is None:
-            self.log(f'Unable to read time attributes for {time_entity_id}', level='WARNING')
-            alarm_time = None
+        if override is None:
+            tm = self._read_time_attrs(time_entity_id)
+            if tm is None:
+                self.log(f'Unable to read time attributes for {time_entity_id}', level='WARNING')
+                alarm_time = None
+            else:
+                hour, minute = tm
+                d = datetime.now() + timedelta(days=1)
+                t = datetime(d.year, d.month, d.day, hour, minute, 0, 0)
+                alarm_time = f"{t.hour:02d}:{t.minute:02d}"
         else:
-            hour, minute = tm
-            d = datetime.now() + timedelta(days=1)
-            t = datetime(d.year, d.month, d.day, hour, minute, 0, 0)
-            alarm_time = f"{t.hour:02d}:{t.minute:02d}"
+            hour = override.hour
+            minute = override.minute
+            second = override.second
+            alarm_time = f"{hour:02d}:{minute:02d}:{second:02d}"
 
         state = self.get_state(bool_entity_id)
 
@@ -393,8 +403,11 @@ class Alarms(Hass):
 
         self.lib.log_function_name(start=True)
 
+        action = kwargs['action']
+        ids = kwargs.get('ids', None)
+
         self._cancel_timer(self.early_alarm_callback, 'early alarm')
-        self.early_alarm_callback = self.set_alarm(alarm_type='early', action=kwargs['action'])
+        self.early_alarm_callback = self.set_alarm(alarm_type='early', action=action, ids=ids)
 
         self.lib.log_function_name(start=False)
 
@@ -404,8 +417,11 @@ class Alarms(Hass):
 
         self.lib.log_function_name(start=True)
 
+        action = kwargs['action']
+        ids = kwargs.get('ids', None)
+
         self._cancel_timer(self.normal_alarm_callback, 'normal alarm')
-        self.normal_alarm_callback = self.set_alarm(alarm_type='normal', action=kwargs['action'])
+        self.normal_alarm_callback = self.set_alarm(alarm_type='normal', action=action, ids=ids)
 
         self.lib.log_function_name(start=False)
 
@@ -470,7 +486,11 @@ class Alarms(Hass):
         alarm = None
         action = kwargs['action']
         alarm_type = kwargs['alarm_type']
+        ids = kwargs.get('ids', None)
         _alarm_type = alarm_type
+
+        if ids is None:
+            ids = kwargs['ids'] = const.NORMAL_ALARM
 
         if self.lib.get_verbose_debug():
             self.log(f"\t{alarm_type} alarm enabled", level='DEBUG')
@@ -483,42 +503,43 @@ class Alarms(Hass):
 
         if action == 'set':
             # state = self.get_state(time_entity_id, attribute="attributes")
-            tm = self._read_time_attrs(time_entity_id)
-            if tm is None:
+            hm = self._read_time_attrs(time_entity_id)
+            if hm is None:
                 # cannot determine time; abort setting alarm
                 self.log(f'Aborting set_alarm: cannot read time from {time_entity_id}', level='ERROR')
                 self.lib.log_function_name(start=False)
                 return None
 
-            hour, minute = tm
+            hour, minute = hm
 
             if debug:
-                d = datetime.now() + timedelta(minutes=1)
+                d = (datetime.now() + timedelta(minutes=1)).replace(second=0, microsecond=0)
                 hour = d.hour
                 minute = d.minute
-                timestamp = hour * 3600 + minute * 60
-                alarm_time = f"{hour:02d}:{minute:02d}:00"
+                second = d.second
+                timestamp = hour * 3600 + minute * 60 + second
+                alarm_time = f"{hour:02d}:{minute:02d}:{second:02d}"
 
                 if self.lib.get_verbose_debug():
-                    self.log(f"\t{d}", level='DEBUG')
+                    self.log(f"\t\tdebug_time={d}", level='DEBUG')
 
-                self.set_state(time_entity_id, state=alarm_time, attributes={"hour": hour, "timestamp": timestamp})
+                self.set_state(time_entity_id, state=f"{alarm_time}", attributes={"timestamp": timestamp, "hour": hour, "minute": minute, "seconds": second})
+                alarm = self.run_once(self.alarm, alarm_time, **kwargs)
+                self.show_alarm_time(_alarm_type, d)
+                self.lib.log_function_name(start=False)
+                return
             else:
-                alarm_time = f"{hour:02d}:{minute:02d}:00"
+                alarm_time = f"{hour:02d}:{minute:02d}:{0:02d}"
 
             kwargs.pop('action', None)
+            kwargs['ids'] = ids
             alarm = self.run_daily(self.alarm, alarm_time, **kwargs)
-            self.log(f'\t{_alarm_type} alarm set for {alarm_time} using {time_entity_id}', level="INFO")
+            self.log(f'\t{_alarm_type} alarm set for {alarm_time} using {time_entity_id}. kwargs={kwargs}', level="INFO")
         elif action == 'cancel':
             self.set_state(bool_entity_id, state='off')
             alarm_time = 'unset' # can trace in message below
 
             alarm = {'early': self.early_alarm_callback, 'normal': self.normal_alarm_callback}.get(_alarm_type)
-
-            # if _alarm_type == 'early':
-            #     alarm = self.early_alarm_callback
-            # elif alarm_type == 'normal':
-            #     alarm = self.normal_alarm_callback
             self._cancel_timer(alarm, f'{_alarm_type} alarm')
             alarm = None
         else:
@@ -538,20 +559,16 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def is_test(self, kwargs):
-
-        return kwargs['alarm_type'] == 'test' or self.lib.get_alarm_testing()
-
-# -----------------------------------------------------------------------------------
-
     def _alarm(self, kwargs):
 
         self.lib.log_function_name(start=True)
 
         alarm_type = kwargs['alarm_type']
+        ids = kwargs['ids']
         entity_id = const.STUDY_SPEAKER if self.is_test(kwargs) else const.BEDROOM_SPEAKER
 
-        media_content_id = self.select_alarm(alarm_type=alarm_type)
+        # media_content_id = self.select_alarm(alarm_type=alarm_type)
+        media_content_id = ids[random.randint(0, len(ids) - 1)]  # randomise choice.
 
         self.call_service('sonos/play_thing', entity_id=entity_id, media_content_id=media_content_id, volume_level=const.ALARM_VOLUME, delayed=True)
 
@@ -569,10 +586,9 @@ class Alarms(Hass):
         if alarm_type == 'normal':
             ids = const.NORMAL_ALARM
         elif alarm_type == 'test':
-            ids = const.NORMAL_ALARM
+            ids = const.PROGRESSIVE_ALARM
         else:
-            # ids = const.EARLY_ALARM
-            ids = const.NORMAL_ALARM
+            ids = const.SUNSET_ALARM
 
         self.lib.log_function_name(start=False)
 
@@ -753,5 +769,11 @@ class Alarms(Hass):
             timer = None
             if message is not None:
                 self.log(f'\t{message} cancelled', level='DEBUG')
+
+# -----------------------------------------------------------------------------------
+
+    def is_test(self, kwargs):
+
+        return kwargs['alarm_type'] == 'test' or self.lib.get_alarm_testing()
 
 # -----------------------------------------------------------------------------------

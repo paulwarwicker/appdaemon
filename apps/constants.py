@@ -150,11 +150,25 @@ EARLY_ALARM_TIME: Final[str] = '07:00:00'
 NORMAL_ALARM_TIME: Final[str] = '07:45:00'
 LATE_ALARM_TIME: Final[str] = '10:00:00'
 
-NORMAL_ALARM: Final[list[str]]  = [
+PROGRESSIVE_ALARM: Final[list[str]]  = [
     PROGRESSIVE1_STREAM := 'aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
     PROGRESSIVE2_STREAM := 'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
     PROGRESSIVE3_STREAM := 'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
 ]
+
+SUNSET_ALARM: Final[list[str]]  = [
+    SUNSET1_STREAM := 'aac://http://prem2.di.fm:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+    SUNSET2_STREAM := 'aac://http://prem1.di.fm:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+    SUNSET3_STREAM := 'aac://http://prem4.di.fm:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+]
+
+ALTNEWWAVE_ALARM: Final[list[str]]  = [
+    ALTNEWWAVE1_STREAM := 'aac://http://prem2.di.fm:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    ALTNEWWAVE2_STREAM := 'aac://http://prem1.di.fm:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    ALTNEWWAVE3_STREAM := 'aac://http://prem4.di.fm:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+]
+
+NORMAL_ALARM = PROGRESSIVE_ALARM + SUNSET_ALARM + ALTNEWWAVE_ALARM
 
 EARLY_ALARM: Final[list[str]] = [
     # OCEANS_STREAM := 'aac://http://prem2.zenradio.com:80/zroceansounds_aac?5fba91be81f6da5b573f89c1',
@@ -178,7 +192,7 @@ EARLY_ALARM: Final[list[str]] = [
 BACKUP_STREAM: Final[str] = SUNSETS_STREAM
 PROGRESSIVE_STREAM: Final[str] = PROGRESSIVE1_STREAM
 
-ALTNEWWAVE_STREAM: Final[str] = 'aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1'
+ALTNEWWAVE_STREAM: Final[str] = ALTNEWWAVE1_STREAM
 CHRISTMAS_STREAM: Final[str] = 'aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1'
 HALLWAY_STREAMS: Final[list[str]] = [
     SUMMER_VIBES_ALBUM := 'spotify:album:37ZeJt50FWCaLkw3HNJB2c',
@@ -187,12 +201,6 @@ HALLWAY_STREAMS: Final[list[str]] = [
     BOSSANOVA_STREAM := 'aac://http://prem2.radiotunes.com:80/smoothbossanova?5fba91be81f6da5b573f89c1',
 ]
 
-# ALTNEWWAVE1_STREAM := 'aac://http://prem2.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-# ALTNEWWAVE2_STREAM := 'aac://http://prem4.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-# ALTNEWWAVE3_STREAM := 'aac://http://prem1.radiotunes.com:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-# SUNSETS1_STREAM := 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-# SUNSETS2_STREAM := 'aac://http://prem1.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-# SUNSETS3_STREAM := 'aac://http://prem4.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1'
 # 'x-sonos-spotify:spotify%3atrack%3a1r4QKeqpv1ov8FkrgKDxQ7?sid=9&flags=8224&sn=1', # a gentle thunderstorm
 # 'x-sonos-spotify:spotify%3atrack%3a2T5Lipk1QTtvt76Xjcwrxc?sid=9&flags=8224&sn=1', # heavy thunderstorm sounds
 # 'x-sonos-spotify:spotify%3atrack%3a1E0jvxVMYcnZbjvrs03Yay?sid=9&flags=8224&sn=1', # thunderstorm sounds with rain and loud claps of thunder for all isomniacs

@@ -1400,10 +1400,9 @@ class Lighting(Hass):
 
         return self.now_is_between('sunset', f'{const.BEDROOM_WINDOW_ON_HOUR}:00:00')
 
-
 # -----------------------------------------------------------------------------------
 
-    def get_brightness(self) -> bool:
+    def get_brightness(self) -> int:
         """get brightness"""
 
         if self.lib.is_summer():
@@ -1412,3 +1411,5 @@ class Lighting(Hass):
             brightness = (const.FULL_ON_THRESHOLD - 1) if self.now_is_between('sunrise', 'sunset') else const.HALF_ON
 
         return brightness
+
+# -----------------------------------------------------------------------------------
