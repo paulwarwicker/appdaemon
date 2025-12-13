@@ -153,6 +153,14 @@ front_door:
     - announcer
     - timestamp
 
+remote:
+  module: remote
+  class: Remote
+  log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+
 # fan:
 #   module: fan
 #   class: Fan
