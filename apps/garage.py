@@ -172,16 +172,10 @@ class Garage(Hass):
 
         below = await self.is_below_horizon()
 
-        if new == 'opening':
-            if below:
-                self.call_service('lighting/garage_on', seconds=self.interval(minutes=30), cb='garage_off')
-        elif new == 'open':
-            pass
-        elif new == 'closing':
-            pass
-        elif new == 'closed':
-            if below:
-                self.call_service('lighting/garage_off', seconds=self.interval(minutes=1), cb='garage_off')
+        if new == 'opening' and below:
+            self.call_service('lighting/garage_on', seconds=self.interval(minutes=30), cb='garage_off')
+        elif new == 'closed' and below:
+            self.call_service('lighting/garage_off', seconds=self.interval(minutes=1), cb='garage_off')
 
         await self.garage_announcement(state=new)
 
@@ -207,21 +201,10 @@ class Garage(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def is_garage_closed(self) -> bool:
-        """is garage door closed"""
-
-        state = await self.get_state(const.GARAGE_ENTITY_ID)
-
-        return state == 'closed'
-
-# -----------------------------------------------------------------------------------
-
     async def is_garage_open(self) -> bool:
         """is garage door open"""
 
-        state = await self.get_state(const.GARAGE_ENTITY_ID)
-
-        return state == 'open'
+        return (await self.get_state(const.GARAGE_ENTITY_ID)) == 'open'
 
 # -----------------------------------------------------------------------------------
 
@@ -232,7 +215,7 @@ class Garage(Hass):
 
         if await self.is_garage_open():
             (state, _) = await self.garage_state()
-            ts = self.call_service('timestamp/get', name='garage_announcement')
+            ts = await self.call_service('timestamp/get', name='garage_announcement')
             if ts is not None:
                 diff = (datetime.now() - ts).seconds
                 if diff >= self.interval(minutes=60):
