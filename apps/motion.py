@@ -135,7 +135,7 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.downstairs_motion('', '', '', '', {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
+        self.downstairs_motion(None, None, None, None, {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
 
 # -----------------------------------------------------------------------------------
 
@@ -145,7 +145,7 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.upstairs_motion('', '', '', '', {'seconds': 5, 'key': 'upstairs', 'cb': 'bannister_off'})
+        self.upstairs_motion(None, None, None, None, {'seconds': 5, 'key': 'upstairs', 'cb': 'bannister_off'})
 
 # -----------------------------------------------------------------------------------
 
@@ -155,9 +155,9 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.downstairs_motion('', '', '', '', {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
+        self.downstairs_motion(None, None, None, None, {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
         self.lib.delay(self, 15)
-        self.upstairs_motion('', '', '', '', {'seconds': 10, 'key': 'upstairs', 'cb': 'bannister_off'})
+        self.upstairs_motion(None, None, None, None, {'seconds': 10, 'key': 'upstairs', 'cb': 'bannister_off'})
 
 # -----------------------------------------------------------------------------------
 
@@ -167,7 +167,7 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.kitchen_motion('', '', '', '', {'seconds': 5})
+        self.kitchen_motion(None, None, None, None, {'seconds': 5})
 
 # -----------------------------------------------------------------------------------
 
@@ -177,7 +177,7 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.utility_motion('', '', '', '', {'seconds': 5, 'key': 'utility', 'cb': 'utility_off'})
+        self.utility_motion(None, None, None, None, {'seconds': 5, 'key': 'utility', 'cb': 'utility_off'})
 
 # -----------------------------------------------------------------------------------
 

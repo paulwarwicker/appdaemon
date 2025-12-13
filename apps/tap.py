@@ -187,7 +187,7 @@ class Tap(Hass):
     def water_garden_for_n_minutes(self, kwargs) -> None:
         """water garden for <minutes> minutes"""
 
-        self.water_garden_for('', '', '', '', kwargs)
+        self.water_garden_for(None, None, None, None, kwargs)
 
 # -----------------------------------------------------------------------------------
 
