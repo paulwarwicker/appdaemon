@@ -199,6 +199,9 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         # entity_ids = [const.STUDY_SPEAKER, const.HALLWAY_SPEAKER] if self.lib.get_testing() else [const.KITCHEN_SPEAKER]
         # entity_ids = const.BROADCAST_ENTITY_ID if entity_id is None else [entity_id]
 
+        if entity_id is None:
+            entity_id = const.KITCHEN_SPEAKER
+
         if self.announceable(announce) or force:
 
             self.call_service('media_player/play_media',
