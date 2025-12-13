@@ -101,32 +101,6 @@ class Garage(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def garage_is_open_service(self, namespace, domain, service, kwargs) -> bool:
-        """is garage open"""
-
-        await self.log_function_name(start=True)
-
-        is_open = await self.is_garage_open()
-
-        await self.log_function_name(start=False)
-
-        return is_open
-
-# -----------------------------------------------------------------------------------
-
-    async def garage_is_open_service(self, namespace, domain, service, kwargs) -> bool:
-        """is garage open"""
-
-        await self.log_function_name(start=True)
-
-        is_open = await self.is_garage_open()
-
-        await self.log_function_name(start=False)
-
-        return is_open
-
-# -----------------------------------------------------------------------------------
-
     async def garage_open_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('garage/open')
