@@ -56,7 +56,6 @@ class Remote(Hass):
 
         self.lib.log_function_name(start=True)
 
-        # self.show_service(namespace, domain, service, data)
         self.power_off_media(None, None, None, None, {})
 
         self.lib.log_function_name(start=False)
@@ -65,7 +64,6 @@ class Remote(Hass):
 
     def test_power_off_media_event(self, event, data, kwargs) -> None:
 
-        # self.call_service('remote/power_off_living_room')
         self.power_off_living_room(None, None, None, None, {})
 
 # -----------------------------------------------------------------------------------
