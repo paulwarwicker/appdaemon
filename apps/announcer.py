@@ -242,7 +242,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         event = kwargs.get('event', None)
 
-        if event in ('preannounce','bins1') :
+        if event in ('preannounce','bins1'):
             self.bins_announce('preannounce', self.lib.get_testing())
         elif event in ('announce', 'bins2'):
             self.bins_announce('announce', self.lib.get_testing())
