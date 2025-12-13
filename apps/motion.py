@@ -101,9 +101,8 @@ class Motion(Hass):
     def garage_motion_service(self, namespace:str, domain:str, service:str, kwargs) -> None:
         """garage motion detected"""
 
-        if self.get_state('input_boolean.ignore_sensors') == 'on':
-            self.log('Ignoring garage motion due to ignore_sensors', level='WARNING')
-            return
+        # if self.check_ignore_sensors():
+        #     return
 
         ts = self.call_service('timestamp/get', name='garage')
         diff = (datetime.now() - ts).seconds
@@ -220,13 +219,11 @@ class Motion(Hass):
     def upstairs_motion(self, entity, attribute, old, new, kwargs) -> None:
         """upstairs motion"""
 
+        if self.check_ignore_sensors():
+            return
+
         self.lib.log_function_name(start=True)
         # self.lib.log_function_name(force=True)
-
-        if self.get_state('input_boolean.ignore_sensors') == 'on':
-            self.log('Ignoring upstairs motion due to ignore_sensors', level='WARNING')
-            self.lib.log_function_name(start=False)
-            return
 
         if self.upstairs_motion_active:
             self.log('upstairs_motion_active is active', level='WARNING')
@@ -253,15 +250,11 @@ class Motion(Hass):
 
     def downstairs_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        force = {}
-        # force = {'force': True}
-
-        self.lib.log_function_name(**force)
-
-        if self.get_state('input_boolean.ignore_sensors') == 'on':
-            self.log('Ignoring upstairs motion due to ignore_sensors', level='WARNING')
-            self.lib.log_function_name(start=False)
+        if self.check_ignore_sensors():
             return
+
+        force = {'force': True} if True else {} # pylint: disable=using-constant-test
+        self.lib.log_function_name(**force)
 
         self.downstairs_motion_flag = True
         self.call_service('timestamp/set', name='downstairs')
@@ -276,6 +269,9 @@ class Motion(Hass):
 
     def check_downstairs_motion(self) -> None:
 
+        if self.check_ignore_sensors():
+            return
+
         downstairs_ts = self.call_service('timestamp/get', name='downstairs')
         front_door_ts = self.call_service('timestamp/get', name='front_door_motion')
 
@@ -286,6 +282,10 @@ class Motion(Hass):
 # -----------------------------------------------------------------------------------
 
     def check_upstairs_motion(self) -> None:
+
+        if self.check_ignore_sensors():
+            return
+
         upstairs_ts = self.call_service('timestamp/get', name='upstairs')
         front_door_ts = self.call_service('timestamp/get', name='front_door_motion')
 
@@ -296,8 +296,7 @@ class Motion(Hass):
 
     def kitchen_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.get_state('input_boolean.ignore_sensors') == 'on':
-            self.log('Ignoring kitchen motion due to ignore_sensors', level='WARNING')
+        if self.check_ignore_sensors():
             return
 
         self.lib.log_function_name(start=True)
@@ -313,8 +312,7 @@ class Motion(Hass):
 
     def utility_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.get_state('input_boolean.ignore_sensors') == 'on':
-            self.log('Ignoring utility motion due to ignore_sensors', level='WARNING')
+        if self.check_ignore_sensors():
             return
 
         self.lib.log_function_name(start=True)
@@ -334,8 +332,7 @@ class Motion(Hass):
 
     def bathroom_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.get_state('input_boolean.ignore_sensors') == 'on':
-            self.log('Ignoring bathroom motion due to ignore_sensors', level='WARNING')
+        if self.check_ignore_sensors():
             return
 
         self.lib.log_function_name(start=True)
@@ -351,8 +348,7 @@ class Motion(Hass):
 
     def cloakroom_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.get_state('input_boolean.ignore_sensors') == 'on':
-            self.log('Ignoring cloakroom motion due to ignore_sensors', level='WARNING')
+        if self.check_ignore_sensors():
             return
 
         force = {}
@@ -371,8 +367,7 @@ class Motion(Hass):
 
     def bedroom_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.get_state('input_boolean.ignore_sensors') == 'on':
-            self.log('Ignoring bedroom motion due to ignore_sensors', level='WARNING')
+        if self.check_ignore_sensors():
             return
 
         force = {}
@@ -394,8 +389,7 @@ class Motion(Hass):
 
     def garage_motion(self, entity_id, attribute, old, new, kwargs) -> None:
 
-        if self.get_state('input_boolean.ignore_sensors') == 'on':
-            self.log('Ignoring garage motion due to ignore_sensors', level='WARNING')
+        if self.check_ignore_sensors():
             return
 
         self.lib.log_function_name(start=True)
@@ -414,8 +408,7 @@ class Motion(Hass):
 
     def front_door_motion(self, entity_id, attribute, old, new, kwargs) -> None:
 
-        if self.get_state('input_boolean.ignore_sensors') == 'on':
-            self.log('Ignoring front door motion due to ignore_sensors', level='WARNING')
+        if self.check_ignore_sensors():
             return
 
         self.lib.log_function_name(start=True)
@@ -448,5 +441,16 @@ class Motion(Hass):
     def reset_upstairs_motion_active(self, kwargs) -> None:
 
         self.upstairs_motion_active = False
+
+# -----------------------------------------------------------------------------------
+
+    def check_ignore_sensors(self) -> bool:
+
+        ignore = self.get_state('input_boolean.ignore_sensors') == 'on'
+
+        if ignore:
+            self.log('Ignoring motion due to ignore_sensors', level='WARNING')
+
+        return ignore
 
 # -----------------------------------------------------------------------------------

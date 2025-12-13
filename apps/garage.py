@@ -38,6 +38,7 @@ class Garage(Hass):
 
         self.register_service('garage/open', self.garage_open_service)
         self.register_service('garage/close', self.garage_close_service)
+        self.register_service('garage/is_open', self.garage_is_open_service)
 
         garage = const.GARAGE_ENTITY_ID
 
@@ -87,6 +88,45 @@ class Garage(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    async def garage_is_open_service(self, namespace, domain, service, kwargs) -> bool:
+        """is garage open"""
+
+        await self.log_function_name(start=True)
+
+        is_open = await self.is_garage_open()
+
+        await self.log_function_name(start=False)
+
+        return is_open
+
+# -----------------------------------------------------------------------------------
+
+    async def garage_is_open_service(self, namespace, domain, service, kwargs) -> bool:
+        """is garage open"""
+
+        await self.log_function_name(start=True)
+
+        is_open = await self.is_garage_open()
+
+        await self.log_function_name(start=False)
+
+        return is_open
+
+# -----------------------------------------------------------------------------------
+
+    async def garage_is_open_service(self, namespace, domain, service, kwargs) -> bool:
+        """is garage open"""
+
+        await self.log_function_name(start=True)
+
+        is_open = await self.is_garage_open()
+
+        await self.log_function_name(start=False)
+
+        return is_open
+
+# -----------------------------------------------------------------------------------
+
     async def garage_open_event(self, event, data, kwargs:dict) -> None:
 
         self.call_service('garage/open')
@@ -131,6 +171,7 @@ class Garage(Hass):
         await self.log_function_name(start=True)
 
         self.call_service('cover/open_cover', entity_id=const.GARAGE_ENTITY_ID)
+        self.call_service('timestamp/set', name='garage')
         self.call_service('lighting/garage_on')
 
         await self.log_function_name(start=False)
@@ -143,6 +184,7 @@ class Garage(Hass):
         await self.log_function_name(start=True)
 
         self.call_service('cover/close_cover', entity_id=const.GARAGE_ENTITY_ID)
+        self.call_service('timestamp/set', name='garage', value=None)
         self.call_service('lighting/garage_off')
 
         await self.log_function_name(start=False)
@@ -180,22 +222,12 @@ class Garage(Hass):
 
         state = kwargs['state']
 
-        if state == 'opening':
-            message = 'The garage door is opening'
-        elif state == 'closing':
-            message = 'The garage door is closing'
-        elif state == 'closed':
-            message = 'The garage door is closed'
-        elif state == 'open':
-            message = 'The garage door is open'
+        if state == 'open':
             await self.sleep(6.0) # just delay open announcement because this will be triggered immediately after opening
-        elif state == 'unavailable':
-            return
-        else:
-            state = await self.get_state(const.GARAGE_ENTITY_ID)
-            message = f'The garage door is {state}'
 
-        self.call_service('announcer/broadcast', message=message, timestamp='garage')
+        message = f'The garage door is {state}'
+
+        self.call_service('announcer/broadcast', message=message, timestamp='garage_announcement')
 
         await self.log_function_name(start=False)
 
@@ -225,11 +257,12 @@ class Garage(Hass):
         await self.log_function_name(start=True)
 
         if await self.is_garage_open():
-            (state, ts) = await self.garage_state()
-            diff = (datetime.now() - ts).seconds
-
-            if diff >= self.interval(minutes=60):
-                await self.garage_announcement(state=state)
+            (state, _) = await self.garage_state()
+            ts = self.call_service('timestamp/get', name='garage_announcement')
+            if ts is not None:
+                diff = (datetime.now() - ts).seconds
+                if diff >= self.interval(minutes=60):
+                    await self.garage_announcement(state=state)
 
         await self.log_function_name(start=False)
 
@@ -305,7 +338,6 @@ class Garage(Hass):
         return int(timedelta(minutes=minutes).total_seconds())
 
 # -----------------------------------------------------------------------------------
-
 
     async def log_function_name(self, **kwargs) -> None:
         """log function name as log message"""

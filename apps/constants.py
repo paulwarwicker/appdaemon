@@ -247,13 +247,18 @@ DAILY_WATERING_MINUTES: Final[int] = 30
 
 # timestamps initialised in automation
 TIMESTAMPS: Final[list[str]] = [
-        'prev_downstairs', 'downstairs', 'prev_upstairs', 'upstairs', 'karoq_announce', 'karoq_notification', 'vacuum', 'general', 'travel',
-        'tap', 'karoq_home', 'upstairs_motion', 'garage_open', 'garage_close', 'garage_lights_on', 'garage_lights_off',
-        'snooze', 'bedroom', 'prev_bedroom'
+        'downstairs', 'prev_downstairs', 'upstairs', 'prev_upstairs', 'bedroom', 'prev_bedroom',
+        'garage', 'garage_lights', 'garage_announcement', 'snooze', 'tap',  'upstairs_motion',
+        'karoq_announce', 'karoq_notification', 'karoq_home', 'vacuum', 'general', 'travel',
     ]
 
 BEDROOM_BUTTON: Final[str] = 'shellybutton1-C8C9A33CDF09'
 GARAGE_BUTTON: Final[str] = 'shellybutton1-EC64C9C4F038'
 
+BATHROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.bathroom_sensor_illuminance'
 CLOAKROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.cloakroom_sensor_illuminance'
+DOWNSTAIRS_SENSOR_ILLUMINANCE: Final[str] = 'sensor.downstairs_sensor_illuminance'
+
+BATHROOM_LUX_THRESHOLD: Final[int] = 10
 CLOAKROOM_LUX_THRESHOLD: Final[int] = 10
+DOWNSTAIRS_SENSOR_LUX_THRESHOLD: Final[int] = 10

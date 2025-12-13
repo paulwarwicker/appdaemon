@@ -12,6 +12,7 @@
 import traceback
 import time
 from datetime import datetime
+from enum import Enum
 
 # from typing import TYPE_CHECKING, Optional, cast # , Any
 from typing import TYPE_CHECKING, cast
@@ -24,10 +25,24 @@ from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 if TYPE_CHECKING:
     from automationlib import AutomationLib  # type: ignore
 
+class Callback(Enum):
+    """
+    Docstring for Callback
+    """
+    KITCHEN = 'kitchen'
+    UTILITY_ROOM = 'utility_room'
+    CLOAKROOM = 'cloakroom'
+    BATHROOM = 'bathroom'
+
+# GLOBAL_MODE = Callback.UTILITY_ROOM
+
 class Lighting(Hass):
-    """Documentation for Lighting"""
+    """
+    Docstringfor Lighting
+    """
 
     DEFAULT_TIMEOUT = const.LONG_TIMEOUT # can't use constants in class variable initialisation
+    callback = None
 
     timers = {}
     reset_on_off = None
@@ -204,14 +219,12 @@ class Lighting(Hass):
     def kitchen_on_service(self, namespace, domain, service, data) -> None:
         """turn on kitchen lights"""
 
-        self.lib.log_function_name(start=True)
-
         force = data.get('force', False)
 
-        if not force and (self.get_state('input_boolean.kitchen_override') == 'on' or self.any_light_on_full('kitchen')):
-            self.log('\tignoring kitchen on service', level='INFO')
-            self.lib.log_function_name(start=False)
+        if not force and self.check_override('kitchen'):
             return
+
+        self.lib.log_function_name(start=True)
 
         brightness = self.get_brightness()
 
@@ -232,10 +245,11 @@ class Lighting(Hass):
         callback = self.get_callback(cb)
         seconds = data.get('seconds', const.LONG_TIMEOUT)
 
-        if self.get_state('input_boolean.kitchen_override') == 'on' or self.any_light_on_full('kitchen'):
+        if self.check_override('kitchen'):
             self.kitchen_cb = cb
             self.kitchen_callback = callback
             self.kitchen_seconds = seconds
+            self.callback = Callback.KITCHEN
             self.log('\tdeferring kitchen off service', level='INFO')
             self.run_in(self.deferred_kitchen_off, 60*60)
             self.lib.log_function_name(start=False)
@@ -255,8 +269,8 @@ class Lighting(Hass):
 
         self.log('\trunning deferred kitchen off', level='INFO')
 
-        if self.get_state('input_boolean.kitchen_override') == 'on' or self.any_light_on_full('kitchen'):
-            self.log('\tignoring deferred_kitchen_off', level='INFO')
+        if self.check_override('kitchen'):
+            self.log('\t\tignoring deferred_kitchen_off', level='WARNING')
             self.run_in(self.deferred_kitchen_off, 60*60)
             return
 
@@ -271,17 +285,18 @@ class Lighting(Hass):
         self.kitchen_callback = None
         self.kitchen_seconds = None
 
+# -----------------------------------------------------------------------------------
+
     def utility_on_service(self, namespace, domain, service, data) -> None:
         """turn on utility lights"""
 
-        self.lib.log_function_name(start=True)
-
         force = data.get('force', False)
 
-        if not force and (self.get_state('input_boolean.utility_override') == 'on' or self.any_light_on_full('utility_room')):
-            self.log('\tignoring utility on service', level='INFO')
-            self.lib.log_function_name(start=False)
+        if not force and self.check_override('utility_room'):
+            self.log('\t\tignoring utility on service', level='WARNING')
             return
+
+        self.lib.log_function_name(start=True)
 
         brightness = self.get_brightness()
 
@@ -294,12 +309,11 @@ class Lighting(Hass):
     def utility_off_service(self, namespace, domain, service, data) -> None:
         """turn off utility lights"""
 
-        self.lib.log_function_name(start=True)
-
-        if self.get_state('input_boolean.utility_override') == 'on' or self.any_light_on_full('utility_room'):
-            self.log('\tdeferring utility off service', level='INFO')
-            self.lib.log_function_name(start=False)
+        if self.check_override('utility_room'):
+            self.log('\t\tdeferring utility off service', level='WARNING')
             return
+
+        self.lib.log_function_name(start=True)
 
         cb = data.get('cb', 'noop')
         callback = self.get_callback(cb)
@@ -316,14 +330,13 @@ class Lighting(Hass):
     def bathroom_on_service(self, namespace, domain, service, data) -> None:
         """turn on bathroom lights"""
 
-        self.lib.log_function_name(start=True)
-
         force = data.get('force', False)
 
-        if not force and (self.get_state('input_boolean.bathroom_override') == 'on' or self.any_light_on_full('bathroom')):
-            self.log('\tignoring bathroom on service', level='INFO')
-            self.lib.log_function_name(start=False)
+        if not force and self.check_override('bathroom'):
+            self.log('\t\tignoring bathroom on service', level='WARNING')
             return
+
+        self.lib.log_function_name(start=True)
 
         cb = data.get('cb', 'noop')
         ## TODO: why no callback?
@@ -357,12 +370,11 @@ class Lighting(Hass):
     def bathroom_off_service(self, namespace, domain, service, data) -> None:
         """turn off bathroom lights"""
 
-        self.lib.log_function_name(start=True)
-
-        if self.get_state('input_boolean.bathroom_override') == 'on' or self.any_light_on_full('bathroom'):
-            self.log('\tdeferring bathroom off service', level='INFO')
-            self.lib.log_function_name(start=False)
+        if self.check_override('bathroom'):
+            self.log('\t\tdeferring bathroom off service', level='WARNING')
             return
+
+        self.lib.log_function_name(start=True)
 
         cb = data.get('cb', 'noop')
         callback = self.get_callback(cb)
@@ -379,14 +391,13 @@ class Lighting(Hass):
     def cloakroom_on_service(self, namespace, domain, service, data) -> None:
         """turn on cloakroom lights"""
 
-        self.lib.log_function_name(start=True)
-
         force = data.get('force', False)
 
-        if not force and (self.get_state('input_boolean.cloakroom_override') == 'on' or self.any_light_on_full('cloakroom')):
-            self.log('\tignoring cloakroom on service', level='INFO')
-            self.lib.log_function_name(start=False)
+        if not force and self.check_override('cloakroom'):
+            self.log('\t\tignoring cloakroom on service', level='WARNING')
             return
+
+        self.lib.log_function_name(start=True)
 
         cb = data.get('cb', 'noop')
 
@@ -399,7 +410,7 @@ class Lighting(Hass):
         except (TypeError, ValueError):
             lux = None
 
-        if self.now_is_between(sunset, f'{sunrise}{plus1}') or (lux is not None and lux < const.CLOAKROOM_LUX_THRESHOLD):
+        if lux is not None and lux < const.CLOAKROOM_LUX_THRESHOLD:
             # brightness = const.HALF_ON if self.now_is_between(sunset, f'{sunset}{plus1}') or self.now_is_between(sunrise, f'{sunrise}{plus1}') else const.QUARTER_ON
             brightness = const.HALF_ON # const.QUARTER_ON if self.lib.is_summer() else const.HALF_ON
 
@@ -417,12 +428,11 @@ class Lighting(Hass):
     def cloakroom_off_service(self, namespace, domain, service, data) -> None:
         """turn off cloakroom lights"""
 
-        self.lib.log_function_name(start=True)
-
-        if self.get_state('input_boolean.cloakroom_override') == 'on' or self.any_light_on_full('cloakroom'):
-            self.log('\tdeferring cloakroom off service', level='INFO')
-            self.lib.log_function_name(start=False)
+        if self.check_override('cloakroom'):
+            self.log('\t\tdeferring cloakroom off service', level='WARNING')
             return
+
+        self.lib.log_function_name(start=True)
 
         cb = data.get('cb', 'noop')
         callback = self.get_callback(cb)
@@ -546,10 +556,16 @@ class Lighting(Hass):
 
         self.show_service(namespace, domain, service, data, cb, callback, seconds)
 
-        self.set_callback(cb, callback, seconds)
+        try:
+            lux = int(self.get_state(const.DOWNSTAIRS_SENSOR_ILLUMINANCE))
+        except (TypeError, ValueError):
+            lux = None
 
-        self.call_service('light/turn_on', entity_id=const.HALLWAY1, brightness=const.QUARTER_ON)
-        self.call_service('light/turn_on', entity_id=const.BANNISTER, brightness=self.lib.percent_to_brightness(12))
+        if lux is not None and lux < const.DOWNSTAIRS_SENSOR_LUX_THRESHOLD:
+            self.set_callback(cb, callback, seconds)
+
+            self.call_service('light/turn_on', entity_id=const.HALLWAY1, brightness=const.QUARTER_ON)
+            self.call_service('light/turn_on', entity_id=const.BANNISTER, brightness=self.lib.percent_to_brightness(12))
 
         self.lib.log_function_name(start=False)
 
@@ -926,9 +942,7 @@ class Lighting(Hass):
     def cloakroom_off(self, kwargs) -> None:
         """turn off cloakroom light"""
 
-        if self.get_state('input_boolean.cloakroom_override') == 'on' or self.any_light_on_full('cloakroom'):
-            self.log('\tignoring cloakroom off service', level='INFO')
-            self.lib.log_function_name(start=False)
+        if self.check_override('cloakroom'):
             return
 
         self.call_service('light/turn_off', entity_id=const.CLOAKROOM, transition=10)
@@ -948,9 +962,7 @@ class Lighting(Hass):
     def bathroom_off(self, kwargs) -> None:
         """turn off bathroom lights"""
 
-        if self.get_state('input_boolean.bathroom_override') == 'on' or self.any_light_on_full('bathroom'):
-            self.log('\tignoring bathroom off service', level='INFO')
-            self.lib.log_function_name(start=False)
+        if self.check_override('bathroom'):
             return
 
         self.call_service('light/turn_off', entity_id=const.BATHROOM_LIGHTS, transition=10)
@@ -1006,14 +1018,12 @@ class Lighting(Hass):
 
     def kitchen_off(self, kwargs) -> None: # callback
 
-        entity_ids = self.light_entities('kitchen', const.N_KITCHEN_ENTITIES)
-
-        if self.get_state('input_boolean.kitchen_override') == 'on' or self.any_light_on_full('kitchen'):
-            self.log('\tdeferring kitchen off', level='INFO')
+        if self.check_override('kitchen'):
             return
 
-        self.call_service('light/turn_off', entity_id=entity_ids, transition=10) # was entity_id=const.KITCHEN_LIGHTS
+        entity_ids = self.light_entities('kitchen', const.N_KITCHEN_ENTITIES)
 
+        self.call_service('light/turn_off', entity_id=entity_ids, transition=20)
 
         cb = 'kitchen_floor_off'
         callback = self.get_callback(cb)
@@ -1031,8 +1041,7 @@ class Lighting(Hass):
 
     def utility_off(self, kwargs) -> None:
 
-        if self.get_state('input_boolean.utility_override') == 'on' or self.any_light_on_full('utility_room'):
-            self.log('\tdeferring utility off', level='INFO')
+        if self.check_override('utility_room'):
             return
 
         self.call_service('light/turn_off', entity_id=const.UTILITY_ROOM_LIGHTS, transition=10)
@@ -1411,5 +1420,19 @@ class Lighting(Hass):
             brightness = (const.FULL_ON_THRESHOLD - 1) if self.now_is_between('sunrise', 'sunset') else const.HALF_ON
 
         return brightness
+
+# -----------------------------------------------------------------------------------
+
+    def check_override(self, name) -> bool:
+        """check override"""
+
+        bool_entity_id = f'input_boolean.{name}_override'
+
+        override = self.get_state(bool_entity_id) == 'on' or self.any_light_on_full(name)
+
+        if override:
+            self.log(f'\tignoring {name} off service', level='INFO')
+
+        return override
 
 # -----------------------------------------------------------------------------------

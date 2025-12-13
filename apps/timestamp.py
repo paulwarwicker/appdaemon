@@ -97,7 +97,7 @@ class Timestamp(Hass):
         """initialise timestamps"""
 
         for name in const.TIMESTAMPS:
-            if name == 'tap' or name == 'karoq_home':
+            if name in ('tap', 'karoq_home', 'garage'):
                 self.ts[name] = None
             elif name == 'upstairs_motion':
                 self.ts[name] = datetime.now() + timedelta(hours=-6)

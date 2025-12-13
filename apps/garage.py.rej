@@ -1,0 +1,9 @@
+diff a/apps/garage.py b/apps/garage.py	(rejected hunks)
+@@ -38,7 +38,6 @@
+ 
+         self.register_service('garage/open', self.garage_open_service)
+         self.register_service('garage/close', self.garage_close_service)
+-        self.register_service('garage/is_open', self.garage_is_open_service)
+ 
+         garage = const.GARAGE_ENTITY_ID
+ 
