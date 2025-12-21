@@ -188,13 +188,16 @@ class Lighting(Hass):
 
         self.lib.log_function_name(start=True)
 
-        cb = data.get('cb', 'noop')
-        ## TODO: why no callback?
+        cb = data.get('cb', 'front_door_off')
+        callback = self.get_callback(cb)
+        seconds = data.get('seconds', const.DING_TIMEOUT)
 
-        # self.show_service(namespace, domain, service, data, cb, callback)
+        self.show_service(namespace, domain, service, data, cb, callback)
 
         self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=self.lib.percent_to_brightness(80), transition=10)
         self.call_service('light/turn_on', entity_id=const.HALLWAY1, brightness=self.lib.percent_to_brightness(25), transition=10)
+
+        self.set_callback(cb, callback, seconds)
 
         self.lib.log_function_name(start=False)
 

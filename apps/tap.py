@@ -158,7 +158,7 @@ class Tap(Hass):
         minutes = kwargs.get('minutes', None)
 
         if minutes:
-            self.water_garden_for('','','','', {'minutes': minutes})
+            self.water_garden_for('', '', '', '', {'minutes': minutes})
 
 # -----------------------------------------------------------------------------------
 
@@ -187,7 +187,7 @@ class Tap(Hass):
     def water_garden_for_n_minutes(self, kwargs) -> None:
         """water garden for <minutes> minutes"""
 
-        self.water_garden_for(None, None, None, None, kwargs)
+        self.water_garden_for('', '', '', '', kwargs)
 
 # -----------------------------------------------------------------------------------
 
@@ -253,7 +253,7 @@ class Tap(Hass):
 
     def status_event(self, event, data, kwargs) -> None:
 
-        self.status('','','','',{})
+        self.status('', '', '', '', {})
 
 # -----------------------------------------------------------------------------------
 

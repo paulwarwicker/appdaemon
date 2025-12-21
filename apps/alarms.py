@@ -16,6 +16,8 @@ from datetime import datetime, timedelta
 
 from typing import TYPE_CHECKING, cast
 
+from dateutil import parser
+
 import constants as const
 import automationlib as _helpers  # type: ignore
 
@@ -34,6 +36,18 @@ class Alarms(Hass):
     default_early_alarm_schedule = 'daily'  # weekday|daily|none
     callbacks = [None, None, None]
     lib: "AutomationLib" = _helpers  # type: ignore
+
+    NUM_WORDS = {
+        0: "twelve", 1: "one", 2: "two", 3: "three", 4: "four",
+        5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine",
+        10: "ten", 11: "eleven", 12: "twelve",
+        13: "thirteen", 14: "fourteen", 15: "fifteen",
+        16: "sixteen", 17: "seventeen", 18: "eighteen",
+        19: "nineteen", 20: "twenty", 21: "twenty one",
+        22: "twenty two", 23: "twenty three", 24: "twenty four",
+        25: "twenty five", 26: "twenty six", 27: "twenty seven",
+        28: "twenty eight", 29: "twenty nine"
+    }
 
 # -----------------------------------------------------------------------------------
 
@@ -71,7 +85,7 @@ class Alarms(Hass):
     def reset_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
         """reset alarms"""
 
-        self.reset_alarms('','','','',{})
+        self.reset_alarms('', '', '', '', {})
 
 # -----------------------------------------------------------------------------------
 
@@ -366,9 +380,11 @@ class Alarms(Hass):
 
         state = self.get_state(bool_entity_id)
 
-        message = f'The {_alarm_type} morning alarm is set to {alarm_time}' if state == 'on' else f'The {_alarm_type} morning alarm is cancelled'
+        alarm_words = self.time_to_words(alarm_time) if alarm_time is not None else 'unknown time'
+
+        message = f'The {_alarm_type} morning alarm is set to {alarm_words}' if state == 'on' else f'The {_alarm_type} morning alarm is cancelled'
         volume = const.STUDY_ANNOUNCE_VOLUME_LOW if self.lib.is_night() else const.STUDY_ANNOUNCE_VOLUME
-        self.call_service("announcer/announce", entity_id=const.STUDY_SPEAKER, message=message, volume=volume, announce=True, force=True)
+        self.call_service("announcer/announce", entity_id=const.STUDY_SPEAKER, message=message, volume=volume, announce=True) #, force=True)
 
         self.lib.log_function_name(start=False)
 
@@ -545,7 +561,8 @@ class Alarms(Hass):
         else:
             self.log(f"\tUnexpected alarm action {action}", level='WARNING')
 
-        self.show_alarm_time(_alarm_type)
+        if _alarm_type == 'normal' or (self.get_state('input_boolean.alarms_disabled') == 'off' and _alarm_type == 'early'):
+            self.show_alarm_time(_alarm_type)
 
         self.lib.log_function_name(start=False)
 
@@ -568,7 +585,10 @@ class Alarms(Hass):
         entity_id = const.STUDY_SPEAKER if self.is_test(kwargs) else const.BEDROOM_SPEAKER
 
         # media_content_id = self.select_alarm(alarm_type=alarm_type)
-        media_content_id = ids[random.randint(0, len(ids) - 1)]  # randomise choice.
+        media_content_id = ids[random.randint(0, len(ids) - 1)]  # randomise choice
+
+        if self.get_state('input_boolean.wake_up_boo') == 'on':
+            media_content_id = const.WAKE_UP_BOO_STREAM
 
         self.call_service('sonos/play_thing', entity_id=entity_id, media_content_id=media_content_id, volume_level=const.ALARM_VOLUME, delayed=True)
 
@@ -775,5 +795,54 @@ class Alarms(Hass):
     def is_test(self, kwargs):
 
         return kwargs['alarm_type'] == 'test' or self.lib.get_alarm_testing()
+
+# -----------------------------------------------------------------------------------
+
+    def time_to_words(self, time_str, style="british"):
+        """
+        Convert a time string into natural language.
+        style = "british" or "american"
+        """
+        t = parser.parse(time_str)
+        hour = t.hour
+        minute = t.minute
+
+        # Special cases
+        if hour == 0 and minute == 0:
+            return "midnight"
+        if hour == 12 and minute == 0:
+            if style == 'british':
+                return "midday"
+            return "noon"
+
+        # 12?hour conversion
+        hour_12 = hour % 12 or 12
+        next_hour_12 = (hour_12 % 12) + 1
+
+        if style.lower() == "american":
+            if minute == 0:
+                return f"{self.NUM_WORDS[hour_12]} o'clock"
+            else:
+                return f"{self.NUM_WORDS[hour_12]} {self.NUM_WORDS[minute]}"
+
+        snapped = (minute // 5) * 5
+
+        # Recompute hour/minute phrasing based on snapped value
+        if snapped == 0:
+            phrase = f"{self.NUM_WORDS[hour_12]} o'clock"
+        elif snapped == 15:
+            phrase = f"quarter past {self.NUM_WORDS[hour_12]}"
+        elif snapped == 30:
+            phrase = f"half past {self.NUM_WORDS[hour_12]}"
+        elif snapped == 45:
+            phrase = f"quarter to {self.NUM_WORDS[next_hour_12]}"
+        elif snapped < 30:
+            phrase = f"{self.NUM_WORDS[snapped]} past {self.NUM_WORDS[hour_12]}"
+        else:
+            phrase = f"{self.NUM_WORDS[60 - snapped]} to {self.NUM_WORDS[next_hour_12]}"
+
+        if snapped == minute:
+            return phrase
+        return f"just gone {phrase}"
 
 # -----------------------------------------------------------------------------------

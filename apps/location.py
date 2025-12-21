@@ -129,7 +129,7 @@ class Location(Hass):
                 message = f'Max has left {name}'
 
         if announce:
-            self.call_service('announcer/announce', entity_id='media_player.study', message=message, force=True)
+            self.call_service('announcer/announce', entity_id='media_player.study', message=message)
 
         if village:
             self.call_service('location/max_home')

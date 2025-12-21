@@ -61,6 +61,8 @@ class Automation(Hass):
         self.call_service('scene/reload')
 
         self.listen_event(self.set_all_state_event, 'set_all_state')
+        self.listen_event(self.reset_trace, 'reset')
+
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.test_event, 'test')
 
@@ -155,7 +157,6 @@ class Automation(Hass):
         """internal method to set console level using the debug flag. set the property log_level and report a change"""
 
         level = "DEBUG" if self.get_state('input_boolean.debug') == 'on' else "INFO"
-        level = "DEBUG"
         prefix = "VERBOSE " if self.get_state('input_boolean.verbose') == 'on' else ""
         log_level = level+prefix
 
@@ -177,7 +178,7 @@ class Automation(Hass):
         self.debug = new == 'on'
         self.log(f'\tautomation debug now {self.debug}', level='INFO')
         self._set_console_log_level()
-        self.lib.set_debug(self.debug)
+        self.lib.set_value('debug', self.debug)
 
 # -----------------------------------------------------------------------------------
 
@@ -187,7 +188,7 @@ class Automation(Hass):
         self.verbose = new == 'on'
         self.log(f'\tautomation verbose now {self.verbose}', level='INFO')
         self._set_console_log_level()
-        self.lib.set_verbose(self.verbose)
+        self.lib.set_value('verbose', self.verbose)
 
 # -----------------------------------------------------------------------------------
 
@@ -197,7 +198,7 @@ class Automation(Hass):
         self.testing = new == 'on'
         self.log(f'\tautomation testing now {self.testing}', level='INFO')
         self._set_console_log_level()
-        self.lib.set_testing(self.testing)
+        self.lib.set_value('testing', self.testing)
 
 # -----------------------------------------------------------------------------------
 
@@ -207,7 +208,7 @@ class Automation(Hass):
         self.trace = new == 'on'
         self.log(f'\tautomation trace now {self.trace}', level='INFO')
         self._set_console_log_level()
-        self.lib.set_trace(self.trace)
+        self.lib.set_value('trace', self.trace)
 
 # -----------------------------------------------------------------------------------
 
@@ -585,7 +586,7 @@ class Automation(Hass):
     def status_event(self, event, data, kwargs) -> None:
         """status event"""
 
-        self.status('','','','',{})
+        self.status('', '', '', '', {})
 
 # -----------------------------------------------------------------------------------
 
@@ -624,5 +625,12 @@ class Automation(Hass):
     #         return await result
 
     #     return result
+
+# -----------------------------------------------------------------------------------
+
+    def reset_trace(self, kwargs) -> None:
+        """reset tracing flag from input_boolean"""
+
+        self.trace = self.verbose = self.debug = self.testing = False
 
 # -----------------------------------------------------------------------------------

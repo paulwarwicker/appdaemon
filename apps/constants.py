@@ -14,8 +14,9 @@ from enum import Enum # pylint: disable=unused-import
 MODULES: Final[list[str]] = [
   "automationlib", "automation", "timers", "timestamp", "announcer", "motion", "lighting",
   "alarms", "location", "sonos", "weather", "garage", "shelly", "vacuum", "tap", "front_door",
+  "heating", "remote",
   ]
-# "starling" "car"
+# "starling" "car" "fan"
 
 # announcer
 START_HOUR: Final[int] = 8 # :30
@@ -111,6 +112,7 @@ DEFAULT_TIMEOUT: Final[int] = FIVEMINUTES
 LONG_TIMEOUT: Final[int] = TENMINUTES
 
 LONGER_TIMEOUT: Final[int] = DEFAULT_TIMEOUT + SHORT_TIMEOUT
+DING_TIMEOUT: Final[int] = LONG_TIMEOUT
 WELCOME_TIMEOUT: Final[int] = LONG_TIMEOUT
 KITCHEN_FLOOR_TIMEOUT: Final[int] = LONG_TIMEOUT
 BANNISTER_TIMEOUT: Final[int] = LONG_TIMEOUT
@@ -171,13 +173,16 @@ ALTNEWWAVE_ALARM: Final[list[str]]  = [
 NORMAL_ALARM = PROGRESSIVE_ALARM + SUNSET_ALARM + ALTNEWWAVE_ALARM
 
 EARLY_ALARM: Final[list[str]] = [
+    WAKE_UP_BOO_STREAM := "aac:https://open.spotify.com/track/3NrF3AkIopPlgQFwgRQkPh?si=3b81069698a34bfc",
+    FEEL_IT_STREAM := 'aac:https://open.spotify.com/track/0cYKu4opws5EhOj5F0AIHx?si=6babb7c7095f4914',
+    SUNSETS_STREAM := 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+
     # OCEANS_STREAM := 'aac://http://prem2.zenradio.com:80/zroceansounds_aac?5fba91be81f6da5b573f89c1',
     # NATIVEAMERICAN_STREAM := 'aac://http://prem2.zenradio.com:80/zrnativeamericansounds_aac?5fba91be81f6da5b573f89c1',
     # SOUNDSOFRAIN_STREAM := 'aac://http://prem2.zenradio.com:80/zrsoundsofrain_aac?5fba91be81f6da5b573f89c1',
     # RELAXATION_STREAM := 'aac://http://prem2.zenradio.com:80/zrrelaxation_aac?5fba91be81f6da5b573f89c1',
     # RELAXINGSPA_STREAM := 'aac://http://prem2.zenradio.com:80/zrrelaxingspanmassage_aac?5fba91be81f6da5b573f89c1',
     # SHAMANICMUSIC_STREAM := 'aac://http://prem2.zenradio.com:80/zrshamanicmusic_aac?5fba91be81f6da5b573f89c1',
-    SUNSETS_STREAM := 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
     # NATURE_STREAM := 'aac://http://prem2.zenradio.com:80/zrnature_aac?5fba91be81f6da5b573f89c1',
     # TIBETANMUSIC_STREAM := 'aac://http://prem2.zenradio.com:80/zrtibetanmusic_aac?5fba91be81f6da5b573f89c1',
     # SLEEPRELAXATION_STREAM := 'aac://http://prem2.zenradio.com:80/zrsleeprelaxation_aac?5fba91be81f6da5b573f89c1',
@@ -187,6 +192,8 @@ EARLY_ALARM: Final[list[str]] = [
     # BIRDSONG_STREAM := 'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1', # birdsong garden morning
     # EARLYMORNINGRAIN_STREAM := 'x-sonos-spotify:spotify%3atrack%3a2cwKtKEhPn6ZnJmlzbmpLQ?sid=9&flags=8224&sn=1', # the early morning rain
     # RAINDROPSDANCING_STREAM := 'x-sonos-spotify:spotify%3atrack%3a4G6Lz9Et6dhLKydPyY4N9a?sid=9&flags=8224&sn=1', # rain drops dancing on a tin roof
+
+    # WAKE_UP_BOO_STREAM := "https://open.spotify.com/track/3NrF3AkIopPlgQFwgRQkPh?si=41f11fcd62e742fd",
 ]
 
 BACKUP_STREAM: Final[str] = SUNSETS_STREAM
@@ -262,3 +269,5 @@ DOWNSTAIRS_SENSOR_ILLUMINANCE: Final[str] = 'sensor.downstairs_sensor_illuminanc
 BATHROOM_LUX_THRESHOLD: Final[int] = 10
 CLOAKROOM_LUX_THRESHOLD: Final[int] = 10
 DOWNSTAIRS_SENSOR_LUX_THRESHOLD: Final[int] = 10
+
+HEATING: Final[str] = 'climate.heating'

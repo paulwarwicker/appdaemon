@@ -115,7 +115,7 @@ class Motion(Hass):
     def status_event(self, event:str, data:dict, kwargs) -> None:
         """status event"""
 
-        self.status('','','','',{})
+        self.status('', '', '', '', {})
 
 # -----------------------------------------------------------------------------------
 
@@ -125,7 +125,7 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.front_door_motion('', '', '', 'on', {'seconds': 5, 'key': 'front door', 'cb': 'front_door_off'})
+        self.front_door_motion(None, None, None, 'on', {'seconds': 5, 'cb': 'front_door_off'})
 
 # -----------------------------------------------------------------------------------
 
@@ -135,7 +135,7 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.downstairs_motion(None, None, None, None, {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
+        self.downstairs_motion('', '', '', '', {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
 
 # -----------------------------------------------------------------------------------
 
@@ -145,7 +145,7 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.upstairs_motion(None, None, None, None, {'seconds': 5, 'key': 'upstairs', 'cb': 'bannister_off'})
+        self.upstairs_motion('', '', '', '', {'seconds': 5, 'key': 'upstairs', 'cb': 'bannister_off'})
 
 # -----------------------------------------------------------------------------------
 
@@ -155,9 +155,9 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.downstairs_motion(None, None, None, None, {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
+        self.downstairs_motion('', '', '', '', {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
         self.lib.delay(self, 15)
-        self.upstairs_motion(None, None, None, None, {'seconds': 10, 'key': 'upstairs', 'cb': 'bannister_off'})
+        self.upstairs_motion('', '', '', '', {'seconds': 10, 'key': 'upstairs', 'cb': 'bannister_off'})
 
 # -----------------------------------------------------------------------------------
 
@@ -167,7 +167,7 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.kitchen_motion(None, None, None, None, {'seconds': 5})
+        self.kitchen_motion('', '', '', '', {'seconds': 5})
 
 # -----------------------------------------------------------------------------------
 
@@ -177,7 +177,7 @@ class Motion(Hass):
         if self.lib.get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        self.utility_motion(None, None, None, None, {'seconds': 5, 'key': 'utility', 'cb': 'utility_off'})
+        self.utility_motion('', '', '', '', {'seconds': 5, 'key': 'utility', 'cb': 'utility_off'})
 
 # -----------------------------------------------------------------------------------
 
@@ -222,8 +222,7 @@ class Motion(Hass):
         if self.check_ignore_sensors():
             return
 
-        self.lib.log_function_name(start=True)
-        # self.lib.log_function_name(force=True)
+        self.lib.log_function_name(start=True) #, force=True)
 
         if self.upstairs_motion_active:
             self.log('upstairs_motion_active is active', level='WARNING')
@@ -243,8 +242,7 @@ class Motion(Hass):
             if self.lib.is_below_horizon():
                 self.call_service('lighting/upstairs_on')
 
-        self.lib.log_function_name(start=False)
-        # self.lib.log_function_name(start=False, force=True)
+        self.lib.log_function_name(start=False) #, force=True)
 
 # -----------------------------------------------------------------------------------
 
@@ -253,7 +251,7 @@ class Motion(Hass):
         if self.check_ignore_sensors():
             return
 
-        force = {'force': True} if True else {} # pylint: disable=using-constant-test
+        force = {'force': False} if True else {} # pylint: disable=using-constant-test
         self.lib.log_function_name(**force)
 
         self.downstairs_motion_flag = True

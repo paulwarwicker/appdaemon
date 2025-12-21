@@ -62,7 +62,7 @@ class FrontDoor(Hass):
     def front_door_ding_event(self, event:str, data:dict, kwargs) -> None:
         """front door ding event"""
 
-        self.front_door_ding('','','','',{})
+        self.set_state('binary_sensor.front_door_ding', 'on')
 
 # -----------------------------------------------------------------------------------
 
@@ -101,13 +101,11 @@ class FrontDoor(Hass):
     def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
         """front door ding"""
 
-        # self.run_in_thread(self.siren_on, const.APP_THREADS - 1)
-        # self.run_in_thread(self.front_door_announce, const.APP_THREADS - 2)
         self.run_in(self.siren_on, 0)
         self.run_in(self.front_door_announce, 0)
 
         if self.lib.is_night():
-            self.call_service('lighting/front_door_ding', seconds=300, cb='front_door_hallway_off', key='front_door_ding')
+            self.call_service('lighting/front_door_ding', seconds=const.DING_TIMEOUT, cb='front_door_hallway_off', key='front_door_ding')
 
 # -----------------------------------------------------------------------------------
 

@@ -40,6 +40,9 @@ class AutomationLib(Hass):
         self.verbose = self.get_state('input_boolean.verbose') == 'on'
         self.testing = self.get_state('input_boolean.testing') == 'on'
         self.trace = self.get_state('input_boolean.trace') == 'on'
+
+        self.listen_event(self.reset_trace, 'reset')
+
         self.log(f'\tautomationlib state: debug={self.debug} verbose={self.verbose} testing={self.testing} trace={self.trace}', level='INFO')
 
         self.log('automationlib initialised -------------------------------------------------------', level='INFO')
@@ -117,6 +120,13 @@ class AutomationLib(Hass):
         (_, isow, _) = self.now().isocalendar()
 
         return 17 <= isow <= 37
+
+# -----------------------------------------------------------------------------------
+
+    def summer_heating(self) -> bool:
+        """summer heating"""
+
+        return self.is_summer() # TODO: review
 
 # -----------------------------------------------------------------------------------
 
@@ -227,35 +237,20 @@ class AutomationLib(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def set_debug(self, value: bool) -> bool:
-        """set cached debug setting"""
+    def set_value(self, _type, value: bool) -> bool:
+        """set cached flag setting"""
 
-        self.debug = value
-        return self.debug
+        match _type:
+            case 'debug':
+                self.debug = value
+            case 'trace':
+                self.trace = value
+            case 'verbose':
+                self.verbose = value
+            case 'testing':
+                self.testing = value
 
-# -----------------------------------------------------------------------------------
-
-    def set_verbose(self, value: bool) -> bool:
-        """set cached verbose setting"""
-
-        self.verbose = value
-        return self.verbose
-
-# -----------------------------------------------------------------------------------
-
-    def set_testing(self, value: bool) -> bool:
-        """set cached testing setting"""
-
-        self.testing = value
-        return self.testing
-
-# -----------------------------------------------------------------------------------
-
-    def set_trace(self, value: bool) -> bool:
-        """set cached trace setting"""
-
-        self.tracing = self.trace = value
-        return self.trace
+        return value
 
 # -----------------------------------------------------------------------------------
 
@@ -566,6 +561,13 @@ class AutomationLib(Hass):
             return task if background else res
 
         return res
+
+# -----------------------------------------------------------------------------------
+
+    def reset_trace(self, kwargs) -> None:
+        """reset tracing flag from input_boolean"""
+
+        self.trace = self.verbose = self.debug = self.testing = False
 
 # -----------------------------------------------------------------------------------
 

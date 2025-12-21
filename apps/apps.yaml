@@ -161,6 +161,14 @@ remote:
     - automationlib
     - announcer
 
+heating:
+  module: heating
+  class: Heating
+  log_level: DEBUG
+  dependencies:
+    - automationlib
+    - announcer
+
 # fan:
 #   module: fan
 #   class: Fan

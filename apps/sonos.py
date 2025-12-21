@@ -169,7 +169,7 @@ class Sonos(Hass):
 
     async def play_thing_service(self, namespace, domain, service, kwargs) -> None:
 
-        self.lib.log_function_name(start=True, force=True)
+        self.lib.log_function_name(start=True) #, force=True)
 
         # if self.task is not None and not self.task.done():
         #     self.log("Cancelling existing playback task", level="WARNING")
@@ -180,13 +180,13 @@ class Sonos(Hass):
 
         self.run_in(self.play_thing, 0, **kwargs)
 
-        self.lib.log_function_name(start=False, force=True)
+        self.lib.log_function_name(start=False) #, force=True)
 
 # -----------------------------------------------------------------------------------
 
     async def play_thing(self, **kwargs) -> None:
 
-        self.lib.log_function_name(start=True, force=True)
+        self.lib.log_function_name(start=True) #, force=True)
 
         entity_id = kwargs.get('entity_id')
         volume_level = kwargs.get('volume_level', const.ALARM_VOLUME)
@@ -253,7 +253,7 @@ class Sonos(Hass):
         else:
             await self.call_service("media_player/volume_set", entity_id=entity_id, volume_level=volume_level)
 
-        self.lib.log_function_name(start=False, force=True)
+        self.lib.log_function_name(start=False) #, force=True)
 
 # -----------------------------------------------------------------------------------
 
@@ -274,7 +274,7 @@ class Sonos(Hass):
 
     def stop_service(self, namespace, domain, service, kwargs) -> None:
 
-        self.lib.log_function_name(start=True, force=True)
+        self.lib.log_function_name(start=True) #, force=True)
 
         entity_id = kwargs.get('entity_id', None)
 
@@ -283,7 +283,7 @@ class Sonos(Hass):
         else:
             self.log('stop_service: entity_id is None', level='ERROR')
 
-        self.lib.log_function_name(start=False, force=True)
+        self.lib.log_function_name(start=False) #, force=True)
 
 # -----------------------------------------------------------------------------------
 

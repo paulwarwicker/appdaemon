@@ -70,7 +70,7 @@ class Garage(Hass):
         await self.log_function_name(start=True)
 
         self.call_service('timestamp/set', name='garage')
-        await self.garage_open('','','','',{})
+        await self.garage_open('', '', '', '', {})
 
         await self.log_function_name(start=False)
 
@@ -82,7 +82,7 @@ class Garage(Hass):
         await self.log_function_name(start=True)
 
         self.call_service('timestamp/set', name='garage')
-        await self.garage_close('','','','',{})
+        await self.garage_close('', '', '', '', {})
 
         await self.log_function_name(start=False)
 
@@ -123,7 +123,7 @@ class Garage(Hass):
 
     async def garage_debug_event(self, event, data, kwargs:dict) -> None:
 
-        await self.garage_debug('','','','',{})
+        await self.garage_debug('', '', '', '', {})
 
 # -----------------------------------------------------------------------------------
 
@@ -230,7 +230,7 @@ class Garage(Hass):
 
         await self.log_function_name(start=True)
 
-        await self.garage_close('','','','',{})
+        await self.garage_close('', '', '', '', {})
 
         await self.log_function_name(start=False)
 
@@ -308,7 +308,7 @@ class Garage(Hass):
         if force:
             trace = separator = notification = True
         else:
-            trace = await self.get_state('input_boolean.trace') == 'on'
+            trace = self.trace
 
         frame = inspect.currentframe()
 
