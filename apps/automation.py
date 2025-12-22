@@ -73,23 +73,21 @@ class Automation(Hass):
         self.listen_state(self.set_verbose_flag, 'input_boolean.verbose')
         self.listen_state(self.set_testing_flag, 'input_boolean.testing')
         self.listen_state(self.set_trace_flag, 'input_boolean.trace')
+        self.listen_state(self.physical_training, 'input_boolean.physical_training')
 
         self.listen_state(self.reset_test1, 'input_boolean.test_1', new='on')
         self.listen_state(self.reset_test2, 'input_boolean.test_2', new='on')
 
         self.listen_state(self.fire_status_event, 'input_boolean.status', new='on')
 
-        self.listen_state(self.set_test_test, 'input_boolean.test_test', new='on', action='set')
-        self.listen_state(self.set_test_test, 'input_boolean.test_test', new='off', action='cancel')
+        _ = self.run_daily(self.reset, '04:00:00') # daily reset including booleans
 
-        self.run_daily(self.reset, '04:00:00') # daily reset including booleans
+        _ = self.run_daily(self.set_all_state, '20:00:00') # set state - make sure before max retires (to bed)
 
-        self.run_daily(self.set_all_state, '20:00:00') # set state - make sure before max retires (to bed)
-
-        self.run_daily(self.backup, '23:30:00')
+        _ = self.run_daily(self.backup, '23:30:00')
 
         runtime = datetime(2024, 1, 1)
-        self.run_minutely(self.maxine_travel_time_to_home, runtime)
+        _ = self.run_minutely(self.maxine_travel_time_to_home, runtime)
         # self.run_minutely(self.test, runtime)
 
         # runtime = datetime(2024, 1, 1, 0, 0, 0)
@@ -127,10 +125,11 @@ class Automation(Hass):
         booleans = {
             'override', 'sonos', 'lumie', 'test_1', 'test_2', 'test_3',
             'water_garden_1', 'water_garden_15', 'water_garden_20', 'water_garden_30', 'bedtime',
-            'reset_alarms', 'test_utility_motion', 'test_kitchen_motion', 'test_bins_announce',
-            'test_frost_warning', 'test_notification', 'test_announcement', 'test_maxine_home',
-            'test_reset', 'test_front_door_ding', 'test_front_door_light_on', 'test_test',
-            'test_early_alarm', 'mock_run', 'alarm_debug'
+            'reset_alarms', 'mock_run', 'alarm_debug',
+            'ignore_sensors', 'power_off_media', 'wake_up_boo', 'physical_training',
+            # 'test_utility_motion', 'test_kitchen_motion', 'test_bins_announce',
+            # 'test_frost_warning', 'test_notification', 'test_announcement', 'test_maxine_home',
+            # 'test_reset', 'test_front_door_ding', 'test_front_door_light_on', 'test_early_alarm',
         }
 
         # ensure certain booleans are not reset whether defined or not
@@ -178,7 +177,7 @@ class Automation(Hass):
         self.debug = new == 'on'
         self.log(f'\tautomation debug now {self.debug}', level='INFO')
         self._set_console_log_level()
-        self.lib.set_value('debug', self.debug)
+        self.lib.set_flag_value('debug', self.debug)
 
 # -----------------------------------------------------------------------------------
 
@@ -188,7 +187,7 @@ class Automation(Hass):
         self.verbose = new == 'on'
         self.log(f'\tautomation verbose now {self.verbose}', level='INFO')
         self._set_console_log_level()
-        self.lib.set_value('verbose', self.verbose)
+        self.lib.set_flag_value('verbose', self.verbose)
 
 # -----------------------------------------------------------------------------------
 
@@ -198,17 +197,31 @@ class Automation(Hass):
         self.testing = new == 'on'
         self.log(f'\tautomation testing now {self.testing}', level='INFO')
         self._set_console_log_level()
-        self.lib.set_value('testing', self.testing)
+        self.lib.set_flag_value('testing', self.testing)
 
 # -----------------------------------------------------------------------------------
 
     def set_trace_flag(self, entity, attribute, old, new, kwargs) -> None:
         """set trace flag"""
 
-        self.trace = new == 'on'
+        self.trace = new == 'on' # self.debug = self.verbose =
+        self.lib.set_flag_value('trace', self.trace)
         self.log(f'\tautomation trace now {self.trace}', level='INFO')
+        self.set_state('input_boolean.debug', state='on' if self.trace else 'off')
+        self.set_state('input_boolean.verbose', state='on' if self.trace else 'off')
         self._set_console_log_level()
-        self.lib.set_value('trace', self.trace)
+
+# -----------------------------------------------------------------------------------
+
+    def physical_training(self, entity, attribute, old, new, kwargs) -> None:
+        """enable physical training setup"""
+
+        if new == 'on':
+            self.set_state('input_boolean.wake_up_boo', state='on')
+            self.set_state('input_boolean.early_alarm', state='on')
+        else:
+            self.set_state('input_boolean.wake_up_boo', state='off')
+            self.set_state('input_boolean.early_alarm', state='off')
 
 # -----------------------------------------------------------------------------------
 
@@ -311,19 +324,6 @@ class Automation(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def test_test(self, entity, attribute, old, new, kwargs) -> None:
-        """test test"""
-
-        self.lib.log_function_name(start=True)
-        self.run_in(self.test, 0)
-        self.lib.log_function_name(start=False)
-
-        self.lib.log_function_name(start=True, force=True)
-        self.run_in(self.test, 0)
-        self.lib.log_function_name(start=False, force=True)
-
-# -----------------------------------------------------------------------------------
-
     def reset(self, kwargs) -> None:
         """reset dowstairs motion flag and set default sonos configuration"""
 
@@ -387,7 +387,6 @@ class Automation(Hass):
         home = self.get_state('person.maxine') == 'home'
 
         if not home:
-            # fetch raw values
             result = self.get_state('sensor.google_travel_time')
             direction = self.get_state('sensor.home_maxine_direction_of_travel')
             state = self.get_state('sensor.maxine_iphone_activity')
@@ -403,10 +402,10 @@ class Automation(Hass):
                 else:
                     state = val
 
-            # debug types
-            if self.lib.get_debug():
-                self.log(f'\ttypes: result={type(result)} direction={type(direction)} state={type(state)}', level='DEBUG')
-                self.log(f'\ttypes: result={result} direction={direction} state={state}', level='DEBUG')
+            # # debug types
+            # if self.lib.get_debug():
+            #     self.log(f'\tmaxine_travel_time_to_home: result={type(result)} direction={type(direction)} state={type(state)}', level='DEBUG')
+            #     self.log(f'\tmaxine_travel_time_to_home: result={result} direction={direction} state={state}', level='DEBUG')
 
             if result == 'unknown' or result is None:
                 self.log('\tmaxine travel time is unknown', level='ERROR')
@@ -530,22 +529,6 @@ class Automation(Hass):
             self.register_test_3(self.front_door_light_on_test)
         elif action == 'cancel':
             self.deregister_test_3()
-
-# -----------------------------------------------------------------------------------
-
-    def set_test_test(self, entity, attribute, old, new, kwargs) -> None:
-        """set test test"""
-
-        action = kwargs['action']
-
-        if action == 'set':
-            print('set test test')
-            pass # pylint: disable=unnecessary-pass
-            # self.register_test_3(self.test_test)
-        elif action == 'cancel':
-            print('cancel test test')
-            pass # pylint: disable=unnecessary-pass
-            # self.deregister_test_3()
 
 # -----------------------------------------------------------------------------------
 

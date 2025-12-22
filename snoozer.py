@@ -19,6 +19,7 @@ class Snoozer(Hass):
     """Documentation for Snoozer"""
 
     lib: "AutomationLib" = _helpers  # type: ignore
+    timer = None
 
 # -----------------------------------------------------------------------------------
 
@@ -49,7 +50,7 @@ class Snoozer(Hass):
         self.call_service("media_player/media_pause", entity_id=entity_id)
         self.log(f"\tsnooze activated: paused {entity_id}", level='WARNING')
 
-        self.run_in(self.resume, minutes * 60, entity_id=entity_id)
+        self.timer = self.run_in(self.resume, minutes * 60, entity_id=entity_id)
 
 # -----------------------------------------------------------------------------------
 

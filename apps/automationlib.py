@@ -41,7 +41,7 @@ class AutomationLib(Hass):
         self.testing = self.get_state('input_boolean.testing') == 'on'
         self.trace = self.get_state('input_boolean.trace') == 'on'
 
-        self.listen_event(self.reset_trace, 'reset')
+        # self.listen_event(self.reset_trace, 'reset')
 
         self.log(f'\tautomationlib state: debug={self.debug} verbose={self.verbose} testing={self.testing} trace={self.trace}', level='INFO')
 
@@ -237,7 +237,7 @@ class AutomationLib(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def set_value(self, _type, value: bool) -> bool:
+    def set_flag_value(self, _type, value: bool) -> bool:
         """set cached flag setting"""
 
         match _type:
@@ -564,7 +564,7 @@ class AutomationLib(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def reset_trace(self, kwargs) -> None:
+    def reset_trace(self, event, data, kwargs) -> None:
         """reset tracing flag from input_boolean"""
 
         self.trace = self.verbose = self.debug = self.testing = False

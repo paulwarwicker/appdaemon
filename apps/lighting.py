@@ -9,6 +9,7 @@
 # https://github.com/nickw444/appdaemon-testing
 
 # import asyncio
+import asyncio
 import traceback
 import time
 from datetime import datetime
@@ -154,6 +155,7 @@ class Lighting(Hass):
         self.show_service(namespace, domain, service, data)
 
         self.call_service('light/turn_off', entity_id=const.ALL_LIGHTS)
+        # TODO: cooker/garden lights?
 
         self.lib.log_function_name(start=False)
 
@@ -254,7 +256,7 @@ class Lighting(Hass):
             self.kitchen_seconds = seconds
             self.callback = Callback.KITCHEN
             self.log('\tdeferring kitchen off service', level='INFO')
-            self.run_in(self.deferred_kitchen_off, 60*60)
+            self.run_in(self.deferred_kitchen_off, const.ONEHOUR)
             self.lib.log_function_name(start=False)
             return
 
@@ -274,7 +276,7 @@ class Lighting(Hass):
 
         if self.check_override('kitchen'):
             self.log('\t\tignoring deferred_kitchen_off', level='WARNING')
-            self.run_in(self.deferred_kitchen_off, 60*60)
+            self.run_in(self.deferred_kitchen_off, const.ONEHOUR)
             return
 
         cb = self.kitchen_cb if self.kitchen_cb is not None else 'noop'
@@ -745,7 +747,7 @@ class Lighting(Hass):
     def all_off_event(self, event, data, kwargs) -> None:
 
         self.call_service('lighting/all_off')
-        self.call_service('sonos/stop_bedroom')
+        self.call_service('sonos/stop', entity_id=const.BEDROOM_SPEAKER)
 
 # -----------------------------------------------------------------------------------
 
@@ -822,9 +824,25 @@ class Lighting(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def test_lights_event(self, event, data, kwargs):
+    async def test_lights_event(self, event, data, kwargs):
 
-        self.living_room_on({})
+        await self.flash(entity_id=const.STUDY)
+
+    async def flash(self, *args, **kwargs) -> None:
+
+        entity_id = kwargs.get('entity_id', const.STUDY)
+        times = int(kwargs.get('times', 5))
+        interval = float(kwargs.get('interval', 0.1))
+
+        state = self.get_state(entity_id=entity_id, state='state')
+
+        for _ in range(times):
+            self.call_service('light/turn_on', entity_id=entity_id, brightness=const.FULL_ON)
+            await asyncio.sleep(interval)
+            self.call_service('light/turn_off', entity_id=entity_id)
+            await asyncio.sleep(interval*2)
+
+        self.call_service('light/turn_on', entity_id=entity_id, state=state)
 
 # -----------------------------------------------------------------------------------
 
@@ -1354,7 +1372,7 @@ class Lighting(Hass):
 
         if new == 'on':
             self.call_service('lighting/bathroom_on', entity_id=const.BATHROOM_LIGHTS, cb='noop', seconds=const.SHORT_TIMEOUT, force=True)
-            self.bathroom_callback_handle = self.run_in(self.bathroom_off, 60 * 60, force=True)
+            self.bathroom_callback_handle = self.run_in(self.bathroom_off, const.ONEHOUR, force=True)
         else:
             self.call_service('lighting/bathroom_off', entity_id=const.BATHROOM_LIGHTS, cb='bathroom_off', seconds=0, force=True)
             if self.bathroom_callback_handle is not None:
@@ -1368,7 +1386,7 @@ class Lighting(Hass):
 
         if new == 'on':
             self.call_service('lighting/cloakroom_on', entity_id=const.CLOAKROOM, cb='noop', seconds=const.SHORT_TIMEOUT, force=True)
-            self.cloakroom_callback_handle = self.run_in(self.cloakroom_off, 30 * 60, force=True)
+            self.cloakroom_callback_handle = self.run_in(self.cloakroom_off, const.HALFHOUR, force=True)
         else:
             self.call_service('lighting/cloakroom_off', entity_id=const.CLOAKROOM, cb='cloakroom_off', seconds=0, force=True)
             if self.cloakroom_callback_handle is not None:
@@ -1382,7 +1400,7 @@ class Lighting(Hass):
 
         if new == 'on':
             self.call_service('lighting/kitchen_on', entity_id=const.KITCHEN_LIGHTS, cb='noop', seconds=const.SHORT_TIMEOUT, force=True)
-            self.kitchen_callback_handle = self.run_in(self.kitchen_off, 60 * 60, force=True)
+            self.kitchen_callback_handle = self.run_in(self.kitchen_off, const.ONEHOUR, force=True)
         else:
             self.call_service('lighting/kitchen_off', entity_id=const.KITCHEN_LIGHTS, cb='kitchen_off', seconds=0, force=True)
             self.call_service('lighting/kitchen_off', entity_id=const.KITCHEN_LIGHTS, cb='kitchen_off', seconds=0, force=True) # just in case
@@ -1398,7 +1416,7 @@ class Lighting(Hass):
 
         if new == 'on':
             self.call_service('lighting/utility_on', entity_id=const.UTILITY, cb='noop', seconds=const.SHORT_TIMEOUT, force=True)
-            self.utility_callback_handle = self.run_in(self.utility_off, 60 * 60, force=True)
+            self.utility_callback_handle = self.run_in(self.utility_off, const.ONEHOUR, force=True)
         else:
             self.call_service('lighting/utility_off', entity_id=const.UTILITY, cb='utility_off', seconds=0, force=True)
             if self.utility_callback_handle is not None:

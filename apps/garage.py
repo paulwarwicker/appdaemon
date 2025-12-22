@@ -101,19 +101,19 @@ class Garage(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def garage_open_event(self, event, data, kwargs:dict) -> None:
+    async def garage_open_event(self, event, data, kwargs) -> None:
 
         self.call_service('garage/open')
 
 # -----------------------------------------------------------------------------------
 
-    async def garage_close_event(self, event, data, kwargs:dict) -> None:
+    async def garage_close_event(self, event, data, kwargs) -> None:
 
         self.call_service('garage/close')
 
 # -----------------------------------------------------------------------------------
 
-    async def garage_test_event(self, event, data, kwargs:dict) -> None:
+    async def garage_test_event(self, event, data, kwargs) -> None:
 
         await self.log_function_name(start=True, force=True)
 
@@ -121,13 +121,13 @@ class Garage(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    async def garage_debug_event(self, event, data, kwargs:dict) -> None:
+    async def garage_debug_event(self, event, data, kwargs) -> None:
 
         await self.garage_debug('', '', '', '', {})
 
 # -----------------------------------------------------------------------------------
 
-    async def garage_open_close_event(self, event, data, kwargs:dict) -> None:
+    async def garage_open_close_event(self, event, data, kwargs) -> None:
 
         await self.log_function_name(start=True)
 
@@ -282,6 +282,13 @@ class Garage(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    async def get_trace(self):
+        """get trace setting"""
+
+        return await self.get_state('input_boolean.trace') == 'on'
+
+# -----------------------------------------------------------------------------------
+
     async def get_verbose_debug(self):
         """get verbose debug setting"""
 
@@ -308,7 +315,7 @@ class Garage(Hass):
         if force:
             trace = separator = notification = True
         else:
-            trace = self.trace
+            trace = await self.get_trace()
 
         frame = inspect.currentframe()
 

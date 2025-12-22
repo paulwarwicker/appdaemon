@@ -106,10 +106,13 @@ ONEMINUTE: Final[int] = 60
 TWOMINUTES: Final[int] = 2*ONEMINUTE
 FIVEMINUTES: Final[int] = 5*ONEMINUTE
 TENMINUTES: Final[int] = 10*ONEMINUTE
+ONEHOUR: Final[int] = 60*ONEMINUTE
+HALFHOUR : Final[int] = 30*ONEMINUTE
 
 SHORT_TIMEOUT: Final[int] = TWOMINUTES
 DEFAULT_TIMEOUT: Final[int] = FIVEMINUTES
 LONG_TIMEOUT: Final[int] = TENMINUTES
+DEFER_TIMEOUT : Final[int] = ONEHOUR
 
 LONGER_TIMEOUT: Final[int] = DEFAULT_TIMEOUT + SHORT_TIMEOUT
 DING_TIMEOUT: Final[int] = LONG_TIMEOUT
@@ -153,30 +156,31 @@ NORMAL_ALARM_TIME: Final[str] = '07:45:00'
 LATE_ALARM_TIME: Final[str] = '10:00:00'
 
 PROGRESSIVE_ALARM: Final[list[str]]  = [
-    PROGRESSIVE1_STREAM := 'aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-    PROGRESSIVE2_STREAM := 'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
-    PROGRESSIVE3_STREAM := 'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+    PROGRESSIVE1_STREAM := 'aac://http://prem1.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+    PROGRESSIVE2_STREAM := 'aac://http://prem2.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
+    PROGRESSIVE4_STREAM := 'aac://http://prem4.di.fm:80/progressive?5fba91be81f6da5b573f89c1',
 ]
 
-SUNSET_ALARM: Final[list[str]]  = [
-    SUNSET1_STREAM := 'aac://http://prem2.di.fm:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-    SUNSET2_STREAM := 'aac://http://prem1.di.fm:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
-    SUNSET3_STREAM := 'aac://http://prem4.di.fm:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+SUNSETS_ALARM: Final[list[str]]  = [
+    SUNSETS1_STREAM := 'aac://http://prem1.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+    SUNSETS2_STREAM := 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+    SUNSETS4_STREAM := 'aac://http://prem4.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
 ]
 
 ALTNEWWAVE_ALARM: Final[list[str]]  = [
-    ALTNEWWAVE1_STREAM := 'aac://http://prem2.di.fm:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-    ALTNEWWAVE2_STREAM := 'aac://http://prem1.di.fm:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
-    ALTNEWWAVE3_STREAM := 'aac://http://prem4.di.fm:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    ALTNEWWAVE1_STREAM := 'aac://http://prem1.di.fm:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    ALTNEWWAVE2_STREAM := 'aac://http://prem2.di.fm:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
+    ALTNEWWAVE4_STREAM := 'aac://http://prem4.di.fm:80/80saltnnewwave?5fba91be81f6da5b573f89c1',
 ]
 
-NORMAL_ALARM = PROGRESSIVE_ALARM + SUNSET_ALARM + ALTNEWWAVE_ALARM
+NORMAL_ALARM = PROGRESSIVE_ALARM + SUNSETS_ALARM + ALTNEWWAVE_ALARM
 
-EARLY_ALARM: Final[list[str]] = [
-    WAKE_UP_BOO_STREAM := "aac:https://open.spotify.com/track/3NrF3AkIopPlgQFwgRQkPh?si=3b81069698a34bfc",
-    FEEL_IT_STREAM := 'aac:https://open.spotify.com/track/0cYKu4opws5EhOj5F0AIHx?si=6babb7c7095f4914',
-    SUNSETS_STREAM := 'aac://http://prem2.zenradio.com:80/zrperfectsunsets_aac?5fba91be81f6da5b573f89c1',
+WAKE_UP_BOO_STREAM = "aac://https://open.spotify.com/track/3NrF3AkIopPlgQFwgRQkPh?si=3b81069698a34bfc"
+FEEL_IT_STREAM = 'aac://https://open.spotify.com/track/0cYKu4opws5EhOj5F0AIHx?si=6babb7c7095f4914'
 
+EARLY_ALARM: Final[list[str]] = SUNSETS_ALARM
+
+# EARLY_ALARM: Final[list[str]] = SUNSETS_ALARM + [
     # OCEANS_STREAM := 'aac://http://prem2.zenradio.com:80/zroceansounds_aac?5fba91be81f6da5b573f89c1',
     # NATIVEAMERICAN_STREAM := 'aac://http://prem2.zenradio.com:80/zrnativeamericansounds_aac?5fba91be81f6da5b573f89c1',
     # SOUNDSOFRAIN_STREAM := 'aac://http://prem2.zenradio.com:80/zrsoundsofrain_aac?5fba91be81f6da5b573f89c1',
@@ -192,20 +196,18 @@ EARLY_ALARM: Final[list[str]] = [
     # BIRDSONG_STREAM := 'x-sonos-spotify:spotify%3atrack%3a3K3cxx8ntQp8DZbPpltwr4?sid=9&flags=8224&sn=1', # birdsong garden morning
     # EARLYMORNINGRAIN_STREAM := 'x-sonos-spotify:spotify%3atrack%3a2cwKtKEhPn6ZnJmlzbmpLQ?sid=9&flags=8224&sn=1', # the early morning rain
     # RAINDROPSDANCING_STREAM := 'x-sonos-spotify:spotify%3atrack%3a4G6Lz9Et6dhLKydPyY4N9a?sid=9&flags=8224&sn=1', # rain drops dancing on a tin roof
+# ]
 
-    # WAKE_UP_BOO_STREAM := "https://open.spotify.com/track/3NrF3AkIopPlgQFwgRQkPh?si=41f11fcd62e742fd",
-]
-
-BACKUP_STREAM: Final[str] = SUNSETS_STREAM
+BACKUP_STREAM: Final[str] = SUNSETS1_STREAM
 PROGRESSIVE_STREAM: Final[str] = PROGRESSIVE1_STREAM
-
 ALTNEWWAVE_STREAM: Final[str] = ALTNEWWAVE1_STREAM
-CHRISTMAS_STREAM: Final[str] = 'aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1'
+
 HALLWAY_STREAMS: Final[list[str]] = [
-    SUMMER_VIBES_ALBUM := 'spotify:album:37ZeJt50FWCaLkw3HNJB2c',
-    SUMMER_VIBES_PLAYLIST := 'spotify:playlist:2hmLDliFT9mW84XHxRUzwx',
-    SUMMER_HITS_PLAYLIST := 'spotify:playlist:37i9dQZF1DX4uU3TGzIPXL',
-    BOSSANOVA_STREAM := 'aac://http://prem2.radiotunes.com:80/smoothbossanova?5fba91be81f6da5b573f89c1',
+    # SUMMER_VIBES_ALBUM := 'spotify:album:37ZeJt50FWCaLkw3HNJB2c',
+    # SUMMER_VIBES_PLAYLIST := 'spotify:playlist:2hmLDliFT9mW84XHxRUzwx',
+    # SUMMER_HITS_PLAYLIST := 'spotify:playlist:37i9dQZF1DX4uU3TGzIPXL',
+    # BOSSANOVA_STREAM := 'aac://http://prem2.radiotunes.com:80/smoothbossanova?5fba91be81f6da5b573f89c1',
+    CHRISTMAS_STREAM := 'aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1',
 ]
 
 # 'x-sonos-spotify:spotify%3atrack%3a1r4QKeqpv1ov8FkrgKDxQ7?sid=9&flags=8224&sn=1', # a gentle thunderstorm

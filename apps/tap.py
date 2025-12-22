@@ -25,6 +25,7 @@ class Tap(Hass):
     """Documentation for Tap"""
 
     lib: "AutomationLib" = _helpers  # type: ignore
+    timer = None
 
 # -----------------------------------------------------------------------------------
 
@@ -226,12 +227,16 @@ class Tap(Hass):
             self.call_service('timestamp/set', name='tap')
             seconds = self.lib.interval(minutes=minutes)
             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
-            self.run_in(self.tap_off, seconds)
+            self.timer = self.run_in(self.tap_off, seconds)
 
 # -----------------------------------------------------------------------------------
 
     def tap_off(self, kwargs) -> None:
         """turn garden tap off"""
+
+        if self.timer is not None:
+            self.cancel_timer(self.timer)
+            self.timer = None
 
         self.call_service('switch/turn_off', entity_id='switch.garden_tap')
         self.broadcast('The garden tap is now off')

@@ -231,7 +231,7 @@ class Motion(Hass):
             self.run_in(self.reset_upstairs_motion_active, 10*60)
 
             ts = self.call_service('timestamp/get', name='upstairs_motion')
-            # nomotion = (datetime.now() - ts).seconds > 1*60*60
+            # nomotion = (datetime.now() - ts).seconds > 1*const.ONEHOUR
 
             self.call_service('timestamp/set', name='upstairs_motion')
 

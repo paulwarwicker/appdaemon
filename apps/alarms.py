@@ -67,16 +67,19 @@ class Alarms(Hass):
         self.listen_event(self.set_alarm_state_event, 'set_alarm_state')
         self.listen_event(self.status_event, 'status')
 
-        self.listen_state(self.set_early_alarm_callback, 'input_boolean.early_alarm', new='on', action='set')
-        self.listen_state(self.set_early_alarm_callback, 'input_boolean.early_alarm', new='off', action='cancel')
+        self.listen_state(self.set_early_alarm_callback,  'input_boolean.early_alarm', new='on', action='set')
+        self.listen_state(self.set_early_alarm_callback,  'input_boolean.early_alarm', new='off', action='cancel')
+        self.listen_state(self.disable_physical_training, 'input_boolean.early_alarm', new='off')
         self.listen_state(self.set_normal_alarm_callback, 'input_boolean.normal_alarm', new='on', action='set')
         self.listen_state(self.set_normal_alarm_callback, 'input_boolean.normal_alarm', new='off', action='cancel')
         self.listen_state(self.reset_alarms, 'input_boolean.reset_alarms', new='on')
 
-        # also can fire event set_alarm_state
         self.run_daily(self.set_alarm_state, '20:30:00') # make sure before max goes to bed
 
-        self.run_in(self.set_alarm_state, 0)
+        # alarms will be set daily as above. can also set manually by firing event set_alarm_state
+        # enabling/disabling alarms in UI will announce if set, but announce here if we have reloaded code
+        self.show_alarm_time('early')
+        self.show_alarm_time('normal')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
@@ -98,9 +101,6 @@ class Alarms(Hass):
     def set_alarm_state(self, kwargs):
 
         self.lib.log_function_name(start=True)
-
-        if self.get_state('input_boolean.alarms_disabled') == 'on':
-            self.set_state('input_boolean.early_alarm', state='off')
 
         self.cancel_alarms()
         self.set_early_alarm()
@@ -238,11 +238,11 @@ class Alarms(Hass):
         alarm_time = f'{hour:02d}:{minute:02d}:{second:02d}'
         timestamp = hour * 3600 + minute * 60 + second
 
-        self.lib.log_function_name(start=False)
-
         state = 'on' if self.get_state('input_boolean.override') == 'on' else 'off'
 
-        return state, alarm_time, timestamp, const.SUNSET_ALARM
+        self.lib.log_function_name(start=False)
+
+        return state, alarm_time, timestamp, const.SUNSETS_ALARM
 
 # -----------------------------------------------------------------------------------
 
@@ -252,10 +252,9 @@ class Alarms(Hass):
 
         dow = self.lib.dow()
 
-        # (06-00 on tuesday or friday/saturday) or (00-06 on wednesday or saturday/sunday) -> set alarm later
-        # later = (self.now_is_between('06:00:00', '23:59:59') and ((dow == 2) or (5 <= dow <= 6))) or (self.now_is_between('00:00:00', '05:59:59') and ((dow == 3) or (6 <= dow <= 7)))
+        # setting alarm for tomorrow. usually set at 20:30 the previous evening. if mon or tue evening or tues wed morning -> setup for early alarms
         # dow: 1 - mon, 2 - tue, 3 - wed, 4 - thu, 5 - fri, 6 - sat, 7 - sun
-        later = not (self.now_is_between('06:00:00', '23:59:59') and (dow in (1,2))) or (self.now_is_between('00:00:00', '05:59:59') and (dow in (2,3)))
+        later = not (self.now_is_between('06:00:00', '23:59:59') and (dow in (1,2))) or (self.now_is_between('00:00:00', '05:59:59') and (dow in (2,3))) # (1 <= dow <= 2)
 
         hour = minute = second = 12
 
@@ -263,12 +262,12 @@ class Alarms(Hass):
             parts = const.LATE_ALARM_TIME.split(':')
             alarm_time = const.LATE_ALARM_TIME
             desc = 'LATE_ALARM_TIME'
-            ids = const.PROGRESSIVE_ALARM
+            ids = const.PROGRESSIVE_ALARM # always progress if later
         else:
             parts = const.NORMAL_ALARM_TIME.split(':')
             alarm_time = const.NORMAL_ALARM_TIME
             desc = 'NORMAL_ALARM_TIME'
-            ids = const.NORMAL_ALARM
+            ids = const.NORMAL_ALARM # varied if earlier
 
         try:
             if len(parts) >= 1:
@@ -305,7 +304,7 @@ class Alarms(Hass):
         seconds = parts[2] if len(parts) >=3 else 0
 
         if ids is None:
-            ids = const.SUNSET_ALARM
+            ids = const.EARLY_ALARM
 
         if self.lib.get_verbose_debug():
             self.log(f'set_early_alarm_time state={state} alarm_time={alarm_time} timestamp={timestamp} hour={hour} minute={minute} seconds={seconds} ids={ids}', level="WARNING")
@@ -429,6 +428,16 @@ class Alarms(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def disable_physical_training(self, entity, attribute, old, new, kwargs):
+
+        self.lib.log_function_name(start=True)
+
+        self.set_state('input_boolean.physical_training', state='off')
+
+        self.lib.log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
     def set_normal_alarm_callback(self, entity, attribute, old, new, kwargs):
 
         self.lib.log_function_name(start=True)
@@ -505,8 +514,12 @@ class Alarms(Hass):
         ids = kwargs.get('ids', None)
         _alarm_type = alarm_type
 
-        if ids is None:
-            ids = kwargs['ids'] = const.NORMAL_ALARM
+        if action == 'set' and ids is None:
+            if alarm_type == 'early':
+                ids = kwargs['ids'] = const.EARLY_ALARM
+            else:  # normal
+                ids = kwargs['ids'] = const.NORMAL_ALARM
+            self.log(f'No ids provided for {alarm_type} alarm; using ids={ids}', level='WARNING')
 
         if self.lib.get_verbose_debug():
             self.log(f"\t{alarm_type} alarm enabled", level='DEBUG')
@@ -549,7 +562,9 @@ class Alarms(Hass):
 
             kwargs.pop('action', None)
             kwargs['ids'] = ids
+            # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_daily
             alarm = self.run_daily(self.alarm, alarm_time, **kwargs)
+            # alarm = self.run_daily(self.alarm, alarm_time, ids=ids, alarm_type=_alarm_type)
             self.log(f'\t{_alarm_type} alarm set for {alarm_time} using {time_entity_id}. kwargs={kwargs}', level="INFO")
         elif action == 'cancel':
             self.set_state(bool_entity_id, state='off')
@@ -561,8 +576,8 @@ class Alarms(Hass):
         else:
             self.log(f"\tUnexpected alarm action {action}", level='WARNING')
 
-        if _alarm_type == 'normal' or (self.get_state('input_boolean.alarms_disabled') == 'off' and _alarm_type == 'early'):
-            self.show_alarm_time(_alarm_type)
+        # if _alarm_type == 'normal' or (self.get_state('input_boolean.alarms_disabled') == 'off' and _alarm_type == 'early'):
+        self.show_alarm_time(_alarm_type)
 
         self.lib.log_function_name(start=False)
 
@@ -571,12 +586,7 @@ class Alarms(Hass):
 # -----------------------------------------------------------------------------------
 
     def alarm(self, kwargs):
-
-        self.run_in(self._alarm, 0, **kwargs)
-
-# -----------------------------------------------------------------------------------
-
-    def _alarm(self, kwargs):
+        """play alarm"""
 
         self.lib.log_function_name(start=True)
 
@@ -587,8 +597,8 @@ class Alarms(Hass):
         # media_content_id = self.select_alarm(alarm_type=alarm_type)
         media_content_id = ids[random.randint(0, len(ids) - 1)]  # randomise choice
 
-        if self.get_state('input_boolean.wake_up_boo') == 'on':
-            media_content_id = const.WAKE_UP_BOO_STREAM
+        if alarm_type == 'early' and self.get_state('input_boolean.wake_up_boo') == 'on':
+            media_content_id = const.WAKE_UP_BOO_STREAM # override
 
         self.call_service('sonos/play_thing', entity_id=entity_id, media_content_id=media_content_id, volume_level=const.ALARM_VOLUME, delayed=True)
 
@@ -605,10 +615,10 @@ class Alarms(Hass):
 
         if alarm_type == 'normal':
             ids = const.NORMAL_ALARM
-        elif alarm_type == 'test':
-            ids = const.PROGRESSIVE_ALARM
+        # elif alarm_type == 'test':
+        #     ids = const.PROGRESSIVE_ALARM
         else:
-            ids = const.SUNSET_ALARM
+            ids = const.SUNSETS_ALARM
 
         self.lib.log_function_name(start=False)
 

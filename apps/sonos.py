@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 class Sonos(Hass):
     """Documentation for Sonos"""
 
-    task = None
     timer = None
     lib: "AutomationLib" = _helpers  # type: ignore
 
@@ -49,18 +48,11 @@ class Sonos(Hass):
         self.register_service('sonos/unjoin_entity', self.unjoin_entity_service)
         self.register_service('sonos/mute_unjoin_all', self.mute_unjoin_all_service)
         self.register_service('sonos/set_configuration', self.set_configuration_service)
-        # self.register_service('sonos/stop_bedroom', self.stop_service, entity_id=const.BEDROOM_SPEAKER)
-        # self.register_service('sonos/stop_hallway', self.stop_service, entity_id=const.HALLWAY_SPEAKER)
-        # self.register_service('sonos/stop_study', self.stop_service, entity_id=const.STUDY_SPEAKER)
-        self.register_service('sonos/stop_bedroom', self.stop_bedroom_service)
-        self.register_service('sonos/stop_hallway', self.stop_hallway_service)
-        self.register_service('sonos/stop_study', self.stop_study_service)
         self.register_service('sonos/play_thing', self.play_thing_service)
         self.register_service('sonos/stop', self.stop_service)
 
         self.listen_event(self.status_event, 'status')
-        # self.listen_event(self.snooze_event, 'snooze')
-        self.listen_event(self.snooze_event, 'snooze10', seconds=10*60)
+        self.listen_event(self.snooze_event, 'snooze10', seconds=10*60) # any snooze event when alarm testing will snooze for 10s
         self.listen_event(self.snooze_event, 'snooze30', seconds=30*60)
         self.listen_event(self.play_thing_event, 'play_thing')
         self.listen_event(self.join_test_event, 'join_test')
@@ -73,11 +65,9 @@ class Sonos(Hass):
         self.listen_event(self.stop_bedroom_event, 'stop_bedroom')
         self.listen_event(self.stop_study_event, 'stop_study')
 
-        self.run_daily(self.play_hallway, '08:00:00')
+        self.run_daily(self.play_hallway, '08:00:00') # play_hallway event for manual start
         self.run_daily(self.stop_hallway, '21:00:00')
-        # self.run_daily(self.play_hallway, '00:17:00')
 
-        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
@@ -118,8 +108,6 @@ class Sonos(Hass):
         if entity_id is None:
             return
 
-        # ts = self.call_service('timestamp/get', name='snooze')
-
         self.call_service('timestamp/set', name='snooze')
 
         all_attributes = await self.get_state(entity_id=entity_id, attribute="all")
@@ -140,11 +128,11 @@ class Sonos(Hass):
         self.log(f'shuffle={shuffle} repeat={repeat}', level='DEBUG')
 
         self.call_service('media_player/media_stop', entity_id=entity_id)
-        # self.call_service('media_player/pause', entity_id=entity_id)
 
-        # if self.task is not None and not self.task.done():
-        #     self.log("Cancelling existing playback task", level="WARNING")
-        #     self.task.cancel()
+        if self.timer is not None:
+            self.log(f"Cancelling existing playback timer {self.timer}", level="WARNING")
+            self.cancel_timer(self.timer)
+            self.timer = None
 
         kwargs = {
             'entity_id': entity_id,
@@ -156,12 +144,7 @@ class Sonos(Hass):
             'set_repeat': repeat
         }
 
-        # await self.sleep(seconds)
-
-        # self.task = self.create_task(self.play_thing(**kwargs))
-        # self.log(f"Started new playback task: task={self.task}", level="DEBUG")
-
-        self.run_in(self.play_thing, seconds, **kwargs)
+        self.timer = self.run_in(self.play_thing, seconds, **kwargs)
 
         self.lib.log_function_name(start=False, force=True)
 
@@ -170,13 +153,6 @@ class Sonos(Hass):
     async def play_thing_service(self, namespace, domain, service, kwargs) -> None:
 
         self.lib.log_function_name(start=True) #, force=True)
-
-        # if self.task is not None and not self.task.done():
-        #     self.log("Cancelling existing playback task", level="WARNING")
-        #     self.task.cancel()
-
-        # self.task = self.create_task(self.play_thing(**kwargs))
-        # self.log(f"Started new playback task: task={self.task}", level="DEBUG")
 
         self.run_in(self.play_thing, 0, **kwargs)
 
@@ -287,25 +263,6 @@ class Sonos(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def stop_bedroom_service(self, namespace, domain, service, kwargs) -> None:
-
-        self.call_service('sonos/stop', entity_id=const.BEDROOM_SPEAKER)
-
-# -----------------------------------------------------------------------------------
-
-    def stop_hallway_service(self, namespace, domain, service, kwargs) -> None:
-
-        # self.call_service('sonos/stop', entity_id=const.HALLWAY_SPEAKER)
-        self.call_service("media_player/media_pause", entity_id=const.HALLWAY_SPEAKER)
-
-# -----------------------------------------------------------------------------------
-
-    def stop_study_service(self, namespace, domain, service, kwargs) -> None:
-
-        self.call_service('sonos/stop', entity_id=const.STUDY_SPEAKER)
-
-# -----------------------------------------------------------------------------------
-
     def status_event(self, event, data, kwargs):
 
         status = '\n'
@@ -324,34 +281,24 @@ class Sonos(Hass):
 
     def play_hallway_event(self, event, data, kwargs):
 
-        # self.play_spotify({
-        #     'entity_id': const.STUDY_SPEAKER,
-        #     'volume_level': 0.2,
-        #     'media_content_id': const.SUMMER_HITS_PLAYLIST,
-        #     # 'media_content_id': const.SUMMER_VIBES_ALBUM,
-        #     'delayed': False,
-        #     'shuffle': True
-        #     })
-
         self.play_hallway({})
 
 # -----------------------------------------------------------------------------------
 
     def stop_hallway_event(self, event, data, kwargs):
 
-        self.call_service('sonos/stop_hallway')
+        self.call_service('sonos/stop', entity_id=const.HALLWAY_SPEAKER)
 
 # -----------------------------------------------------------------------------------
 
     def stop_bedroom_event(self, event, data, kwargs):
 
-        self.call_service('sonos/stop_bedroom')
+        self.call_service('sonos/stop', entity_id=const.BEDROOM_SPEAKER)
 
 # -----------------------------------------------------------------------------------
 
     def stop_study_event(self, event, data, kwargs):
 
-        # self.call_service('sonos/stop_study')
         self.call_service('sonos/stop', entity_id=const.STUDY_SPEAKER)
 
 # -----------------------------------------------------------------------------------
@@ -447,8 +394,7 @@ class Sonos(Hass):
 
     def play_hallway(self, kwargs):
 
-        # # media_content_id = const.BOSSANOVA_STREAM
-        # media_content_id = self.select_stream(const.HALLWAY_STREAMS)
+        media_content_id = self.select_stream(const.HALLWAY_STREAMS)
 
         # if media_content_id.startswith('spotify:'):
         #     self.play_spotify({'entity_id': const.HALLWAY_SPEAKER, 'volume_level': 0.02, 'media_content_id': media_content_id, 'delayed': False, 'shuffle': True})
@@ -456,8 +402,7 @@ class Sonos(Hass):
         #     self.call_service('sonos/play_thing', entity_id=const.HALLWAY_SPEAKER, volume_level=0.02, media_content_id=media_content_id, delayed=False, shuffle=True)
 
         retries = 10
-        player = const.HALLWAY_SPEAKER
-        player = const.STUDY_SPEAKER
+        player = const.STUDY_SPEAKER if self.lib.get_testing() else const.HALLWAY_SPEAKER
         volume = 0.02
 
         self.call_service("media_player/volume_set", entity_id=player, volume_level=volume)
@@ -465,7 +410,11 @@ class Sonos(Hass):
         for attempt in range(1, retries + 1):
             try:
                 # Attempt to resume playback
-                self.call_service("media_player/media_play", entity_id=player, media_channel="ABBA to ZZ Top and everything in between")
+                # self.call_service("media_player/media_play", entity_id=player, media_channel="ABBA to ZZ Top and everything in between")
+                if media_content_id.startswith('spotify:'):
+                    self.play_spotify({'entity_id': const.HALLWAY_SPEAKER, 'volume_level': volume, 'media_content_id': media_content_id, 'delayed': False, 'shuffle': True})
+                else:
+                    self.call_service('sonos/play_thing', entity_id=const.HALLWAY_SPEAKER, volume_level=volume, media_content_id=media_content_id, delayed=False, shuffle=True)
                 break
             except Exception as e:
                 self.log(f"play_hallway: failed to start playback in {attempt} attempts: {e}", level="WARNING")

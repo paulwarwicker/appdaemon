@@ -24,7 +24,7 @@ class Heating(Hass):
     """This is the documentation for Heating"""
 
     lib: "AutomationLib" = _helpers  # type: ignore
-    LOW_TEMPERATURE_THRESHOLD = 5.0
+    LOW_TEMPERATURE_THRESHOLD = 0.0
 
 # -----------------------------------------------------------------------------------
 
@@ -95,13 +95,15 @@ class Heating(Hass):
         temperature = self.get_state(const.HEATING, attribute="temperature")
         # self.log(f'Heating: current={current_temperature} target={temperature}')
 
-        # if forecast <= 21.5: # self.LOW_TEMPERATURE_THRESHOLD:
-        #     # temperature will already be in 0.5 degree increments
-        #     target = temperature + 1.0
-        #     if temperature < target:
-        #         attributes={'target_temp_high': target, "hvac_action": "heat"}
-        #         # self.call_service('climate/set_temperature', entity_id=const.HEATING, **attributes)
-        #         self.call_service('climate/set_temperature', entity_id=const.HEATING, temperature=target, hvac_mode='heat')
+        target = temperature + 1.0
 
+        if forecast <= self.LOW_TEMPERATURE_THRESHOLD:
+            # temperature will already be in 0.5 degree increments
+            if temperature >= target:
+                pass
+            else:
+                # attributes={'target_temp_high': target, "hvac_action": "heat"}
+                # self.call_service('climate/set_temperature', entity_id=const.HEATING, **attributes)
+                self.call_service('climate/set_temperature', entity_id=const.HEATING, temperature=target, hvac_mode='heat')
 
 # -----------------------------------------------------------------------------------

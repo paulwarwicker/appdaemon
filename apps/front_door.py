@@ -8,6 +8,7 @@
 # https://github.com/nickw444/appdaemon-testing
 
 
+from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
 import constants as const # pylint: disable=unused-import
@@ -41,6 +42,9 @@ class FrontDoor(Hass):
 
         self.run_daily(self.front_door_battery, 'sunset + 00:05:00')
 
+        runtime = datetime(2024, 1, 1, 0, 0, 0)
+        self.run_hourly(self.reset_ding, runtime)
+
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
@@ -62,7 +66,9 @@ class FrontDoor(Hass):
     def front_door_ding_event(self, event:str, data:dict, kwargs) -> None:
         """front door ding event"""
 
+        self.set_state('binary_sensor.front_door_ding', 'off')
         self.set_state('binary_sensor.front_door_ding', 'on')
+        self.set_state('binary_sensor.front_door_ding', 'off')
 
 # -----------------------------------------------------------------------------------
 
@@ -105,7 +111,7 @@ class FrontDoor(Hass):
         self.run_in(self.front_door_announce, 0)
 
         if self.lib.is_night():
-            self.call_service('lighting/front_door_ding', seconds=const.DING_TIMEOUT, cb='front_door_hallway_off', key='front_door_ding')
+            self.call_service('lighting/front_door_ding', seconds=const.DING_TIMEOUT, cb='front_door_hallway_off')
 
 # -----------------------------------------------------------------------------------
 
@@ -114,8 +120,9 @@ class FrontDoor(Hass):
 
         delay = 1 if self.lib.get_testing() else 5
 
-        self.call_service('siren/turn_on', entity_id='siren.tapo_hub')
-        self.call_service('siren/turn_on', entity_id='siren.kasa_hub')
+        # self.call_service('siren/turn_on', entity_id='siren.tapo_hub')
+        # self.call_service('siren/turn_on', entity_id='siren.kasa_hub')
+        self.call_service('siren/turn_on', entity_id=['siren.tapo_hub','siren.kasa_hub'])
 
         self.run_in(self.siren_off, delay)
 
@@ -124,8 +131,9 @@ class FrontDoor(Hass):
     def siren_off(self, kwargs) -> None:
         """turn off siren for front door ding"""
 
-        self.call_service('siren/turn_off', entity_id='siren.tapo_hub')
-        self.call_service('siren/turn_off', entity_id='siren.kasa_hub')
+        # self.call_service('siren/turn_off', entity_id='siren.tapo_hub')
+        # self.call_service('siren/turn_off', entity_id='siren.kasa_hub')
+        self.call_service('siren/turn_off', entity_id=['siren.tapo_hub','siren.kasa_hub'])
 
 # -----------------------------------------------------------------------------------
 
@@ -191,5 +199,12 @@ class FrontDoor(Hass):
         # self.turn_off(scene) # TODO: not working
         self.call_service('light/turn_off', entity_id='light.hallway_1', transition=10)
         self.call_service('light/turn_off', entity_id=const.FRONT_DOOR, transition=10)
+
+# -----------------------------------------------------------------------------------
+
+    def reset_ding(self, kwargs) -> None:
+        """reset front door ding sensor"""
+
+        self.set_state('binary_sensor.front_door_ding', 'off')
 
 # -----------------------------------------------------------------------------------

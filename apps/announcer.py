@@ -140,7 +140,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         messages = ['first announce message', 'second announce message', 'third announce message']
 
         for i, message in enumerate(messages):
-            self.run_in(self._announce, i * 2, entity_id=const.STUDY_SPEAKER, message=message)
+            _ = self.run_in(self._announce, i * 2, entity_id=const.STUDY_SPEAKER, message=message)
 
 # -----------------------------------------------------------------------------------
 
@@ -149,7 +149,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         messages = ['first broadcast message', 'second broadcast message', 'third broadcast message']
 
         for i, message in enumerate(messages):
-            self.run_in(self._announce, i * 2, entity_id=const.KITCHEN_SPEAKER, message=message)
+            _ = self.run_in(self._announce, i * 2, entity_id=const.KITCHEN_SPEAKER, message=message)
 
 # -----------------------------------------------------------------------------------
 
