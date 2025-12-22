@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 
 from typing import TYPE_CHECKING, cast
 
-from dateutil import parser
+from dateutil import parser # pylint: disable=import-error
 
 import constants as const
 import automationlib as _helpers  # type: ignore
