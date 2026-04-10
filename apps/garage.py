@@ -10,31 +10,35 @@
 import inspect
 from datetime import datetime,timedelta
 
-from typing import TYPE_CHECKING, cast
+# from typing import TYPE_CHECKING, cast
 
 import constants as const
-import automationlib as _helpers  # type: ignore
+# import automationlib as _helpers  # type: ignore
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
+# if TYPE_CHECKING:
+    # from automationlib import AutomationLib  # type: ignore
 
-class Garage(Hass):
+from automationbase import AutomationBase  # type: ignore
+
+class Garage(AutomationBase):
     """Documentation for Garage"""
 
-    lib: "AutomationLib" = _helpers  # type: ignore
+    # lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
-    async def initialize(self) -> None:
+    def initialize(self) -> None:
         """initialise"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # type: ignore
+
+        super().initialize()
 
         self.register_service('garage/open', self.garage_open_service)
         self.register_service('garage/close', self.garage_close_service)
@@ -54,8 +58,7 @@ class Garage(Hass):
         self.listen_event(self.garage_debug_event, 'garage_debug')
         self.listen_event(self.garage_test_event, 'garage_test')
 
-        runtime = datetime(2024, 1, 1, 21, 0, 0)
-        self.run_daily(self.close_garage, runtime)
+        self.run_daily(self.close_garage, "21:00")
 
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.check_garage, runtime)

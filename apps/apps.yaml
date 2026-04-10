@@ -1,83 +1,72 @@
-automationlib:
-  module: automationlib
-  class: AutomationLib
-  log_level: DEBUG
+automationbase:
+  module: automationbase
+  class: AutomationBase
+  log_level: INFO
+
+# automationlib:
+#   module: automationlib
+#   class: AutomationLib
+#   log_level: DEBUG
 
 automation:
   module: automation
   class: Automation
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
-    # - motion
-    # - lighting
-    # - timers
-    # - location
-    # - alarms
-    # - sonos
-    # - garage
-    # - weather
-    # - tap
-    # - vacuum
-    # - shelly
-
-    # - fan
-    # - doorbell
-    # - front_door
-    # - starling
-    # - car
 
 announcer:
   module: announcer
   class: Announcer
-  log_level: DEBUG
+  log_level: INFO
   dependencies: # timestamp causes cyclic dependency
-    - automationlib
+    - automationbase
 
 timestamp:
   module: timestamp
   class: Timestamp
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
 
 motion:
   module: motion
   class: Motion
   reset_on_off: false
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
 
 lighting:
   module: lighting
   class: Lighting
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
+    - motion
 
 timers:
   module: timers
   class: Timers
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
 
 location:
   module: location
   class: Location
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
     - lighting
@@ -85,34 +74,34 @@ location:
 alarms:
   module: alarms
   class: Alarms
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
 
 sonos:
   module: sonos
   class: Sonos
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
 
 garage:
   module: garage
   class: Garage
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
 
 weather:
   module: weather
   class: Weather
-  log_level: DEBUG
+  log_level: INFO
   # location: 78704 US
   dependencies:
     - announcer
@@ -120,62 +109,72 @@ weather:
 tap:
   module: tap
   class: Tap
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
 
 vacuum:
   module: vacuum
   class: Vacuum
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
 
-shelly:
-  module: shelly
-  class: Shelly
-  log_level: DEBUG
-  dependencies:
-    - automationlib
-    - announcer
-    - timestamp
+# shelly:
+#   module: shelly
+#   class: Shelly
+#   log_level: INFO
+#   dependencies:
+#     - automationbase
+#     - announcer
+#     - timestamp
 
 front_door:
   module: front_door
   class: FrontDoor
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
     - timestamp
 
 remote:
   module: remote
   class: Remote
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
 
 heating:
   module: heating
   class: Heating
-  log_level: DEBUG
+  log_level: INFO
   dependencies:
-    - automationlib
+    - automationbase
     - announcer
 
-# fan:
-#   module: fan
-#   class: Fan
-#   log_level: DEBUG
-#   dependencies:
-#     - announcer
-#     - timestamp
+fan:
+  module: fan
+  class: Fan
+  log_level: INFO
+  dependencies:
+    - automationbase
+    - announcer
+    - timestamp
+
+hue:
+  module: hue
+  class: Hue
+  log_level: INFO
+  dependencies:
+    - automationbase
+    - announcer
+    - timestamp
 
 # # --
 # doorbell:

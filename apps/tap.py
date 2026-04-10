@@ -11,20 +11,22 @@ import math
 
 from datetime import datetime,timezone
 
-from typing import TYPE_CHECKING, cast
+# from typing import TYPE_CHECKING, cast
 
 import constants as const
-import automationlib as _helpers  # type: ignore
+# import automationlib as _helpers  # type: ignore
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
+# if TYPE_CHECKING:
+#     from automationlib import AutomationLib  # type: ignore
 
-class Tap(Hass):
+from automationbase import AutomationBase  # type: ignore
+
+class Tap(AutomationBase):
     """Documentation for Tap"""
 
-    lib: "AutomationLib" = _helpers  # type: ignore
+    # lib: "AutomationLib" = _helpers  # type: ignore
     timer = None
 
 # -----------------------------------------------------------------------------------
@@ -32,11 +34,11 @@ class Tap(Hass):
     def initialize(self) -> None:
         """initialise"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # type: ignore
 
         self.register_service('tap/water_for', self.water_garden_service)
 
@@ -61,7 +63,6 @@ class Tap(Hass):
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.check_garden_tap, runtime)
 
-        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
@@ -73,7 +74,7 @@ class Tap(Hass):
 
         if state == 'on':
             self.call_service('switch/turn_off', entity_id='switch.garden_tap')
-            self.lib.delay(5)
+            self._delay(5)
             state2 = self.get_state('switch.garden_tap')
             self.log(f'\tGarden tap was {state} now {state2}', level='WARNING')
 
@@ -209,7 +210,7 @@ class Tap(Hass):
     def water_garden_daily(self, kwargs) -> None:
         """water garden daily"""
 
-        if self.lib.is_summer() and self.lib.no_rain():
+        if self._is_summer() and self._no_rain():
             kwargs = {**kwargs, 'minutes': const.DAILY_WATERING_MINUTES}
             self.water_garden_for_n_minutes(kwargs)
             self.broadcast(f'Watering garden for {const.DAILY_WATERING_MINUTES} minutes')
@@ -225,7 +226,7 @@ class Tap(Hass):
             self.log(f'\ttap_on for {minutes:d} minutes', level='INFO')
             self.call_service('switch/turn_on', entity_id='switch.garden_tap')
             self.call_service('timestamp/set', name='tap')
-            seconds = self.lib.interval(minutes=minutes)
+            seconds = self._interval(minutes=minutes)
             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
             self.timer = self.run_in(self.tap_off, seconds)
 
@@ -264,7 +265,7 @@ class Tap(Hass):
 
     def status(self, entity, attribute, old, new, kwargs) -> None:
 
-        (_, week, _) = self.lib.now().isocalendar()
+        (_, week, _) = self._now().isocalendar()
         state = 17 <= week <= 37
 
         status = f'\n\n\tweek={week}\n\tstate={state}\n'

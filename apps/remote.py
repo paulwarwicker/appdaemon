@@ -9,17 +9,19 @@
 # https://github.com/nickw444/appdaemon-testing
 
 import inspect
-from typing import TYPE_CHECKING, cast
+# from typing import TYPE_CHECKING, cast
 
 import constants as const # pylint: disable=unused-import
-import automationlib as _helpers  # type: ignore
+# import automationlib as _helpers  # type: ignore
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
+# if TYPE_CHECKING:
+#     from automationlib import AutomationLib  # type: ignore
 
-class Remote(Hass):
+from automationbase import AutomationBase  # type: ignore
+
+class Remote(AutomationBase):
     """
     Docstringfor Remote (Harmony)
     """
@@ -27,24 +29,25 @@ class Remote(Hass):
     # Expose lib as AutomationLib for the type checker; default to the helper module so
     # pylint/mypy see the attributes without requiring per-file casts. initialise()
     # will replace this with the running AppDaemon app instance.
-    lib: "AutomationLib" = _helpers  # type: ignore
+    # lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
-    async def initialize(self) -> None:
+    def initialize(self) -> None:
         """initialise"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))  # type: ignore
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # fallback
-        assert self.lib is not None
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))  # type: ignore
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # fallback
+        # assert self.lib is not None
+
+        super().initialize()
 
         self.register_service('remote/power_off_media', self.power_off_media_service)
         self.register_service('remote/watch_dvd', self.watch_dvd_service)
 
-        # self.listen_event(self.status_event, 'status')
         self.listen_event(self.power_off_media_event, 'power_off_media')
         self.listen_event(self.watch_dvd_event, 'watch_dvd')
         self.listen_event(self.power_on_media_event, 'power_on_media')
@@ -58,22 +61,22 @@ class Remote(Hass):
     async def power_off_media_service(self, namespace, domain, service, data) -> None:
         """power off media service"""
 
-        await self.log_function_name(start=True)
+        await self._log_function_name_async(start=True)
 
         await self.power_off_media(None, None, None, None, {})
 
-        await self.log_function_name(start=False)
+        await self._log_function_name_async(start=False)
 
 # -----------------------------------------------------------------------------------
 
     async def watch_dvd_service(self, namespace, domain, service, data) -> None:
         """power off media service"""
 
-        await self.log_function_name(start=True)
+        await self._log_function_name_async(start=True)
 
         await self.watch_dvd(None, None, None, None, {'dvd': True})
 
-        await self.log_function_name(start=False)
+        await self._log_function_name_async(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -96,7 +99,7 @@ class Remote(Hass):
 
     async def power_off_media(self, entity_id, attribute, old, new, kwargs) -> None:
 
-        # await self.log_function_name(start=True)
+        # await self._log_function_name_async(start=True)
 
         await self.power_off_skyq()
         await self.power_off_tv()
@@ -104,13 +107,13 @@ class Remote(Hass):
 
         await self.set_state('input_boolean.power_off_media', state='off')
 
-        # await self.log_function_name(start=False)
+        # await self._log_function_name_async(start=False)
 
 # -----------------------------------------------------------------------------------
 
     async def power_on_media(self, entity_id, attribute, old, new, kwargs) -> None:
 
-        # await self.log_function_name(start=True)
+        # await self._log_function_name_async(start=True)
 
         dvd = kwargs.get('dvd', False)
 
@@ -121,17 +124,17 @@ class Remote(Hass):
         else:
             await self.power_on_tv()
 
-        # await self.log_function_name(start=False)
+        # await self._log_function_name_async(start=False)
 
 # -----------------------------------------------------------------------------------
 
     async def watch_dvd(self, entity_id, attribute, old, new, kwargs) -> None:
 
-        await self.log_function_name(start=True)
+        await self._log_function_name_async(start=True)
 
         await self.power_on_media(None, None, None, None, {'dvd': True})
 
-        await self.log_function_name(start=False)
+        await self._log_function_name_async(start=False)
 
 # -----------------------------------------------------------------------------------
 

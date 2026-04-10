@@ -9,30 +9,37 @@
 
 # from datetime import datetime, timedelta
 
-from typing import TYPE_CHECKING, cast
+from datetime import datetime
+# from typing import TYPE_CHECKING, cast
 
 import constants as const
-import automationlib as _helpers  # type: ignore
+# import automationlib as _helpers  # type: ignore
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
-class Location(Hass):
+# if TYPE_CHECKING:
+#     from automationlib import AutomationLib  # type: ignore
+
+from automationbase import AutomationBase  # type: ignore
+
+class Location(AutomationBase):
     """This is the documentation for Location"""
 
-    lib: "AutomationLib" = _helpers  # type: ignore
+    # lib: "AutomationLib" = _helpers  # type: ignore
+    state = 'Not Driving'
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self):
         """initialise"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # type: ignore
+
+        super().initialize()
 
         self.register_service('location/max_home', self.max_home_service)
         self.register_service('location/paul_home', self.paul_home_service)
@@ -71,12 +78,15 @@ class Location(Hass):
         self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, old='Jollop_Place', location='proximity.jollop_place')
         self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, old='C_R_T', location='proximity.c_r_t')
         self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, old='C_R_T_offsite', location='proximity.c_r_t_offsite')
-        self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, old='Jan_Jim', location='proximity.jan_jim')
+        self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, old='N_F_U', location='proximity.n_f_u')
+        self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, old='La_Hogue', location='proximity.la_hogue')
 
         self.listen_event(self.test_max_home_event, 'max_home')
         self.listen_event(self.test_paul_home_event, 'paul_home')
 
-        # self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
+        runtime = datetime(2024, 1, 1)
+        self.run_minutely(self.maxine_travel_time_to_home, runtime)
+
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
@@ -84,22 +94,22 @@ class Location(Hass):
     def max_home_service(self, namespace, domain, service, kwargs) -> None:
         """max home"""
 
-        self.lib.log_function_name(start=True)
+        self._log_function_name(start=True)
 
         self.call_service('lighting/welcome_lights', cb='welcome_lights_off')
 
-        self.lib.log_function_name(start=False)
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def paul_home_service(self, namespace, domain, service, kwargs) -> None:
         """paul home"""
 
-        self.lib.log_function_name(start=True)
+        self._log_function_name(start=True)
 
         self.call_service('garage/open')
 
-        self.lib.log_function_name(start=False)
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -111,7 +121,7 @@ class Location(Hass):
         direction = self.get_state('sensor.home_maxine_direction_of_travel')
         name = const.LOCATIONS[entity_id][1]
 
-        verbose = self.lib.get_verbose_debug()
+        verbose = self._get_verbose_debug()
 
         if verbose:
             self.log(f'\tentity_id={entity_id} state={state} name={name} direction={direction} village={village} home={home}', level='DEBUG')
@@ -138,12 +148,12 @@ class Location(Hass):
 
     def max_location_detect(self, entity_id, attribute, old, new, kwargs):
 
-        self.lib.log_function_name(start=True)
+        self._log_function_name(start=True)
 
         location = kwargs['location']
         location_entity_id = (const.LOCATIONS[location][0]).lower()
 
-        verbose = self.lib.get_verbose_debug()
+        verbose = self._get_verbose_debug()
 
         if verbose:
             # 2024-11-29 17:59:07.465115 INFO location:       entity=device_tracker.maxine_iphone attribute=state old=DS_Smith_Fordham new=not_home location=proximity.ds_smith_fordham
@@ -154,15 +164,15 @@ class Location(Hass):
         elif old.lower() == location_entity_id:
             self.max_location_announce(location, 'leave', kwargs)
 
-        self.lib.log_function_name(start=False)
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def paul_location_detect(self, entity_id, attribute, old, new, kwargs):
 
-        self.lib.log_function_name(start=True)
+        self._log_function_name(start=True)
 
-        if self.lib.get_verbose_debug():
+        if self._get_verbose_debug():
             self.log(f'\tpaul location entity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
 
         if old == 'not_home' and new == 'home':
@@ -170,7 +180,7 @@ class Location(Hass):
         elif new == 'not_home' and old == 'home':
             self.call_service('garage/close')
 
-        self.lib.log_function_name(start=False)
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -189,5 +199,91 @@ class Location(Hass):
     def test_paul_home_event(self, event, data, kwargs):
 
         self.call_service('location/paul_home')
+
+# -----------------------------------------------------------------------------------
+
+    def maxine_travel_time_to_home(self, kwargs) -> None:
+        """set travel time to home for maxine. set maxine_driving_status sensor"""
+
+        self._log_function_name(start=True) #, force=True)
+
+        home = self.get_state('person.maxine') == 'home'
+
+        if not home:
+            result = self.get_state('sensor.google_travel_time')
+            direction = self.get_state('sensor.home_maxine_direction_of_travel')
+            state = self.get_state('sensor.maxine_iphone_activity')
+
+            for name, val in (('result', result), ('direction', direction), ('state', state)):
+                if name == 'result':
+                    try:
+                        result = float(val)
+                    except (ValueError, TypeError):
+                        result = 'unknown'
+                elif name == 'direction':
+                    direction = val
+                else:
+                    state = val
+
+            # # debug types
+            # if self._get_debug():
+            #     self.log(f'\tmaxine_travel_time_to_home: result={type(result)} direction={type(direction)} state={type(state)}', level='DEBUG')
+            #     self.log(f'\tmaxine_travel_time_to_home: result={result} direction={direction} state={state}', level='DEBUG')
+
+            if result == 'unknown' or result is None:
+                self.log('\tmaxine travel time is unknown', level='ERROR')
+                self._log_function_name(start=False) #, force=True)
+                return
+
+            try:
+                minutes = int(result)
+            except (TypeError, ValueError):
+                self.log(f'\tUnable to parse travel time: {result!r}', level='ERROR')
+                self._log_function_name(start=False)
+                self._log_function_name(start=False) #, force=True)
+                return
+
+            message = f'Max is {minutes} minutes away'
+
+            direction = '' if direction is None else str(direction)
+            state = '' if state is None else str(state)
+
+            if state == "Automotive":
+                if self.state != 'Driving':
+                    self.state = 'Driving'
+                    self.set_state('sensor.maxine_driving_status', state=self.state)
+            else:
+                if self.state != 'Not Driving':
+                    self.state = 'Not Driving'
+                    self.set_state('sensor.maxine_driving_status', state=self.state)
+
+            ts = self.call_service('timestamp/get', name='travel')
+
+            # compute diff safely
+            if ts is None:
+                diff = 0
+            else:
+                try:
+                    diff = int((datetime.now() - ts).total_seconds())
+                except Exception: # pylint: disable=broad-exception-caught
+                    diff = 0
+
+            # ensure direction is compared correctly (avoid using "in" on strings)
+            announce = (direction == 'towards') and self.now_is_between('08:00:00', '02:00:00') and (10 <= minutes <= 15) and (diff >= 4 * 60)
+
+            if announce:
+                try:
+                    ts_str = ts.ctime() if hasattr(ts, 'ctime') else str(ts)
+                    ts_ts = ts.timestamp() if hasattr(ts, 'timestamp') else float(diff)
+                except Exception: # pylint: disable=broad-exception-caught
+                    ts_str = str(ts)
+                    ts_ts = float(diff)
+                self.log(f'\tmessage={message} ts={ts_str} ({ts_ts:6.3f})', level='DEBUG')
+                self.call_service('announcer/announce', entity_id='media_player.study', message=message, timestamp='travel')
+        else:
+            if self.state != 'Not Driving':
+                self.set_state('sensor.maxine_driving_status', state=self.state)
+
+        self._log_function_name(start=False) #, force=True)
 
 # -----------------------------------------------------------------------------------

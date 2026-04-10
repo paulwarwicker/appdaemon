@@ -8,32 +8,36 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-from typing import TYPE_CHECKING, cast
+# from typing import TYPE_CHECKING, cast
 
 import constants as const # pylint: disable=unused-import
-import automationlib as _helpers  # type: ignore
+# import automationlib as _helpers  # type: ignore
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
+# if TYPE_CHECKING:
+#     from automationlib import AutomationLib  # type: ignore
 
-class Timers(Hass):
+from automationbase import AutomationBase  # type: ignore
+
+class Timers(AutomationBase):
     """Documentation for Timers"""
 
     timers = {}
-    lib: "AutomationLib" = _helpers  # type: ignore
+    # lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # type: ignore
+
+        super().initialize()
 
         self.register_service('timers/set', self.set_timer_service)
         self.register_service('timers/get', self.get_timer_service)
@@ -95,7 +99,7 @@ class Timers(Hass):
     def set_timer(self, name, timer) -> None:
         """set a timer"""
 
-        self.lib.log_function_name(start=True)
+        self._log_function_name(start=True)
 
         print(timer)
         extant = self.info_timer(timer)
@@ -105,7 +109,7 @@ class Timers(Hass):
             self.log(f'set_timer missing paramater name={name} timer={timer}', level='ERROR')
             return
 
-        verbose = self.lib.get_verbose_debug()
+        verbose = self._get_verbose_debug()
 
         if verbose:
             self.log(f'name={name} timer={timer}', level='DEBUG')
@@ -122,16 +126,16 @@ class Timers(Hass):
             self.timers[name] = timer
             self.print_timers()
 
-        self.lib.log_function_name(start=False)
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def get_timer(self, name):
         """get a timer"""
 
-        self.lib.log_function_name(start=True)
+        self._log_function_name(start=True)
 
-        verbose = self.lib.get_verbose_debug()
+        verbose = self._get_verbose_debug()
 
         if verbose:
             self.log(f'name={name}', level='DEBUG')
@@ -143,7 +147,7 @@ class Timers(Hass):
         else:
             self.log(f'\t\t\tdid not find timer name={name}', level='WARNING')
 
-        self.lib.log_function_name(start=False)
+        self._log_function_name(start=False)
 
         return timer
 
@@ -152,7 +156,7 @@ class Timers(Hass):
     def _cancel_timer(self, name) -> None:
         """cancel a timer callback"""
 
-        self.lib.log_function_name(start=True)
+        self._log_function_name(start=True)
 
         timer = self.get_timer(name)
 
@@ -164,7 +168,7 @@ class Timers(Hass):
         else:
             self.log(f'_cancel_timer did not find timer name={name}', level='ERROR')
 
-        self.lib.log_function_name(start=False)
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 

@@ -8,34 +8,35 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-from datetime import datetime
 import pprint
 import textwrap
 import traceback # pylint: disable=unused-import
 from io import StringIO
 
-from typing import TYPE_CHECKING, cast
+# from typing import TYPE_CHECKING, cast
 
-import constants as const
-import automationlib as _helpers  # type: ignore
+import constants as const # pylint: disable=unused-import
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# import automationlib as _helpers  # type: ignore
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
+# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
-class Automation(Hass):
+# if TYPE_CHECKING:
+#     from automationlib import AutomationLib  # type: ignore
+
+from automationbase import AutomationBase  # type: ignore
+
+class Automation(AutomationBase):
     """Documentation for Automation"""
 
-    debug = False
-    testing = False
-    verbose = False
-    trace = False
-    override = False
+    # debug = False
+    # testing = False
+    # verbose = False
+    # trace = False
+    # override = False
 
-    lib: "AutomationLib" = _helpers  # type: ignore
-    state = 'Not Driving'
-    log_level = None
+    # lib: "AutomationLib" = _helpers  # type: ignore
+    # log_level = None
 
     handlers = {}
 
@@ -44,19 +45,13 @@ class Automation(Hass):
     def initialize(self) -> None:
         """initialise"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # type: ignore
 
-        self.lib.initialize()
-
-        self.debug = self.get_state('input_boolean.debug') == 'on'
-        self.verbose = self.get_state('input_boolean.verbose') == 'on'
-        self.testing = self.get_state('input_boolean.testing') == 'on'
-        self.trace = self.get_state('input_boolean.trace') == 'on'
-        self.log(f"\tautomation state: debug={self.debug} verbose={self.verbose} testing={self.testing} trace={self.trace}", level='INFO')
+        super().initialize()
 
         self.call_service('scene/reload')
 
@@ -64,11 +59,10 @@ class Automation(Hass):
         self.listen_event(self.reset_trace, 'reset')
 
         self.listen_event(self.status_event, 'status')
-        self.listen_event(self.test_event, 'test')
 
-        self.listen_state(self.set_console_log_level, 'input_boolean.debug')
-        self.listen_state(self.set_console_log_level, 'input_boolean.verbose')
-        self.listen_state(self.set_console_log_level, 'input_boolean.trace')
+        # self.listen_state(self.set_console_log_level, 'input_boolean.debug')
+        # self.listen_state(self.set_console_log_level, 'input_boolean.verbose')
+        # self.listen_state(self.set_console_log_level, 'input_boolean.trace')
         self.listen_state(self.set_debug_flag, 'input_boolean.debug')
         self.listen_state(self.set_verbose_flag, 'input_boolean.verbose')
         self.listen_state(self.set_testing_flag, 'input_boolean.testing')
@@ -80,47 +74,37 @@ class Automation(Hass):
 
         self.listen_state(self.fire_status_event, 'input_boolean.status', new='on')
 
-        _ = self.run_daily(self.reset, '04:00:00') # daily reset including booleans
+        self.run_daily(self.reset, '04:00:00') # daily reset including booleans
 
-        _ = self.run_daily(self.set_all_state, '20:00:00') # set state - make sure before max retires (to bed)
+        self.run_daily(self.set_all_state, '20:30:00') # set state - make sure before max retires (to bed)
 
-        _ = self.run_daily(self.backup, '23:30:00')
-
-        runtime = datetime(2024, 1, 1)
-        _ = self.run_minutely(self.maxine_travel_time_to_home, runtime)
-        # self.run_minutely(self.test, runtime)
-
-        # runtime = datetime(2024, 1, 1, 0, 0, 0)
-        # self.run_hourly(...)
+        self.run_daily(self.backup, '23:30:00')
 
         self.set_all_state({})
         self._set_console_log_level()
 
-        # self.log('timestamp status', level='INFO')
-        # self.call_service('timestamp/status')
-
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
-        self.test({})
+        # self.test({})
 
 # -----------------------------------------------------------------------------------
 
     def test(self, kwargs) -> None:
         """test method"""
 
-        self.lib.log_function_name(start=True)
+        self._log_function_name(start=True)
 
-        # print(self.lib.dow())
+        # print(self._dow())
         # traceback.print_stack() # leave
 
-        self.lib.log_function_name(start=False)
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def set_all_state(self, kwargs) -> None:
         """set all state - reset to false and then set_default_state"""
 
-        self.lib.log_function_name(start=True)
+        self._log_function_name(start=True)
 
         booleans = {
             'override', 'sonos', 'lumie', 'test_1', 'test_2', 'test_3',
@@ -135,12 +119,14 @@ class Automation(Hass):
         # ensure certain booleans are not reset whether defined or not
         booleans -= {'debug', 'verbose', 'early_alarm', 'normal_alarm', 'test_alarm'}
 
+        # print(booleans)
+
         for boolean in booleans:
             self.set_state(f'input_boolean.{boolean}', state='off')
 
-        self.set_default_state()
+        # self.set_default_state()
 
-        self.lib.log_function_name(start=False)
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -152,64 +138,45 @@ class Automation(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def _set_console_log_level(self) -> None:
-        """internal method to set console level using the debug flag. set the property log_level and report a change"""
-
-        level = "DEBUG" if self.get_state('input_boolean.debug') == 'on' else "INFO"
-        prefix = "VERBOSE " if self.get_state('input_boolean.verbose') == 'on' else ""
-        log_level = level+prefix
-
-        if self.log_level != log_level:
-            self.log(f'\tchanging log level to {prefix}{level} (now {log_level} was {self.log_level})', level='INFO')
-            self.log_level = level+prefix
-
-            for module in const.MODULES:
-                app = self.get_app(module)
-                if app is not None:
-                    self.log(f'setting log level {prefix}{level} on app {module} (app={app})', level='INFO')
-                    app.set_log_level(level)
-
-# -----------------------------------------------------------------------------------
-
     def set_debug_flag(self, entity, attribute, old, new, kwargs) -> None:
         """set debug flag"""
 
-        self.debug = new == 'on'
-        self.log(f'\tautomation debug now {self.debug}', level='INFO')
+        self.shared.debug = new == 'on'
         self._set_console_log_level()
-        self.lib.set_flag_value('debug', self.debug)
+        self._set_flag_value('debug', self.shared.debug)
+        self.log(f'\tverbose={self.shared.verbose} debug={self.shared.debug} trace={self.shared.trace} testing={self.shared.testing}', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
     def set_verbose_flag(self, entity, attribute, old, new, kwargs) -> None:
         """set verbose flag"""
 
-        self.verbose = new == 'on'
-        self.log(f'\tautomation verbose now {self.verbose}', level='INFO')
+        self.shared.verbose = new == 'on'
         self._set_console_log_level()
-        self.lib.set_flag_value('verbose', self.verbose)
+        self._set_flag_value('verbose', self.shared.verbose)
+        self.log(f'\tverbose={self.shared.verbose} debug={self.shared.debug} trace={self.shared.trace} testing={self.shared.testing}', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
     def set_testing_flag(self, entity, attribute, old, new, kwargs) -> None:
         """set testing flag"""
 
-        self.testing = new == 'on'
-        self.log(f'\tautomation testing now {self.testing}', level='INFO')
+        self.shared.testing = new == 'on'
         self._set_console_log_level()
-        self.lib.set_flag_value('testing', self.testing)
+        self._set_flag_value('testing', self.shared.testing)
+        self.log(f'\tverbose={self.shared.verbose} debug={self.shared.debug} trace={self.shared.trace} testing={self.shared.testing}', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
     def set_trace_flag(self, entity, attribute, old, new, kwargs) -> None:
         """set trace flag"""
 
-        self.trace = new == 'on' # self.debug = self.verbose =
-        self.lib.set_flag_value('trace', self.trace)
-        self.log(f'\tautomation trace now {self.trace}', level='INFO')
-        self.set_state('input_boolean.debug', state='on' if self.trace else 'off')
-        self.set_state('input_boolean.verbose', state='on' if self.trace else 'off')
+        self.shared.trace = new == 'on' # self.shared.debug = self.shared.verbose =
+        self.set_state('input_boolean.debug', state='on' if self.shared.trace else 'off')
+        self.set_state('input_boolean.verbose', state='on' if self.shared.trace else 'off')
         self._set_console_log_level()
+        self._set_flag_value('trace', self.shared.trace)
+        self.log(f'\tverbose={self.shared.verbose} debug={self.shared.debug} trace={self.shared.trace} testing={self.shared.testing}', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -327,10 +294,9 @@ class Automation(Hass):
     def reset(self, kwargs) -> None:
         """reset dowstairs motion flag and set default sonos configuration"""
 
-        if self.lib.get_alarm_testing():
+        if self._get_alarm_testing():
             self.call_service('alarm/reset')
 
-        # self.call_service('motion/reset_motion_flag')
         self.call_service('sonos/unjoin_all')
 
         self.set_state('input_boolean.override', state='off')
@@ -376,92 +342,6 @@ class Automation(Hass):
         delay = self.get_state('number.living_room_audio_delay')
         if delay != 3:
             self.set_state('number.living_room_audio_delay', state=3)
-
-# -----------------------------------------------------------------------------------
-
-    def maxine_travel_time_to_home(self, kwargs) -> None:
-        """set travel time to home for maxine. set maxine_driving_status sensor"""
-
-        self.lib.log_function_name(start=True) #, force=True)
-
-        home = self.get_state('person.maxine') == 'home'
-
-        if not home:
-            result = self.get_state('sensor.google_travel_time')
-            direction = self.get_state('sensor.home_maxine_direction_of_travel')
-            state = self.get_state('sensor.maxine_iphone_activity')
-
-            for name, val in (('result', result), ('direction', direction), ('state', state)):
-                if name == 'result':
-                    try:
-                        result = float(val)
-                    except (ValueError, TypeError):
-                        result = 'unknown'
-                elif name == 'direction':
-                    direction = val
-                else:
-                    state = val
-
-            # # debug types
-            # if self.lib.get_debug():
-            #     self.log(f'\tmaxine_travel_time_to_home: result={type(result)} direction={type(direction)} state={type(state)}', level='DEBUG')
-            #     self.log(f'\tmaxine_travel_time_to_home: result={result} direction={direction} state={state}', level='DEBUG')
-
-            if result == 'unknown' or result is None:
-                self.log('\tmaxine travel time is unknown', level='ERROR')
-                self.lib.log_function_name(start=False) #, force=True)
-                return
-
-            try:
-                minutes = int(result)
-            except (TypeError, ValueError):
-                self.log(f'\tUnable to parse travel time: {result!r}', level='ERROR')
-                self.lib.log_function_name(start=False)
-                self.lib.log_function_name(start=False) #, force=True)
-                return
-
-            message = f'Max is {minutes} minutes away'
-
-            direction = '' if direction is None else str(direction)
-            state = '' if state is None else str(state)
-
-            if state == "Automotive":
-                if self.state != 'Driving':
-                    self.state = 'Driving'
-                    self.set_state('sensor.maxine_driving_status', state=self.state)
-            else:
-                if self.state != 'Not Driving':
-                    self.state = 'Not Driving'
-                    self.set_state('sensor.maxine_driving_status', state=self.state)
-
-            ts = self.call_service('timestamp/get', name='travel')
-
-            # compute diff safely
-            if ts is None:
-                diff = 0
-            else:
-                try:
-                    diff = int((datetime.now() - ts).total_seconds())
-                except Exception: # pylint: disable=broad-exception-caught
-                    diff = 0
-
-            # ensure direction is compared correctly (avoid using "in" on strings)
-            announce = (direction == 'towards') and self.now_is_between('08:00:00', '02:00:00') and (10 <= minutes <= 15) and (diff >= 4 * 60)
-
-            if announce:
-                try:
-                    ts_str = ts.ctime() if hasattr(ts, 'ctime') else str(ts)
-                    ts_ts = ts.timestamp() if hasattr(ts, 'timestamp') else float(diff)
-                except Exception: # pylint: disable=broad-exception-caught
-                    ts_str = str(ts)
-                    ts_ts = float(diff)
-                self.log(f'\tmessage={message} ts={ts_str} ({ts_ts:6.3f})', level='DEBUG')
-                self.call_service('announcer/announce', entity_id='media_player.study', message=message, timestamp='travel')
-        else:
-            if self.state != 'Not Driving':
-                self.set_state('sensor.maxine_driving_status', state=self.state)
-
-        self.lib.log_function_name(start=False) #, force=True)
 
 # -----------------------------------------------------------------------------------
 
@@ -549,9 +429,9 @@ class Automation(Hass):
         status += f'\tdefault_verbose_state={state}\n'
         state = self.get_state('input_boolean.default_testing_state')
         status += f'\tdefault_testing_state={state}\n\n'
-        status += f'\tdebug={self.debug}\n'
-        status += f'\tverbose={self.verbose}\n'
-        status += f'\ttesting={self.testing}\n\n'
+        status += f'\tdebug={self.shared.debug}\n'
+        status += f'\tverbose={self.shared.verbose}\n'
+        status += f'\ttesting={self.shared.testing}\n\n'
 
         scheduler = self.get_scheduler_entries()
 
@@ -570,13 +450,6 @@ class Automation(Hass):
         """status event"""
 
         self.status('', '', '', '', {})
-
-# -----------------------------------------------------------------------------------
-
-    def test_event(self, event, data, kwargs) -> None:
-        """test event"""
-
-        print(self.lib.is_playing(self, 'media_player.study'))
 
 # -----------------------------------------------------------------------------------
 
@@ -614,6 +487,6 @@ class Automation(Hass):
     def reset_trace(self, kwargs) -> None:
         """reset tracing flag from input_boolean"""
 
-        self.trace = self.verbose = self.debug = self.testing = False
+        self.shared.trace = self.shared.verbose = self.shared.debug = self.shared.testing = False
 
 # -----------------------------------------------------------------------------------

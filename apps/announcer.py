@@ -15,9 +15,10 @@ import uuid
 # from datetime import datetime, time, timedelta # pylint: disable=unused-import
 
 from typing import Optional
-from typing import TYPE_CHECKING, cast
+# from typing import TYPE_CHECKING, cast
 
-from ics import Calendar # type: ignore # pylint: disable=E0401
+from datetime import datetime, date
+from icalendar import Calendar  # type: ignore
 
 import yaml
 import requests  # type: ignore # pylint: disable=E0401
@@ -29,26 +30,30 @@ from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 # app_lock decorator
 import adbase as ad # type: ignore pylint: disable=E0401 disable=W0611
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
+# if TYPE_CHECKING:
+#     from automationlib import AutomationLib  # type: ignore#
 
-class Announcer(Hass): # pylint: disable=W0212 disable=W0621
+from automationbase import AutomationBase  # type: ignore
+
+class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
     """This is the documentation for Announcer"""
 
     announce_lock: Optional[threading.Lock] = None
     cache = True
-    lib: "AutomationLib" = _helpers  # type: ignore
+    # lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """Documentation for Announcer"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # type: ignore
+
+        super().initialize()
 
         self.register_service('announcer/announce', self.announce_service)
         self.register_service('announcer/broadcast', self.broadcast_service)
@@ -84,7 +89,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         announce = kwargs.get('announce', True)
         timestamp = kwargs.get('timestamp', None)
         force = kwargs.get('force', False)
-        volume = kwargs.get('volume', const.STUDY_ANNOUNCE_VOLUME_LOW if self.lib.is_night() else const.STUDY_ANNOUNCE_VOLUME)
+        volume = kwargs.get('volume', const.STUDY_ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME)
 
         entry = self.prepare(entity_id, message, timestamp, announce, force, volume)
 
@@ -101,7 +106,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         announce = kwargs.get('announce', True)
         timestamp = kwargs.get('timestamp', None)
         force = kwargs.get('force', False)
-        volume = kwargs.get('volume', const.ANNOUNCE_VOLUME_LOW if self.lib.is_night() else const.ANNOUNCE_VOLUME)
+        volume = kwargs.get('volume', const.ANNOUNCE_VOLUME_LOW if self._is_night() else const.ANNOUNCE_VOLUME)
 
         entry = self.prepare(None, message, timestamp, announce, force, volume)
 
@@ -162,9 +167,9 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         if volume is None:
             if entity_id == const.STUDY_SPEAKER:
-                volume = const.STUDY_ANNOUNCE_VOLUME_LOW if self.lib.is_night() else const.STUDY_ANNOUNCE_VOLUME
+                volume = const.STUDY_ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME
             else:
-                volume = const.ANNOUNCE_VOLUME_LOW if self.lib.is_night() else const.ANNOUNCE_VOLUME
+                volume = const.ANNOUNCE_VOLUME_LOW if self._is_night() else const.ANNOUNCE_VOLUME
 
         entry = self.prepare(entity_id, message, 'general', True, True, volume)
 
@@ -196,7 +201,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         (uu_id, entity_id, message, timestamp, announce, force, volume) = entry
 
-        # entity_ids = [const.STUDY_SPEAKER, const.HALLWAY_SPEAKER] if self.lib.get_testing() else [const.KITCHEN_SPEAKER]
+        # entity_ids = [const.STUDY_SPEAKER, const.HALLWAY_SPEAKER] if self._get_testing() else [const.KITCHEN_SPEAKER]
         # entity_ids = const.BROADCAST_ENTITY_ID if entity_id is None else [entity_id]
 
         if entity_id is None:
@@ -211,7 +216,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
                               announce=True,
                               extra={'volume': volume * 2})
 
-            self.lib.delay(1.0) # give it time to play
+            self._delay(1.0) # give it time to play
 
             self.call_service('media_player/play_media',
                               entity_id=entity_id,
@@ -220,7 +225,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
                               announce=True,
                               extra={'volume': volume})
 
-            self.lib.delay(max(len(message) * const.SECONDS_PER_CHARACTER, const.MINIMUM_MESSAGE_LENGTH))
+            self._delay(max(len(message) * const.SECONDS_PER_CHARACTER, const.MINIMUM_MESSAGE_LENGTH))
 
             if timestamp:
                 self.call_service('timestamp/set', name=timestamp)
@@ -246,22 +251,62 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         event = kwargs.get('event', None)
 
         if event in ('preannounce','bins1'):
-            self.bins_announce('preannounce', self.lib.get_testing())
+            self.bins_announce('preannounce', self._get_testing())
         elif event in ('announce', 'bins2'):
-            self.bins_announce('announce', self.lib.get_testing())
+            self.bins_announce('announce', self._get_testing())
         elif event in ('followup', 'bins3'):
-            self.bins_announce('followup', self.lib.get_testing())
+            self.bins_announce('followup', self._get_testing())
 
 # -----------------------------------------------------------------------------------
 
-    def fetch_calendar(self, url) -> Calendar:
+    # def fetch_calendar(self, url) -> Calendar:
+
+    #     try:
+    #         resp = requests.get(url=url, timeout=5.0)
+    #         resp.raise_for_status()
+    #     except requests.RequestException as exc:
+    #         self.log(f"Failed to fetch bin calendar: {exc}", level="ERROR")
+    #         return False
+
+    #     while True:
+    #         text = resp.text
+
+    #         # JSON error message?
+    #         if text.startswith("{"):
+    #             try:
+    #                 data = json.loads(text)
+    #             except json.JSONDecodeError:
+    #                 break
+
+    #             # Rate limit check
+    #             m = re.match(r"^Rate limit is exceeded\. Try again in (\d+) seconds\.$", data.get("message", ""))
+
+    #             if m:
+    #                 delay_seconds = int(m.group(1))
+    #                 self._delay(seconds=delay_seconds)
+
+    #                 # retry request after delay
+    #                 try:
+    #                     resp = requests.get(url=url, timeout=5.0)
+    #                     resp.raise_for_status()
+    #                 except requests.RequestException as exc:
+    #                     self.log(f"Failed to fetch bin calendar: {exc}", level="ERROR")
+    #                     return False
+
+    #                 continue  # re-check response
+    #         break
+
+    #     return Calendar(text)
+
+    def fetch_calendar(self, url):
+        """Fetch an ICS file and return an icalendar.Calendar object."""
 
         try:
             resp = requests.get(url=url, timeout=5.0)
             resp.raise_for_status()
         except requests.RequestException as exc:
             self.log(f"Failed to fetch bin calendar: {exc}", level="ERROR")
-            return False
+            return None
 
         while True:
             text = resp.text
@@ -279,20 +324,23 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
                 if m:
                     delay_seconds = int(m.group(1))
-                    self.lib.delay(self, delay_seconds)
+                    self._delay(seconds=delay_seconds)
 
-                    # retry request after delay
                     try:
                         resp = requests.get(url=url, timeout=5.0)
                         resp.raise_for_status()
                     except requests.RequestException as exc:
                         self.log(f"Failed to fetch bin calendar: {exc}", level="ERROR")
-                        return False
+                        return None
 
-                    continue  # re-check response
+                    continue  # retry
             break
 
-        return Calendar(text)
+        try:
+            return Calendar.from_ical(text)
+        except Exception as exc:
+            self.log(f"Failed to parse ICS calendar: {exc}", level="ERROR")
+            return None
 
 # -----------------------------------------------------------------------------------
 
@@ -315,8 +363,38 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         c = self.fetch_calendar(url)
 
-        for e in iter(c.timeline.overlapping(dow, dow)):
-            bins.append(e.name.split()[0].lower())
+        if c is None:
+            self.log("Calendar fetch failed; skipping bin announce", level="WARNING")
+            return
+
+        # for e in iter(c.timeline.overlapping(dow, dow)):
+        #     bins.append(e.name.split()[0].lower())
+
+        # Convert target day to a date object
+        target_date = dow.date()
+
+        for component in c.walk():
+            if component.name != "VEVENT":
+                continue
+
+            # DTSTART may be date or datetime
+            dtstart = component.get("DTSTART")
+            if not dtstart:
+                continue
+
+            dt = dtstart.dt
+            if isinstance(dt, datetime):
+                event_date = dt.date()
+            elif isinstance(dt, date):
+                event_date = dt
+            else:
+                continue
+
+            # Same?day match
+            if event_date == target_date:
+                summary = component.get("SUMMARY", "")
+                if summary:
+                    bins.append(summary.split()[0].lower())
 
         if test:
             bins = ['orange']
@@ -347,7 +425,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
     def vouchers_announce(self, kwargs) -> None:
 
-        dow = self.lib.dow()
+        dow = self._dow()
 
         data = {}
 
@@ -362,7 +440,7 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         value = vouchers['value']
         expiry = vouchers['expiry']
 
-        if self.lib.is_mock_run():
+        if self._is_mock_run():
             value = 1
             expiry = 'whenever'
 
@@ -381,9 +459,9 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
 
         uu_id = uuid.uuid4()
 
-        if self.lib.get_testing():
+        if self._get_testing():
             entity_id = const.STUDY_SPEAKER
-            volume = const.STUDY_ANNOUNCE_VOLUME_LOW if self.lib.is_night() else const.STUDY_ANNOUNCE_VOLUME
+            volume = const.STUDY_ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME
 
         return [uu_id, entity_id, message, timestamp, announce, force, volume]
 
@@ -399,12 +477,12 @@ class Announcer(Hass): # pylint: disable=W0212 disable=W0621
         if self.get_state('input_boolean.mute_announcement') == 'on' or hint is False:
             return False # is muted or hint is false
 
-        dow = self.lib.dow()
+        dow = self._dow()
 
         announceable1 = self.now_is_between(f'{const.START_HOUR:02d}:30:00', f'{const.END_HOUR:02d}:30:00')
         announceable2 = (dow in (2,4) and self.now_is_between('09:27:00', '09:58:00')) or (dow in (1,5) and self.now_is_between('16:27:00', '16:58:00'))
 
-        if self.lib.get_verbose_debug():
+        if self._get_verbose_debug():
             self.log(f'\tannounceable1={announceable1} announceable2={announceable2}, announceable1 and not announceable2={announceable1 and not announceable2}', level='DEBUG')
 
         return announceable1 and not announceable2

@@ -7,43 +7,27 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-
-from datetime import datetime
-from typing import TYPE_CHECKING, cast
-
 import constants as const # pylint: disable=unused-import
-import automationlib as _helpers  # type: ignore
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+from automationbase import AutomationBase  # type: ignore
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
-
-class FrontDoor(Hass):
+class FrontDoor(AutomationBase):
     """Documentation for Front Door"""
 
-    lib: "AutomationLib" = _helpers  # type: ignore
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        super().initialize()
 
         self.register_service('front_door/battery', self.front_door_battery_service)
 
         self.listen_event(self.front_door_battery_event, 'front_door_battery')
-        self.listen_event(self.front_door_ding_event, 'front_door_ding')
-        self.listen_state(self.front_door_ding, 'binary_sensor.front_door_ding', old='off', new='on')
+        self.listen_event(self.front_door_ding, 'front_door_ding')
+        self.listen_state(self.front_door_ding, 'event.front_door_ding') # , old='off', new='on')
 
         self.run_daily(self.front_door_battery, 'sunset + 00:05:00')
-
-        runtime = datetime(2024, 1, 1, 0, 0, 0)
-        self.run_hourly(self.reset_ding, runtime)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
@@ -66,9 +50,8 @@ class FrontDoor(Hass):
     def front_door_ding_event(self, event:str, data:dict, kwargs) -> None:
         """front door ding event"""
 
-        self.set_state('binary_sensor.front_door_ding', 'off')
-        self.set_state('binary_sensor.front_door_ding', 'on')
-        self.set_state('binary_sensor.front_door_ding', 'off')
+        # self.front_door_ding({})
+        print("FIXME: front_door_ding_event")
 
 # -----------------------------------------------------------------------------------
 
@@ -107,21 +90,22 @@ class FrontDoor(Hass):
     def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
         """front door ding"""
 
-        self.run_in(self.siren_on, 0)
-        self.run_in(self.front_door_announce, 0)
+        # print(f'front_door_ding: {entity} {attribute} {old} -> {new}')
 
-        if self.lib.is_night():
-            self.call_service('lighting/front_door_ding', seconds=const.DING_TIMEOUT, cb='front_door_hallway_off')
+        if new == 'on':
+            self.run_in(self.siren_on, 0)
+            self.run_in(self.front_door_announce, 0)
+
+            if self._is_night():
+                self.call_service('lighting/front_door_ding', seconds=const.DING_TIMEOUT, cb='front_door_hallway_off')
 
 # -----------------------------------------------------------------------------------
 
     def siren_on(self, kwargs) -> None:
         """turn on siren for front door ding"""
 
-        delay = 1 if self.lib.get_testing() else 5
+        delay = 1 if self._get_testing() else 5
 
-        # self.call_service('siren/turn_on', entity_id='siren.tapo_hub')
-        # self.call_service('siren/turn_on', entity_id='siren.kasa_hub')
         self.call_service('siren/turn_on', entity_id=['siren.tapo_hub','siren.kasa_hub'])
 
         self.run_in(self.siren_off, delay)
@@ -131,12 +115,9 @@ class FrontDoor(Hass):
     def siren_off(self, kwargs) -> None:
         """turn off siren for front door ding"""
 
-        # self.call_service('siren/turn_off', entity_id='siren.tapo_hub')
-        # self.call_service('siren/turn_off', entity_id='siren.kasa_hub')
         self.call_service('siren/turn_off', entity_id=['siren.tapo_hub','siren.kasa_hub'])
 
 # -----------------------------------------------------------------------------------
-
 
     def front_door_announce(self, kwargs) -> None:
         """front door announcement"""
@@ -146,65 +127,47 @@ class FrontDoor(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def ding_front_door_light(self, kwargs) -> None:
-        """Turn on front door light when dark when someone calls. see also front_door_light_on/off"""
+#     def ding_front_door_light(self, kwargs) -> None:
+#         """Turn on front door light when dark when someone calls. see also front_door_light_on/off"""
 
-        if self.now_is_between('sunset', 'sunrise'):
-            # TODO: return to previous level if was previously on
-            brightness = self.get_state(const.FRONT_DOOR, attribute='brightness')
-            state = self.get_state(const.FRONT_DOOR)
-            self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=0)
-            self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=192, transition=10)
-            # self.turn_on('scene.front_door_ding_2') # FIXME: not working - scenes dont allow transitiona
-            seconds = 12*60
-            self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
-            # FIXME:, brightness=brightness) # state=state??
-            self.run_in(self.front_door_light_off, seconds)
+#         if self.now_is_between('sunset', 'sunrise'):
+#             # TODO: return to previous level if was previously on
+#             brightness = self.get_state(const.FRONT_DOOR, attribute='brightness')
+#             state = self.get_state(const.FRONT_DOOR)
+#             self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=0)
+#             self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=192, transition=10)
+#             # self.turn_on('scene.front_door_ding_2') # FIXME: not working - scenes dont allow transitiona
+#             seconds = 12*60
+#             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
+#             # FIXME:, brightness=brightness) # state=state??
+#             self.run_in(self.front_door_light_off, seconds)
 
-# -----------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
-    def ding_hallway_light(self, kwargs) -> None:
-        """Turn on hallway light when dark"""
+#     def front_door_light_on(self, kwargs) -> None:
 
-        if self.lib.is_night():  # civil dusk till civil dawn
-            self.call_service('light/turn_on', entity_id='light.hallway_1', brightness=64, transition=5)
-            seconds = 10*60
-            self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
-            self.run_in(self.hallway_off, seconds)
+#         self.run_in(self._front_door_light_on, 0)
 
-# -----------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
-    def front_door_light_on(self, kwargs) -> None:
+#     def _front_door_light_on(self, kwargs) -> None:
 
-        self.run_in(self._front_door_light_on, 0)
+#         if self.now_is_between('sunset', 'sunrise + 1:00:00'):
+#             if self._is_below_horizon():
+#                 self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=0)
+#                 self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=128, transition=10)
+#                 self.call_service('light/turn_on', entity_id='light.garage_1', brightness=128, transition=10)
+#             else:
+#                 self.run_in(self.int_front_door_light_on, 60)  # respawn self in 60s
 
-# -----------------------------------------------------------------------------------
+# # -----------------------------------------------------------------------------------
 
-    def _front_door_light_on(self, kwargs) -> None:
+#     def front_door_light_off(self, kwargs) -> None:
 
-        if self.now_is_between('sunset', 'sunrise + 1:00:00'):
-            if self.lib.is_below_horizon():
-                self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=0)
-                self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=128, transition=10)
-                self.call_service('light/turn_on', entity_id='light.garage_1', brightness=128, transition=10)
-            else:
-                self.run_in(self.int_front_door_light_on, 60)  # respawn self in 60s
-
-# -----------------------------------------------------------------------------------
-
-    def front_door_light_off(self, kwargs) -> None:
-
-        # scene = 'scene.front_door_ding_2'
-        # self.log(f'\tscene={scene}', level='DEBUG')
-        # self.turn_off(scene) # TODO: not working
-        self.call_service('light/turn_off', entity_id='light.hallway_1', transition=10)
-        self.call_service('light/turn_off', entity_id=const.FRONT_DOOR, transition=10)
-
-# -----------------------------------------------------------------------------------
-
-    def reset_ding(self, kwargs) -> None:
-        """reset front door ding sensor"""
-
-        self.set_state('binary_sensor.front_door_ding', 'off')
+#         # scene = 'scene.front_door_ding_2'
+#         # self.log(f'\tscene={scene}', level='DEBUG')
+#         # self.turn_off(scene) # TODO: not working
+#         self.call_service('light/turn_off', entity_id='light.hallway_1', transition=10)
+#         self.call_service('light/turn_off', entity_id=const.FRONT_DOOR, transition=10)
 
 # -----------------------------------------------------------------------------------

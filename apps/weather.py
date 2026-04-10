@@ -1,39 +1,43 @@
-from datetime import datetime, timedelta
+from datetime import datetime # , timedelta
 from pathlib import Path
 
 import math
 import json  # keep enabled for debug. DO NOT COMMENT OUT # pylint: disable=W0611
 
-from typing import TYPE_CHECKING, cast
+# from typing import TYPE_CHECKING, cast
 
 import yaml
 import aiohttp  # type: ignore # pylint: disable=E0401 disable=E0611
 
 import constants as const  # pylinkint: disable=unused-import
-import automationlib as _helpers  # type: ignore
+# import automationlib as _helpers  # type: ignore
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
+# if TYPE_CHECKING:
+#     from automationlib import AutomationLib  # type: ignore
+
+from automationbase import AutomationBase  # type: ignore
 
 
-class Weather(Hass):
+class Weather(AutomationBase):
     """Weather app using tomorrow.io data"""
 
     request_kwargs = {}
-    lib: "AutomationLib" = _helpers  # type: ignore
+    # lib: "AutomationLib" = _helpers  # type: ignore
     DEBUG = False
 
 # -----------------------------------------------------------------------------------
 
-    async def initialize(self):
+    def initialize(self):
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # type: ignore
+
+        super().initialize()
 
         path = Path(f'{self.AD.config_dir}/secrets.yaml')
         path = path if path.is_file() else Path('/homeassistant/secrets.yaml')  # HAOS
@@ -62,12 +66,15 @@ class Weather(Hass):
         self.run_daily(self.frost_warning, 'sunset + 01:00:00')
         self.run_daily(self.frost_warning, '20:00:00')
 
-        interval = timedelta(minutes=10)
-        # runtime = datetime(2024, 1, 1, 0, 0, 0)
+        runtime = datetime(2024, 1, 1, 0, 0, 0)
 
-        # FIXME: would be nice if on 10 minutes exactly
-        self.run_every(self.get_weather, 'now', interval.total_seconds())
-        self.log(f'Getting weather every {interval}', level='DEBUG')
+        self.run_every(
+            self.get_weather,
+            runtime,
+            const.TENMINUTES
+        )
+
+        self.log(f'Getting weather every {const.TENMINUTES} seconds', level='DEBUG')
 
         self.call_service('announcer/initialised',
                           name=self.name.lower(), announce=False)

@@ -26,24 +26,19 @@ import constants as const # pylint: disable=unused-import
 class AutomationLib(Hass):
     """Documentation for AutomationLib"""
 
-    trace = None
-    debug = None
-    verbose = None
-    testing = None
-    tracing = False
+    trace = False
+    debug = False
+    verbose = False
+    testing = False
 
     # pylint: disable=attribute-defined-outside-init
     def initialize(self):
         """initialization logic"""
 
-        self.debug = self.get_state('input_boolean.debug') == 'on'
-        self.verbose = self.get_state('input_boolean.verbose') == 'on'
-        self.testing = self.get_state('input_boolean.testing') == 'on'
-        self.trace = self.get_state('input_boolean.trace') == 'on'
-
-        # self.listen_event(self.reset_trace, 'reset')
-
-        self.log(f'\tautomationlib state: debug={self.debug} verbose={self.verbose} testing={self.testing} trace={self.trace}', level='INFO')
+        # self.shared.debug = self.get_state('input_boolean.debug') == 'on'
+        # self.shared.verbose = self.get_state('input_boolean.verbose') == 'on'
+        # self.shared.testing = self.get_state('input_boolean.testing') == 'on'
+        # self.shared.trace = self.get_state('input_boolean.trace') == 'on'
 
         self.log('automationlib initialised -------------------------------------------------------', level='INFO')
 
@@ -198,14 +193,14 @@ class AutomationLib(Hass):
     def get_debug(self):
         """get debug setting"""
 
-        return self.debug
+        return self.shared.debug
 
 # -----------------------------------------------------------------------------------
 
     def get_verbose(self):
         """get verbose setting"""
 
-        return self.verbose
+        return self.shared.verbose
 
 # -----------------------------------------------------------------------------------
 
@@ -219,7 +214,7 @@ class AutomationLib(Hass):
     def get_testing(self):
         """get testing setting"""
 
-        return self.testing
+        return self.shared.testing
 
 # -----------------------------------------------------------------------------------
 
@@ -242,13 +237,13 @@ class AutomationLib(Hass):
 
         match _type:
             case 'debug':
-                self.debug = value
+                self.shared.debug = value
             case 'trace':
-                self.trace = value
+                self.shared.trace = value
             case 'verbose':
-                self.verbose = value
+                self.shared.verbose = value
             case 'testing':
-                self.testing = value
+                self.shared.testing = value
 
         return value
 
@@ -266,7 +261,7 @@ class AutomationLib(Hass):
         if force:
             trace = separator = notification = True
         else:
-            trace = self.tracing
+            trace = self.shared.trace
 
         frame = inspect.currentframe()
 
@@ -567,7 +562,7 @@ class AutomationLib(Hass):
     def reset_trace(self, event, data, kwargs) -> None:
         """reset tracing flag from input_boolean"""
 
-        self.trace = self.verbose = self.debug = self.testing = False
+        self.shared.trace = self.verbose = self.shared.debug = self.shared.testing = False
 
 # -----------------------------------------------------------------------------------
 

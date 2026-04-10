@@ -14,9 +14,9 @@ from enum import Enum # pylint: disable=unused-import
 MODULES: Final[list[str]] = [
   "automationlib", "automation", "timers", "timestamp", "announcer", "motion", "lighting",
   "alarms", "location", "sonos", "weather", "garage", "shelly", "vacuum", "tap", "front_door",
-  "heating", "remote",
+  "heating", "remote", "fan", "hue"
   ]
-# "starling" "car" "fan"
+# "starling" "car"
 
 # announcer
 START_HOUR: Final[int] = 8 # :30
@@ -48,7 +48,7 @@ DINING2: Final[str] = 'light.dining_room_2'
 LIVING1: Final[str] = 'light.living_room_1'
 LIVING2: Final[str] = 'light.living_room_2'
 LIVING3: Final[str] = 'light.living_room_3'
-UTILITY: Final[str] = 'light.utility_room'
+UTILITY: Final[str] = 'light.utility_room_1'
 LANDING: Final[str] = 'light.hallway_3'
 RADIATOR: Final[str] = 'light.radiator'
 HALLWAY1: Final[str] = 'light.hallway_1'
@@ -59,7 +59,7 @@ BEDROOM2: Final[str] = 'light.bedroom_2'
 BEDROOM3: Final[str] = 'light.bedroom_3'
 UPSTAIRS: Final[str] = 'light.upstairs'
 BANNISTER: Final[str] = 'light.bannister'
-CLOAKROOM: Final[str] = 'light.cloakroom'
+CLOAKROOM: Final[str] = 'light.cloakroom_1'
 TABLE_LAMP: Final[str] = 'light.table_lamp'
 FRONT_DOOR: Final[str] = 'light.front_door'
 DOWNSTAIRS: Final[str] = 'light.downstairs'
@@ -70,6 +70,7 @@ GARAGE_LIGHTS: Final[str] = 'light.garage_lights'
 KITCHEN_LIGHTS: Final[str] = 'light.kitchen_lights'
 BEDROOM_LIGHTS: Final[str] = 'light.bedroom_lights'
 BATHROOM_LIGHTS: Final[str] = 'light.bathroom_lights'
+CLOAKROOM_LIGHTS: Final[str] = 'light.cloakroom_lights'
 DINING_ROOM_LIGHTS: Final[str] = 'light.dining_room_lights'
 LIVING_ROOM_LIGHTS: Final[str] = 'light.living_room_lights'
 UTILITY_ROOM_LIGHTS: Final[str] = 'light.utility_room_lights'
@@ -141,18 +142,18 @@ SOUNDBAR_SPEAKER: Final[str] = 'media_player.living_room'
 BROADCAST_ENTITY_ID: Final[list[str]] = [KITCHEN_SPEAKER]
 ALL_SPEAKER_ENTITY_ID: Final[list[str]] = [STUDY_SPEAKER, KITCHEN_SPEAKER, BEDROOM_SPEAKER, HALLWAY_SPEAKER, BATHROOM_SPEAKER, DINING_SPEAKER, SOUNDBAR_SPEAKER, BEDROOM2_SPEAKER]
 
-TARGET_VOLUME: Final[int] = 40
 ATTEMPTS: Final[int] = 5
 RAMP_TIME: Final[int] = 20
 PLAY_DELAY: Final[float] = 0.75
 DEFAULT_VOLUME: Final[float] = 0.15
-ALARM_VOLUME: Final[float] = 0.3
+ALARM_VOLUME: Final[float] = 0.2
 ANNOUNCE_VOLUME: Final[int] = 35
 ANNOUNCE_VOLUME_LOW: Final[int] = 20
 STUDY_ANNOUNCE_VOLUME: Final[int] = 20
 STUDY_ANNOUNCE_VOLUME_LOW: Final[int] = 10
 EARLY_ALARM_TIME: Final[str] = '07:00:00'
-NORMAL_ALARM_TIME: Final[str] = '07:45:00'
+# NORMAL_ALARM_TIME: Final[str] = '07:45:00'
+NORMAL_ALARM_TIME: Final[str] = '08:00:00'
 LATE_ALARM_TIME: Final[str] = '10:00:00'
 
 PROGRESSIVE_ALARM: Final[list[str]]  = [
@@ -249,6 +250,8 @@ LOCATIONS: Final[dict[str, list[str]]] = {
     'proximity.c_r_t': ['c_r_t','C R T Offices'],
     'proximity.c_r_t_offsite': ['c_r_t_offsite','C R T Offsite meeting'],
     'proximity.jan_jim': ['jan_jim','Jan and Jim'],
+    'proximity.n_f_u': ['n_f_u','N F U Offices'],
+    'proximity.la_hogue': ['la_hogue','La Hogue'],
 }
 
 # tap
@@ -263,13 +266,21 @@ TIMESTAMPS: Final[list[str]] = [
 
 BEDROOM_BUTTON: Final[str] = 'shellybutton1-C8C9A33CDF09'
 GARAGE_BUTTON: Final[str] = 'shellybutton1-EC64C9C4F038'
+BEDROOM_SWITCH: Final[str] = '757d7dc651c4f600abea6a6de4716655'
+GARAGE_SWITCH: Final[str] = 'f595d782587949a43f91ac5b79af5e2d'
+
+SWITCHES: Final[dict[str, str]] = {
+    BEDROOM_SWITCH: 'Bedroom switch',
+    GARAGE_SWITCH: 'Garage switch',
+}
 
 BATHROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.bathroom_sensor_illuminance'
 CLOAKROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.cloakroom_sensor_illuminance'
 DOWNSTAIRS_SENSOR_ILLUMINANCE: Final[str] = 'sensor.downstairs_sensor_illuminance'
 
-BATHROOM_LUX_THRESHOLD: Final[int] = 10
-CLOAKROOM_LUX_THRESHOLD: Final[int] = 10
-DOWNSTAIRS_SENSOR_LUX_THRESHOLD: Final[int] = 10
+BATHROOM_LUX_THRESHOLD: Final[int] = 50
+CLOAKROOM_LUX_THRESHOLD: Final[int] = 50
+DOWNSTAIRS_SENSOR_LUX_THRESHOLD: Final[int] = 50
 
 HEATING: Final[str] = 'climate.heating'
+BEDROOM_RADIATOR: Final[str] = 'climate.smart_radiator_valve'

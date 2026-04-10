@@ -11,71 +11,66 @@
 
 from datetime import datetime
 
-from typing import TYPE_CHECKING, cast
+# from typing import TYPE_CHECKING, cast
 
 import constants as const
-import automationlib as _helpers  # type: ignore
+# import automationlib as _helpers  # type: ignore
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
-class Heating(Hass):
-    """This is the documentation for Heating"""
+# if TYPE_CHECKING:
+#     from automationlib import AutomationLib  # type: ignore
 
-    lib: "AutomationLib" = _helpers  # type: ignore
-    LOW_TEMPERATURE_THRESHOLD = 0.0
+from automationbase import AutomationBase  # type: ignore
+
+class Heating(AutomationBase):
+    """documentation for Heating"""
+
+    # lib: "AutomationLib" = _helpers  # type: ignore
+    boosted = False
+    bedroom_boosted = False
+    living_room_boosted = False
+    LOW_TEMPERATURE_THRESHOLD = 2.5
+    BEDROOM_THRESHOLD = 23.0
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self):
         """initialise"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # type: ignore
 
-        # self.register_service('location/max_home', self.max_home_service)
-
-        # self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, old='Jan_Jim', location='proximity.jan_jim')
+        super().initialize()
 
         runtime = datetime(2024, 1, 1, 0, 0, 0)
-        self.run_hourly(self.set_room_temperature, runtime)
 
-        # runtime = datetime(2024, 1, 1)
-        # self.run_minutely(self.test, runtime)
+        self.run_every(
+            self.set_living_room_temperature,
+            runtime,
+            const.TENMINUTES
+        )
 
-        # self.run_daily(self.set_all_state, '20:00:00') # set state - make sure before max retires (to bed)
+        self.run_every(
+            self.set_bedroom_temperature,
+            runtime,
+            const.TENMINUTES
+        )
 
-        # self.listen_event(self.test_max_home_event, 'max_home')
+        self.set_bedroom_temperature({})
+        self.set_living_room_temperature({})
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
 
-    # def max_home_service(self, namespace, domain, service, kwargs) -> None:
-#         """max home"""
+    def set_living_room_temperature(self, kwargs):
+        """set living room temperature"""
 
-#         self.lib.log_function_name(start=True)
-
-#         self.call_service('lighting/welcome_lights', cb='welcome_lights_off')
-
-#         self.lib.log_function_name(start=False)
-
-# # -----------------------------------------------------------------------------------
-
-#     def test_paul_home_event(self, event, data, kwargs):
-
-#         self.call_service('location/paul_home')
-
-# -----------------------------------------------------------------------------------
-
-    def set_room_temperature(self, kwargs):
-        """set room temperature"""
-
-        if self.lib.summer_heating():
+        if self._summer_heating():
             return
 
         attributes = self.get_state(entity_id=const.HEATING, attribute="all")
@@ -89,21 +84,66 @@ class Heating(Hass):
             self.log('Forecast low is None', level='ERROR')
             return
 
+        current = self.get_state('sensor.weather_tomorrowio_temperature')
+
+        if current is None:
+            self.log('Current temperature is None', level='ERROR')
+            return
+
+        entity_id = const.HEATING
+        temperature = self.get_state(entity_id, attribute="temperature")
+
+        if temperature is None:
+            self.log('Heating temperature is None', level='ERROR')
+            return
+
+        current = float(current)
         forecast = float(forecast)
-        # self.log(f'Forecast low: {forecast}')
-        current_temperature = self.get_state(const.HEATING, attribute="current_temperature")
-        temperature = self.get_state(const.HEATING, attribute="temperature")
-        # self.log(f'Heating: current={current_temperature} target={temperature}')
+        temperature = float(temperature)
 
-        target = temperature + 1.0
-
-        if forecast <= self.LOW_TEMPERATURE_THRESHOLD:
+        if current <= self.LOW_TEMPERATURE_THRESHOLD:
+            target = temperature + 1.0
             # temperature will already be in 0.5 degree increments
             if temperature >= target:
                 pass
             else:
                 # attributes={'target_temp_high': target, "hvac_action": "heat"}
                 # self.call_service('climate/set_temperature', entity_id=const.HEATING, **attributes)
-                self.call_service('climate/set_temperature', entity_id=const.HEATING, temperature=target, hvac_mode='heat')
+                if not self.boosted:
+                    self.call_service('climate/set_temperature', entity_id=entity_id, temperature=target, hvac_mode='heat')
+                    self.boosted = True
+        else:
+            if self.boosted:
+                target = temperature - 1.0
+                # reset to previous temperature
+                self.call_service('climate/set_temperature', entity_id=entity_id, temperature=target, hvac_mode='heat')
+                self.boosted = False
+
+# -----------------------------------------------------------------------------------
+
+    def set_bedroom_temperature(self, kwargs):
+        """set room temperature"""
+
+        if self._summer_heating() or not self.now_is_between("20:00:00", "07:00:00"):
+            return
+
+        entity_id = const.BEDROOM_RADIATOR
+        current = self.get_state(entity_id, attribute="temperature")
+
+        if current is None:
+            self.log('Radiator temperature is None', level='ERROR')
+            return
+
+        current = float(current)
+
+        if current <= self.BEDROOM_THRESHOLD:
+            target = self.BEDROOM_THRESHOLD + 1.0
+            if not self.bedroom_boosted:
+                self.call_service('climate/set_temperature', entity_id=entity_id, temperature=target, hvac_mode='heat')
+                self.bedroom_boosted = True
+        else:
+            if self.bedroom_boosted:
+                self.call_service('climate/set_temperature', entity_id=entity_id, temperature=self.BEDROOM_THRESHOLD, hvac_mode='heat')
+            self.bedroom_boosted = False
 
 # -----------------------------------------------------------------------------------

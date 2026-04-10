@@ -10,35 +10,39 @@
 
 from datetime import datetime, timedelta
 
-from typing import TYPE_CHECKING, cast
+# from typing import TYPE_CHECKING, cast
 
 import constants as const
-import automationlib as _helpers  # type: ignore
+# import automationlib as _helpers  # type: ignore
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
+# if TYPE_CHECKING:
+#     from automationlib import AutomationLib  # type: ignore
 
 # from typing import Dict
 # from pprint import pprint
 
-class Timestamp(Hass):
+from automationbase import AutomationBase  # type: ignore
+
+class Timestamp(AutomationBase):
     """Documentation for Timestamp"""
 
     ts = {}
-    lib: "AutomationLib" = _helpers  # type: ignore
+    # lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # type: ignore
+
+        super().initialize()
 
         self.register_service('timestamp/set', self.set_timestamp_service)
         self.register_service('timestamp/get', self.get_timestamp_service)
@@ -75,7 +79,7 @@ class Timestamp(Hass):
 
             self.ts[name] = ts
 
-            if self.lib.get_verbose_debug():
+            if self._get_verbose_debug():
                 self.log(f'\t{name} timestamp set to {ts}', level='DEBUG')
 
 # -----------------------------------------------------------------------------------
@@ -112,7 +116,7 @@ class Timestamp(Hass):
     def status_service(self, namespace, domain, service, kwargs):
         """status service"""
 
-        # self.lib.log_function_name(start=True, force=True)
+        # self._log_function_name(start=True, force=True)
 
         status = status = '\n\n'
 
@@ -130,7 +134,7 @@ class Timestamp(Hass):
 
         self.set_state('input_boolean.status', state='off')
 
-        # self.lib.log_function_name(start=False, force=True)
+        # self._log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
 

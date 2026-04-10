@@ -7,42 +7,49 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-from typing import TYPE_CHECKING, cast
+# from typing import TYPE_CHECKING, cast
 
 import constants as const
-import automationlib as _helpers  # type: ignore
+# import automationlib as _helpers  # type: ignore
 
-from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
+# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 
-if TYPE_CHECKING:
-    from automationlib import AutomationLib  # type: ignore
+# if TYPE_CHECKING:
+#     from automationlib import AutomationLib  # type: ignore
 
-class Shelly(Hass):
+from automationbase import AutomationBase  # type: ignore
+
+
+class Shelly(AutomationBase):
     """Documentation for Shelly"""
 
-    lib: "AutomationLib" = _helpers  # type: ignore
+    # lib: "AutomationLib" = _helpers  # type: ignore
+
+    BUTTON_WINDOW_START = '00:00:00'
+    BUTTON_WINDOW_END = '07:30:00'
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
 
-        # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        if self.lib is None:
-            # defensive fallback to module if app not present (optional)
-            self.lib = _helpers  # type: ignore
+        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
+        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
+        # if self.lib is None:
+        #     # defensive fallback to module if app not present (optional)
+        #     self.lib = _helpers  # type: ignore
+
+        super().initialize()
 
         self.listen_event(self.button_event, 'shelly.click')
 
-        self.set_log_level('DEBUG' if self.lib.get_debug() else 'INFO')
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
 
     def button_event(self, event, data, kwargs) -> None:
 
-        self.lib.log_function_name(start=True, force=True)
+        self._log_function_name(start=True, force=True)
 
         device = data['device']
 
@@ -51,33 +58,46 @@ class Shelly(Hass):
         elif device == const.GARAGE_BUTTON:
             self.garage_button(data, kwargs)
 
-        self.lib.log_function_name(start=False, force=True)
+        self._log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
 
     def bedroom_button(self, data, kwargs) -> None:
 
-        self.lib.log_function_name(start=True, force=True)
+        self._log_function_name(start=True, force=True)
 
         event_type  = None
         click_type = data['click_type']
 
-        if self.lib.get_verbose_debug():
-            self.log(f'\t{click_type} press on {const.BEDROOM_BUTTON}')
+        self.log(f'\t{click_type} press on {const.BEDROOM_BUTTON}')
+
+        pt = self.get_state('input_boolean.physical_training') == 'on'
 
         if click_type == 'single':
-            event_type  = 'snooze10'
+            if pt:
+                event_type  = 'stop_bedroom'
+            else:
+                if self.now_is_between(self.BUTTON_WINDOW_START, self.BUTTON_WINDOW_END):
+                    event_type  = 'stop_bedroom'
+                else:
+                    event_type  = 'snooze10'
         elif click_type == 'long':
-            event_type  = 'snooze30' # was 'stop_bedroom'
+            if pt:
+                event_type  = 'snooze10'
+            else:
+                if self.now_is_between(self.BUTTON_WINDOW_START, self.BUTTON_WINDOW_END):
+                    event_type  = 'stop_bedroom'
+                else:
+                    event_type  = 'snooze30'
         elif click_type == 'double':
-            event_type  = 'stop_bedroom'
+            event_type  = 'all_off'
         elif click_type == 'triple':
             event_type  = 'all_off'
 
         if event_type is not None:
             self.fire_event(event_type)
 
-        self.lib.log_function_name(start=False, force=True)
+        self._log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
 
@@ -95,22 +115,21 @@ class Shelly(Hass):
 
     def garage_button(self, data, kwargs) -> None:
 
-        self.lib.log_function_name(start=True, force=True)
+        self._log_function_name(start=True, force=True)
 
         event_type  = None
         click_type = data['click_type']
 
-        if self.lib.get_verbose_debug():
-            self.log(f'\t{click_type} press on {const.GARAGE_BUTTON}')
+        self.log(f'\t{click_type} press on {const.GARAGE_BUTTON}')
 
-        if click_type in ('single', 'long', 'double'):
+        if click_type in ('single', 'long', 'double', 'triple'):
             event_type = self._garage_event_from_state()
-        elif click_type == 'triple':
-            pass
+        # elif click_type == 'triple':
+        #     pass
 
         if event_type is not None:
             self.fire_event(event_type)
 
-        self.lib.log_function_name(start=False, force=True)
+        self._log_function_name(start=False, force=True)
 
 # -----------------------------------------------------------------------------------
