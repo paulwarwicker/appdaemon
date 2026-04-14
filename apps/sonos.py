@@ -35,9 +35,11 @@ class Sonos(AutomationBase):
         self.register_service('sonos/unjoin_entity', self.unjoin_entity_service)
         self.register_service('sonos/play_thing', self.play_thing_service)
         self.register_service('sonos/stop', self.stop_service)
+        self.register_service('sonos/cancel_snooze', self.cancel_service)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.snooze_event, 'snooze10', seconds=10*60) # any snooze event when alarm testing will snooze for 10s
+        self.listen_event(self.snooze_event, 'snooze15', seconds=15*60) # any snooze event when alarm testing will snooze for 10s
         self.listen_event(self.snooze_event, 'snooze30', seconds=30*60)
         self.listen_event(self.snooze_event, 'snooze60', seconds=60*60)
 
@@ -132,6 +134,22 @@ class Sonos(AutomationBase):
 
         self.timer = self.run_in(self.play_thing, seconds, **kwargs)
         self.snoozed = True
+
+        self._log_function_name(start=False, **force)
+
+# -----------------------------------------------------------------------------------
+
+    async def cancel_service(self, namespace, domain, service, kwargs) -> None:
+
+        force = {'force': True}
+
+        self._log_function_name(start=True, **force)
+
+        if self.timer is not None:
+            self.log(f"Cancelling existing playback timer {self.timer}", level="WARNING")
+            self.cancel_timer(self.timer)
+            self.timer = None
+            self.snoozed = False
 
         self._log_function_name(start=False, **force)
 

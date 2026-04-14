@@ -68,19 +68,19 @@ class Hue(AutomationBase):
 
         self._log_function_name(start=True)
 
-        _type = data['type']
-        _subtype = data['subtype']
+        # _type = data['type']
+        # _subtype = data['subtype']
         device_id = data["device_id"]
-        device_name = const.SWITCHES.get(device_id, device_id)
+        # device_name = const.SWITCHES.get(device_id, device_id)
 
-        if self.get_verbose_debug():
-            if _type in ('short_release', 'long_release'):
-                self.log(f'\t{_type} {_subtype} on {device_name} ({device_id})')
-            if _type == 'start':
-                print(data)
-                self.log(f'\t{_type} on {device_name} ({device_id}) with subtype {_subtype}')
-                if _subtype in ('clock_wise', 'counter_clock_wise'):
-                    self.log(f'\t\t{_subtype} for {data["duration"]}ms with {data["steps"]} steps')
+        # if self._get_verbose_debug():
+        #     print(data)
+        #     if _type in ('short_release', 'long_release'):
+        #         self.log(f'\t{_type} {_subtype} on {device_name} ({device_id})')
+        #     if _type == 'start':
+        #         self.log(f'\t{_type} on {device_name} ({device_id}) with subtype {_subtype}')
+        #         if _subtype in ('clock_wise', 'counter_clock_wise'):
+        #             self.log(f'\t\t{_subtype} for {data["duration"]}ms with {data["steps"]} steps')
 
         if device_id == const.BEDROOM_SWITCH:
             self.bedroom_button(data, kwargs)
@@ -99,28 +99,41 @@ class Hue(AutomationBase):
         _type = data['type']
         _subtype = data['subtype']
 
-        if _type == 'short_release' and _subtype in (1,2,3,4):
-            if self.get_state('input_boolean.physical_training') == 'on':
+        if _type == 'short_release':
+            if _subtype in (1,2):
                 event_type  = 'stop_bedroom'
-            else:
-                if self.now_is_between(self.BUTTON_WINDOW_START, self.BUTTON_WINDOW_END): # midnight - 07:30
-                    event_type  = 'stop_bedroom'
-                else:
-                    event_type  = 'snooze10'
+                # if self.get_state('input_boolean.physical_training') == 'on':
+                #     event_type  = 'stop_bedroom'
+                # else:
+                #     if self.now_is_between(self.BUTTON_WINDOW_START, self.BUTTON_WINDOW_END): # midnight - 07:30
+                #         event_type  = 'stop_bedroom'
+                #     else:
+                #         event_type  = 'snooze10'
+            elif _subtype (3,4):
+                event_type  = 'all_off'
 
         if _type == 'long_release':
-            if _subtype in (1,2):
+            if _subtype == 1:
                 event_type = 'snooze10'
+            elif _subtype == 2:
+                event_type = 'snooze15'
             elif _subtype == 3:
                 event_type = 'snooze30'
             elif _subtype == 4:
                 event_type = 'snooze60'
 
-        if _type in ('start') and _subtype in ('clock_wise', 'counter_clock_wise'):
+        if _type in ('start') and _subtype == 'counter_clock_wise':
             event_type = 'all_off'
+
+        if _type in ('start') and _subtype == 'clock_wise':
+            event_type = 'lumie_on'
 
         if event_type is not None:
             self.fire_event(event_type)
+
+            if event_type == 'all_off':
+                self.fire_event('stop_bedroom')
+                self.call_service('sonos/cancel_snooze')
 
         self._log_function_name(start=False)
 
