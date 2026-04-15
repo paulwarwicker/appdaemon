@@ -12,7 +12,7 @@ from enum import Enum # pylint: disable=unused-import
 
 # automation
 MODULES: Final[list[str]] = [
-  "automationlib", "automation", "timers", "timestamp", "announcer", "motion", "lighting",
+  "automation", "timers", "timestamp", "announcer", "motion", "lighting",
   "alarms", "location", "sonos", "weather", "garage", "shelly", "vacuum", "tap", "front_door",
   "heating", "remote", "fan", "hue"
   ]

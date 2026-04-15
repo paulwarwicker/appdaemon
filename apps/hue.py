@@ -101,7 +101,7 @@ class Hue(AutomationBase):
 
         if _type == 'short_release':
             if _subtype in (1,2):
-                event_type  = 'stop_bedroom'
+                event_type = 'stop_bedroom'
                 # if self.get_state('input_boolean.physical_training') == 'on':
                 #     event_type  = 'stop_bedroom'
                 # else:
@@ -109,8 +109,8 @@ class Hue(AutomationBase):
                 #         event_type  = 'stop_bedroom'
                 #     else:
                 #         event_type  = 'snooze10'
-            elif _subtype (3,4):
-                event_type  = 'all_off'
+            elif _subtype in (3,4):
+                event_type = 'all_off'
 
         if _type == 'long_release':
             if _subtype == 1:

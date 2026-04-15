@@ -9,16 +9,8 @@
 # https://github.com/nickw444/appdaemon-testing
 
 import inspect
-# from typing import TYPE_CHECKING, cast
 
 import constants as const # pylint: disable=unused-import
-# import automationlib as _helpers  # type: ignore
-
-# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-
-# if TYPE_CHECKING:
-#     from automationlib import AutomationLib  # type: ignore
-
 from automationbase import AutomationBase  # type: ignore
 
 class Remote(AutomationBase):
@@ -26,22 +18,10 @@ class Remote(AutomationBase):
     Docstringfor Remote (Harmony)
     """
 
-    # Expose lib as AutomationLib for the type checker; default to the helper module so
-    # pylint/mypy see the attributes without requiring per-file casts. initialise()
-    # will replace this with the running AppDaemon app instance.
-    # lib: "AutomationLib" = _helpers  # type: ignore
-
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
-
-        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        # self.lib = cast("AutomationLib", self.get_app('automationlib'))  # type: ignore
-        # if self.lib is None:
-        #     # defensive fallback to module if app not present (optional)
-        #     self.lib = _helpers  # fallback
-        # assert self.lib is not None
 
         super().initialize()
 

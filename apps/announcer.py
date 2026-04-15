@@ -24,14 +24,10 @@ import yaml
 import requests  # type: ignore # pylint: disable=E0401
 import arrow  # type: ignore # pylint: disable=E0401
 import constants as const
-import automationlib as _helpers  # type: ignore
 
 from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
 # app_lock decorator
 import adbase as ad # type: ignore pylint: disable=E0401 disable=W0611
-
-# if TYPE_CHECKING:
-#     from automationlib import AutomationLib  # type: ignore#
 
 from automationbase import AutomationBase  # type: ignore
 
@@ -40,18 +36,11 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
 
     announce_lock: Optional[threading.Lock] = None
     cache = True
-    # lib: "AutomationLib" = _helpers  # type: ignore
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """Documentation for Announcer"""
-
-        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        # if self.lib is None:
-        #     # defensive fallback to module if app not present (optional)
-        #     self.lib = _helpers  # type: ignore
 
         super().initialize()
 

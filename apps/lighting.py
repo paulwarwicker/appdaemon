@@ -15,17 +15,7 @@ import time
 from datetime import datetime
 from enum import Enum
 
-# from typing import TYPE_CHECKING, Optional, cast # , Any
-# from typing import TYPE_CHECKING, cast
-
 import constants as const
-# import automationlib as _helpers  # type: ignore
-
-# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-
-# if TYPE_CHECKING:
-#     from automationlib import AutomationLib  # type: ignore
-
 from automationbase import AutomationBase  # type: ignore
 
 class Callback(Enum):
@@ -36,9 +26,6 @@ class Callback(Enum):
     UTILITY_ROOM = 'utility_room'
     CLOAKROOM = 'cloakroom'
     BATHROOM = 'bathroom'
-
-# GLOBAL_MODE = Callback.UTILITY_ROOM
-
 
 class Lighting(AutomationBase):
     """
@@ -61,22 +48,10 @@ class Lighting(AutomationBase):
     kitchen_callback = None
     kitchen_seconds = None
 
-    # # Expose lib as AutomationLib for the type checker; default to the helper module so
-    # # pylint/mypy see the attributes without requiring per-file casts. initialise()
-    # # will replace this with the running AppDaemon app instance.
-    # lib: "AutomationLib" = _helpers  # type: ignore
-
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
         """initialise"""
-
-        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        # self.lib = cast("AutomationLib", self.get_app('automationlib'))  # type: ignore
-        # if self.lib is None:
-        #     # defensive fallback to module if app not present (optional)
-        #     self.lib = _helpers  # fallback
-        # assert self.lib is not None
 
         super().initialize()
 

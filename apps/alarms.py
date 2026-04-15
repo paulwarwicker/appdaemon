@@ -19,13 +19,6 @@ from datetime import datetime, timedelta
 from dateutil import parser # pylint: disable=import-error
 
 import constants as const
-# import automationlib as _helpers  # type: ignore
-
-# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-
-# if TYPE_CHECKING:
-#     from automationlib import AutomationLib  # type: ignore
-
 from automationbase import AutomationBase  # type: ignore
 
 class Alarms(AutomationBase):
@@ -37,7 +30,6 @@ class Alarms(AutomationBase):
     override = False
     default_early_alarm_schedule = 'daily'  # weekday|daily|none
     callbacks = [None, None, None]
-    # lib: "AutomationLib" = _helpers  # type: ignore
 
     NUM_WORDS = {
         0: "twelve", 1: "one", 2: "two", 3: "three", 4: "four",
@@ -56,11 +48,7 @@ class Alarms(AutomationBase):
     def initialize(self) -> None:
         """initialise alarms"""
 
-        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        # if self.lib is None:
-        #     # defensive fallback to module if app not present (optional)
-        #     self.lib = _helpers  # type: ignore
+        super().initialize()
 
         self.rota = self.generate_rota(datetime(2024, 5, 16).date(), 12)
 

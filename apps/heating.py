@@ -14,19 +14,11 @@ from datetime import datetime
 # from typing import TYPE_CHECKING, cast
 
 import constants as const
-# import automationlib as _helpers  # type: ignore
-
-# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-
-# if TYPE_CHECKING:
-#     from automationlib import AutomationLib  # type: ignore
-
 from automationbase import AutomationBase  # type: ignore
 
 class Heating(AutomationBase):
     """documentation for Heating"""
 
-    # lib: "AutomationLib" = _helpers  # type: ignore
     boosted = False
     bedroom_boosted = False
     living_room_boosted = False
@@ -37,12 +29,6 @@ class Heating(AutomationBase):
 
     def initialize(self):
         """initialise"""
-
-        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        # if self.lib is None:
-        #     # defensive fallback to module if app not present (optional)
-        #     self.lib = _helpers  # type: ignore
 
         super().initialize()
 

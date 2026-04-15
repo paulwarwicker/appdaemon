@@ -10,13 +10,6 @@ import yaml
 import aiohttp  # type: ignore # pylint: disable=E0401 disable=E0611
 
 import constants as const  # pylinkint: disable=unused-import
-# import automationlib as _helpers  # type: ignore
-
-# from hassapi import Hass  # type: ignore # pylint: disable=E0401 disable=E0611
-
-# if TYPE_CHECKING:
-#     from automationlib import AutomationLib  # type: ignore
-
 from automationbase import AutomationBase  # type: ignore
 
 
@@ -24,18 +17,12 @@ class Weather(AutomationBase):
     """Weather app using tomorrow.io data"""
 
     request_kwargs = {}
-    # lib: "AutomationLib" = _helpers  # type: ignore
+
     DEBUG = False
 
 # -----------------------------------------------------------------------------------
 
     def initialize(self):
-
-        # # runtime: get the running AutomationLib app instance (do not instantiate directly)
-        # self.lib = cast("AutomationLib", self.get_app('automationlib'))
-        # if self.lib is None:
-        #     # defensive fallback to module if app not present (optional)
-        #     self.lib = _helpers  # type: ignore
 
         super().initialize()
 

@@ -1,0 +1,16 @@
+{
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "\\.py$",
+        "cmd": "python3 ${workspaceFolder}/scripts/validate_syntax.py ${fileDirname}",
+        "runIn": "backend"
+      },
+      {
+        "match": "\\.(yml|yaml)$",
+        "cmd": "python3 ${workspaceFolder}/scripts/validate_syntax.py ${fileDirname}",
+        "runIn": "backend"
+      }
+    ]
+  }
+}

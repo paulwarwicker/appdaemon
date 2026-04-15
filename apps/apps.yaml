@@ -3,20 +3,6 @@ automationbase:
   class: AutomationBase
   log_level: INFO
 
-# automationlib:
-#   module: automationlib
-#   class: AutomationLib
-#   log_level: DEBUG
-
-automation:
-  module: automation
-  class: Automation
-  log_level: INFO
-  dependencies:
-    - automationbase
-    - announcer
-    - timestamp
-
 announcer:
   module: announcer
   class: Announcer
@@ -31,6 +17,15 @@ timestamp:
   dependencies:
     - automationbase
     - announcer
+
+automation:
+  module: automation
+  class: Automation
+  log_level: INFO
+  dependencies:
+    - automationbase
+    - announcer
+    - timestamp
 
 motion:
   module: motion

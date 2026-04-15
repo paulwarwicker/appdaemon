@@ -16,12 +16,7 @@ from datetime import datetime
 # from typing import TYPE_CHECKING, cast
 
 import constants as const
-# import automationlib as _helpers  # type: ignore
-
 from automationbase import AutomationBase  # type: ignore
-
-# if TYPE_CHECKING:
-#     from automationlib import AutomationLib  # type: ignore
 
 # @dataclass
 class Motion(AutomationBase):
@@ -330,13 +325,15 @@ class Motion(AutomationBase):
         self._log_function_name(start=True)
 
         cb = kwargs.get('cb', 'noop')
-        seconds = kwargs.get('seconds', const.DEFAULT_TIMEOUT)
+        seconds = kwargs.get('seconds', const.LONG_TIMEOUT)
 
-        if self.now_is_between('sunset + 00:15:00', 'sunrise'):
-            if new == 'off':
-                self.call_service('lighting/utility_off', cb=cb, seconds=seconds)
-            elif new == 'on':
-                self.call_service('lighting/turn_on_if_off', entity_id=const.UTILITY, cb=cb, seconds=seconds, brightness=const.QUARTER_ON)
+        # if self.now_is_between('sunset + 00:15:00', 'sunrise'):
+        #     if new == 'off':
+        #         self.call_service('lighting/utility_off', cb=cb, seconds=seconds)
+        #     elif new == 'on':
+        #         self.call_service('lighting/turn_on_if_off', entity_id=const.UTILITY, cb=cb, seconds=seconds, brightness=const.QUARTER_ON)
+
+        self.call_service(f'lighting/utility_{new}', cb=cb, seconds=seconds)
 
         self._log_function_name(start=False)
 
