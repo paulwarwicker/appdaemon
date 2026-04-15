@@ -35,7 +35,7 @@ class Timers(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def set_timer_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+    def set_timer_service(self, namespace, domain, service, kwargs) -> None:
         """set a timer service"""
 
         name = kwargs.get('name', None)
@@ -45,7 +45,7 @@ class Timers(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def get_timer_service(self, namespace:str, domain:str, service:str, kwargs:dict): # None:
+    def get_timer_service(self, namespace, domain, service, kwargs): # None:
         """get a timer service"""
 
         name = kwargs.get('name', None)
@@ -54,7 +54,7 @@ class Timers(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def cancel_timer_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+    def cancel_timer_service(self, namespace, domain, service, kwargs) -> None:
         """cancel a timer service"""
 
         name = kwargs.get('name', None)
@@ -63,7 +63,7 @@ class Timers(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def remove_timer_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+    def remove_timer_service(self, namespace, domain, service, kwargs) -> None:
         """remove a timer callback"""
 
         name = kwargs.get('name', None)
@@ -72,7 +72,7 @@ class Timers(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def timer_status_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+    def timer_status_service(self, namespace, domain, service, kwargs) -> None:
         """status"""
 
         status = ""

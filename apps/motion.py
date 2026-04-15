@@ -77,7 +77,7 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    # def set_motion_flag_service(self, namespace:str, domain:str, service:str, kwargs) -> None:
+    # def set_motion_flag_service(self, namespace, domain, service, kwargs) -> None:
     #     """set downstairs motion flag"""
 
     #     name = kwargs.get('name', None)
@@ -90,7 +90,7 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    # def reset_motion_flag_service(self, namespace:str, domain:str, service:str, kwargs) -> None:
+    # def reset_motion_flag_service(self, namespace, domain, service, kwargs) -> None:
     #     """reset motion flags"""
 
     #     self.upstairs_motion_flag = False
@@ -98,7 +98,7 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def garage_motion_service(self, namespace:str, domain:str, service:str, kwargs) -> None:
+    def garage_motion_service(self, namespace, domain, service, kwargs) -> None:
         """garage motion detected"""
 
         # if self.check_ignore_sensors():
@@ -112,14 +112,14 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def status_event(self, event:str, data:dict, kwargs) -> None:
+    def status_event(self, event, data, kwargs) -> None:
         """status event"""
 
         self.status('', '', '', '', {})
 
 # -----------------------------------------------------------------------------------
 
-    def front_door_motion_event(self, event:str, data:dict, kwargs) -> None:
+    def front_door_motion_event(self, event, data, kwargs) -> None:
         """front door motion event"""
 
         if self._get_verbose_debug():
@@ -129,7 +129,7 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def downstairs_motion_event(self, event:str, data:dict, kwargs) -> None:
+    def downstairs_motion_event(self, event, data, kwargs) -> None:
         """downstairs motion event"""
 
         if self._get_verbose_debug():
@@ -139,7 +139,7 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def upstairs_motion_event(self, event:str, data:dict, kwargs) -> None:
+    def upstairs_motion_event(self, event, data, kwargs) -> None:
         """upstairs motion event"""
 
         if self._get_verbose_debug():
@@ -149,7 +149,7 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def stairs_motion_event(self, event:str, data:dict, kwargs) -> None:
+    def stairs_motion_event(self, event, data, kwargs) -> None:
         """stairs motion event"""
 
         if self._get_verbose_debug():
@@ -161,7 +161,7 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def kitchen_motion_event(self, event:str, data:dict, kwargs) -> None:
+    def kitchen_motion_event(self, event, data, kwargs) -> None:
         """kitchen motion event"""
 
         if self._get_verbose_debug():
@@ -171,7 +171,7 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    async def utility_motion_event(self, event:str, data:dict, kwargs) -> None:
+    async def utility_motion_event(self, event, data, kwargs) -> None:
         """utility motion event"""
 
         if self._get_verbose_debug():
@@ -190,7 +190,7 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def garage_motion_event(self, event:str, data:dict, kwargs) -> None:
+    def garage_motion_event(self, event, data, kwargs) -> None:
         """garage motion event"""
 
         if self._get_verbose_debug():
@@ -202,7 +202,7 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def motion_motion_event(self, event:str, data:dict, kwargs) -> None:
+    def motion_motion_event(self, event, data, kwargs) -> None:
         """motion motion event"""
 
     #     if self._get_verbose_debug():

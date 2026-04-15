@@ -1069,7 +1069,7 @@ class Lighting(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def set_timer(self, name:str, timer:str) -> None:
+    def set_timer(self, name, timer) -> None:
         """set a timer"""
 
         old = self.timers.get(name, None)
@@ -1085,7 +1085,7 @@ class Lighting(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def get_timer(self, name:str): # -> str | None:
+    def get_timer(self, name): # -> str | None:
         """get a timer"""
 
         timer = self.timers.get(name, None)
@@ -1097,7 +1097,7 @@ class Lighting(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def _cancel_timer(self, name:str) -> None:
+    def _cancel_timer(self, name) -> None:
         """cancel a timer callback"""
 
         verbose = self._get_verbose_debug()

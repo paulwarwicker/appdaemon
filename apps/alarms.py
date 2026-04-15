@@ -75,7 +75,7 @@ class Alarms(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def reset_service(self, namespace:str, domain:str, service:str, kwargs:dict) -> None:
+    def reset_service(self, namespace, domain, service, kwargs) -> None:
         """reset alarms"""
 
         self.reset_alarms('', '', '', '', {})

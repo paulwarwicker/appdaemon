@@ -1,6 +1,8 @@
 from typing import Final
 from enum import Enum # pylint: disable=unused-import
 
+DUMMY: Final[int] = 0
+
 # class ModeSelect(Enum):
 #     MODE_A = 'mode_a'
 #     MODE_B = 'mode_b'

@@ -152,6 +152,7 @@ heating:
   dependencies:
     - automationbase
     - announcer
+    - timestamp
 
 fan:
   module: fan

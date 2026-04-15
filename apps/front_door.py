@@ -40,14 +40,14 @@ class FrontDoor(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def front_door_battery_event(self, event:str, data:dict, kwargs) -> None:
+    def front_door_battery_event(self, event, data, kwargs) -> None:
         """front door battery event"""
 
         self.front_door_battery({})
 
 # -----------------------------------------------------------------------------------
 
-    def front_door_ding_event(self, event:str, data:dict, kwargs) -> None:
+    def front_door_ding_event(self, event, data, kwargs) -> None:
         """front door ding event"""
 
         # self.front_door_ding({})
