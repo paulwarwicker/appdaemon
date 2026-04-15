@@ -411,6 +411,9 @@ class Alarms(AutomationBase):
         action = kwargs['action']
         ids = kwargs.get('ids', None)
 
+        if ids is None:
+            ids = const.EARLY_ALARM
+
         self._cancel_timer(self.early_alarm_callback, 'early alarm')
         self.early_alarm_callback = self.set_alarm(alarm_type='early', action=action, ids=ids)
 
@@ -434,6 +437,9 @@ class Alarms(AutomationBase):
 
         action = kwargs['action']
         ids = kwargs.get('ids', None)
+
+        if ids is None:
+            ids = const.NORMAL_ALARM
 
         self._cancel_timer(self.normal_alarm_callback, 'normal alarm')
         self.normal_alarm_callback = self.set_alarm(alarm_type='normal', action=action, ids=ids)
