@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=unused-argument disable=unused-variable disable=broad-exception-caught disable=line-too-long
 
-"""Montion detection and lighting control"""
+"""Motion detection and lighting control"""
 
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
@@ -10,13 +10,14 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
-from datetime import datetime
-# from dataclasses import dataclass
-
-# from typing import TYPE_CHECKING, cast
-
 import constants as const
+import requests
+import json
+import os
+import time
+
 from automationbase import AutomationBase  # type: ignore
+from datetime import datetime, timedelta
 
 # @dataclass
 class Motion(AutomationBase):
@@ -27,11 +28,6 @@ class Motion(AutomationBase):
     upstairs_motion_active = False
     downstairs_motion_flag = False
 
-    # override: bool = False
-    # upstairs_motion_flag: bool = False
-    # upstairs_motion_active: bool = False
-    # downstairs_motion_flag: bool = False
-
 # -----------------------------------------------------------------------------------
 
     def initialize(self) -> None:
@@ -39,76 +35,65 @@ class Motion(AutomationBase):
 
         super().initialize()
 
-        # self.register_service('motion/set_motion_flag', self.set_motion_flag_service)
-        # self.register_service('motion/reset_motion_flag', self.reset_motion_flag_service)
         self.register_service('motion/garage', self.garage_motion_service)
+        self.register_service('motion/reset_active', self.reset_service)
 
         self.listen_event(self.stairs_motion_event,     'stairs_motion')
         self.listen_event(self.upstairs_motion_event,   'upstairs_motion')
         self.listen_event(self.downstairs_motion_event, 'downstairs_motion')
-        self.listen_event(self.front_door_motion_event, 'front_door_motion')
         self.listen_event(self.kitchen_motion_event,    'kitchen_motion')
         self.listen_event(self.utility_motion_event,    'utility_motion')
         self.listen_event(self.garage_motion_event,     'garage_motion')
-        self.listen_event(self.motion_motion_event,     'motion_motion')
         self.listen_event(self.status_event,            'status')
+        self.listen_event(self.front_door_live_event,   'front_door_live')
+        self.listen_event(self.reset_event,             'reset_active')
 
-        self.listen_state(self.front_door_motion, 'binary_sensor.front_door_motion',          new='on')
-        self.listen_state(self.front_door_motion, 'binary_sensor.front_door_motion',          new='off', cb='front_door_off')
-        self.listen_state(self.kitchen_motion,    'binary_sensor.kitchen_sensor_motion',      new='on')
-        self.listen_state(self.kitchen_motion,    'binary_sensor.kitchen_sensor_motion',      new='off', cb='kitchen_off')
-        self.listen_state(self.utility_motion,    'binary_sensor.utility_sensor_motion',      new='on')
-        self.listen_state(self.utility_motion,    'binary_sensor.utility_sensor_motion',      new='off', cb='utility_off')
-        self.listen_state(self.bathroom_motion,   'binary_sensor.bathroom_sensor_motion',     new='on')
-        self.listen_state(self.bathroom_motion,   'binary_sensor.bathroom_sensor_motion',     new='off', cb='bathroom_off')
-        self.listen_state(self.cloakroom_motion,  'binary_sensor.cloakroom_sensor_motion',    new='on')
-        self.listen_state(self.cloakroom_motion,  'binary_sensor.cloakroom_sensor_motion',    new='off', cb='cloakroom_off')
-        self.listen_state(self.garage_motion,     'binary_sensor.garage_sensor_motion',       new='on')
-        self.listen_state(self.garage_motion,     'binary_sensor.garage_sensor_motion',       new='off', cb='garage_off')
+        self.listen_state(self.front_door_motion,       'event.front_door_motion',                  cb='front_door_hallway_off')
+        self.listen_state(self.kitchen_motion,          'binary_sensor.kitchen_sensor_motion',      new='on')
+        self.listen_state(self.kitchen_motion,          'binary_sensor.kitchen_sensor_motion',      new='off', cb='kitchen_off')
+        self.listen_state(self.utility_motion,          'binary_sensor.utility_sensor_motion',      new='on')
+        self.listen_state(self.utility_motion,          'binary_sensor.utility_sensor_motion',      new='off', cb='utility_off')
+        self.listen_state(self.bathroom_motion,         'binary_sensor.bathroom_sensor_motion',     new='on')
+        self.listen_state(self.bathroom_motion,         'binary_sensor.bathroom_sensor_motion',     new='off', cb='bathroom_off')
+        self.listen_state(self.cloakroom_motion,        'binary_sensor.cloakroom_sensor_motion',    new='on')
+        self.listen_state(self.cloakroom_motion,        'binary_sensor.cloakroom_sensor_motion',    new='off', cb='cloakroom_off')
+        self.listen_state(self.garage_motion,           'binary_sensor.garage_sensor_motion',       new='on')
+        self.listen_state(self.garage_motion,           'binary_sensor.garage_sensor_motion',       new='off', cb='garage_off')
 
-        self.listen_state(self.downstairs_motion, 'binary_sensor.downstairs_sensor_motion',   new='on')
-        self.listen_state(self.upstairs_motion,   'binary_sensor.upstairs_sensor_motion',     new='on')
-        self.listen_state(self.bedroom_motion,    'binary_sensor.bedroom_sensor_motion',      new='on')
+        self.listen_state(self.downstairs_motion,       'binary_sensor.downstairs_sensor_motion',   new='on')
+        self.listen_state(self.upstairs_motion,         'binary_sensor.upstairs_sensor_motion',     new='on')
+        self.listen_state(self.bedroom_motion,          'binary_sensor.bedroom_sensor_motion',      new='on')
+        self.listen_state(self.living_room_motion,      'binary_sensor.living_room_sensor_motion',  new='on')
 
-        self.listen_state(self.ignore_sensors,    'input_boolean.ignore_sensors',             old='off', new='on')
-        self.listen_state(self.ignore_sensors,    'input_boolean.ignore_sensors',             old='off', new='on')
+        self.listen_state(self.ignore_sensors,          'input_boolean.ignore_sensors',             old='off', new='on')
+        self.listen_state(self.ignore_sensors,          'input_boolean.ignore_sensors',             old='off', new='on')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
-
-# -----------------------------------------------------------------------------------
-
-    # def set_motion_flag_service(self, namespace, domain, service, kwargs) -> None:
-    #     """set downstairs motion flag"""
-
-    #     name = kwargs.get('name', None)
-    #     value = kwargs.get('value', None)
-
-    #     if name == 'upstairs':
-    #         self.upstairs_motion_flag = value
-    #     elif name == 'downstairs':
-    #         self.downstairs_motion_flag = value
-
-# -----------------------------------------------------------------------------------
-
-    # def reset_motion_flag_service(self, namespace, domain, service, kwargs) -> None:
-    #     """reset motion flags"""
-
-    #     self.upstairs_motion_flag = False
-    #     self.downstairs_motion_flag = False
 
 # -----------------------------------------------------------------------------------
 
     def garage_motion_service(self, namespace, domain, service, kwargs) -> None:
         """garage motion detected"""
 
-        # if self.check_ignore_sensors():
-        #     return
+        if self.check_ignore_sensors():
+            return
 
         ts = self.call_service('timestamp/get', name='garage')
         diff = (datetime.now() - ts).seconds
 
         if diff > self._interval(seconds=10):
             self.call_service('light/turn_on', entity_id=const.GARAGE2)
+
+# -----------------------------------------------------------------------------------
+
+    def reset_service(self, namespace, domain, service, data) -> None:
+        """reset"""
+
+        self._log_function_name(start=True)
+
+        self.upstairs_motion_active = False
+
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -122,10 +107,21 @@ class Motion(AutomationBase):
     def front_door_motion_event(self, event, data, kwargs) -> None:
         """front door motion event"""
 
-        if self._get_verbose_debug():
-            self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
+        self.front_door_motion('', '', '', '', {'cb': 'front_door_hallway_off'})
 
-        self.front_door_motion(None, None, None, 'on', {'seconds': 5, 'cb': 'front_door_off'})
+# -----------------------------------------------------------------------------------
+
+    def front_door_live_event(self, event, data, kwargs) -> None:
+        """front door live event"""
+
+        if self.check_ignore_sensors():
+            return
+
+        self._log_function_name(start=True)
+
+        self.download_live_view({})
+
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -177,9 +173,6 @@ class Motion(AutomationBase):
         if self._get_verbose_debug():
             self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
-        # await self.set_state('binary_sensor.utility_room_sensor_motion', state='on')
-        # await self.set_state('binary_sensor.utility_room_sensor_motion', state='off', cb='utility_off', seconds=5) # doesn't work
-
         self.utility_motion('', '', '', 'on', {'seconds': 5, 'cb': 'utility_off'})
 
         await self.sleep(10.0)
@@ -202,26 +195,31 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def motion_motion_event(self, event, data, kwargs) -> None:
-        """motion motion event"""
+    def reset_event(self, event, data, kwargs):
 
-    #     if self._get_verbose_debug():
-    #         self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
+        self.call_service('motion/reset_active')
 
-    #     entity_id = 'light.hallway_1'
-    #     self.downstairs_motion_event('',{},{})
+# -----------------------------------------------------------------------------------
 
-    #     self._delay(15)
-    #     self.upstairs_motion_event('',{},{})
-    #     self._delay(15)
-    #     self.garage_motion_event('',{},{})
-    #     self._delay(15)
-    #     self.front_door_motion_event('',{},{})
-    #     self._delay(15)
-    #     self.call_service('light/turn_off', entity_id=entity_id)
-    #     self.kitchen_motion_event('',{},{})
-    #     self._delay(15)
-    #     self.utility_motion_event('',{},{})
+    def front_door_motion(self, entity, attribute, old, new, kwargs) -> None:
+        """front door motion"""
+
+        if self.check_ignore_sensors() or new not in ('on', 'off'):
+            return
+
+        self._log_function_name(start=True)
+
+        # if self._get_verbose_debug():
+        #     self.log(f'\tfront_door_motion: entity={entity} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='DEBUG')
+        self.log(f'\tfront_door_motion: entity={entity} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='DEBUG')
+
+        cb = kwargs.get('cb', None)
+        seconds = kwargs.get('seconds', const.DING_TIMEOUT)
+
+        if self.now_is_between('sunset', 'sunrise'):
+            self.call_service(f'lighting/front_door_{new}', entity_id=const.FRONT_DOOR_LIGHTS, cb=cb, seconds=seconds)
+
+        self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
@@ -327,13 +325,8 @@ class Motion(AutomationBase):
         cb = kwargs.get('cb', 'noop')
         seconds = kwargs.get('seconds', const.LONG_TIMEOUT)
 
-        # if self.now_is_between('sunset + 00:15:00', 'sunrise'):
-        #     if new == 'off':
-        #         self.call_service('lighting/utility_off', cb=cb, seconds=seconds)
-        #     elif new == 'on':
-        #         self.call_service('lighting/turn_on_if_off', entity_id=const.UTILITY, cb=cb, seconds=seconds, brightness=const.QUARTER_ON)
-
-        self.call_service(f'lighting/utility_{new}', cb=cb, seconds=seconds)
+        if self.now_is_between('sunset + 00:15:00', 'sunrise'):
+            self.call_service(f'lighting/utility_{new}', cb=cb, seconds=seconds)
 
         self._log_function_name(start=False)
 
@@ -396,6 +389,47 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
+    def living_room_motion(self, entity, attribute, old, new, kwargs) -> None:
+
+        if self.check_ignore_sensors():
+            return
+
+        if self.get_state('light.standard_lamp', attribute="state") == 'on':
+            self.log('living_room_motion: standard_lamp on, skipping', level='DEBUG')
+            return
+
+        force = {}
+        # force = {'force': True}
+
+        self._log_function_name(**force)
+
+        cb = kwargs.get('cb', None)
+        seconds = kwargs.get('seconds', 30 * 60 * 60)
+
+        # just set timestamp
+        ts = self.call_service('timestamp/get', name='living_room')
+        self.call_service('timestamp/set', name='living_room')
+        self.call_service('timestamp/set', name='prev_living_room', value=ts)
+
+        self.call_service(f'lighting/living_room_{new}', entity_id=const.LIVING_ROOM, seconds=seconds, cb=cb)
+
+        self._log_function_name(start=False, **force)
+
+# -----------------------------------------------------------------------------------
+
+    def motion_debug(self, entity, attribute, old, new, kwargs) -> None:
+
+        force = {}
+        # force = {'force': True}
+
+        self._log_function_name(**force)
+
+        print(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwargs}')
+
+        self._log_function_name(start=False, **force)
+
+# -----------------------------------------------------------------------------------
+
     def garage_motion(self, entity_id, attribute, old, new, kwargs) -> None:
 
         if self.check_ignore_sensors():
@@ -410,22 +444,6 @@ class Motion(AutomationBase):
             self.call_service('lighting/garage_on')
         elif old == 'on' and new == 'off' and kwargs.get('test', False):
             self.call_service('lighting/garage_off')
-
-        self._log_function_name(start=False)
-
-# -----------------------------------------------------------------------------------
-
-    def front_door_motion(self, entity_id, attribute, old, new, kwargs) -> None:
-
-        if self.check_ignore_sensors():
-            return
-
-        self._log_function_name(start=True)
-
-        cb = kwargs.get('cb', None)
-
-        if self.now_is_between('sunset', 'sunrise'):
-            self.call_service(f'lighting/front_door_{new}', entity_id=const.FRONT_DOOR_LIGHTS, cb=cb)
 
         self._log_function_name(start=False)
 
@@ -472,3 +490,4 @@ class Motion(AutomationBase):
         return ignore
 
 # -----------------------------------------------------------------------------------
+

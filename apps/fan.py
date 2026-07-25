@@ -35,8 +35,17 @@ class Fan(AutomationBase):
 
         self.listen_event(self.status_event, 'status')
 
-        self.listen_state(self.fan_on, 'input_boolean.fan', new='on')
+        self.set_state('input_boolean.actual_fan_low', state='off')
+        self.set_state('input_boolean.actual_fan_medium', state='off')
+        self.set_state('input_boolean.actual_fan_high', state='off')
+
+        self.listen_state(self.fan_on, 'input_boolean.fan_low', new='on', level='low')
+        self.listen_state(self.fan_on, 'input_boolean.fan_medium', new='on', level='medium')
+        self.listen_state(self.fan_on, 'input_boolean.fan_high', new='on', level='high')
         self.listen_state(self.fan_off, 'input_boolean.fan', new='off')
+        self.listen_state(self.fan_off, 'input_boolean.fan_low', new='off', level='low')
+        self.listen_state(self.fan_off, 'input_boolean.fan_medium', new='off', level='medium')
+        self.listen_state(self.fan_off, 'input_boolean.fan_high', new='off', level='high')
         self.listen_state(self.light_on, 'input_boolean.fan_light', new='on')
         self.listen_state(self.light_off, 'input_boolean.fan_light', new='off')
 
@@ -48,15 +57,6 @@ class Fan(AutomationBase):
         """turn on bedroom fan"""
 
         self._log_function_name(start=True)
-
-        # if self.any_light_on_full('kitchen'):
-        #     self.log('\tignoring kitchen on service', level='INFO')
-        #     self._log_function_name(start=False)
-        #     return
-
-        # brightness = const_ON if self.now_is_between('sunrise', 'sunset') else const.QUARTER_ON
-        # self.call_service('light/turn_on', entity_id=const.KITCHEN_LIGHTS, brightness=brightness)
-        # self.call_service('light/turn_on', entity_id=const.KITCHEN_FLOOR_LIGHTS, brightness=brightness*2)
 
         self._log_function_name(start=False)
 
@@ -108,18 +108,78 @@ class Fan(AutomationBase):
 
         level = kwargs.get('level', 'low')
 
-        self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command=level)
+        self.toggle_state(level, 'on')
+        # self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command=level)
+        print(f"Fan level: {level} - on")
 
         self._log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
     def fan_off(self, entity, attribute, old, new, kwargs) -> None:
-        """bedroom fan off"""
+        """bedroom fan off with level"""
 
         self._log_function_name(start=True)
 
+        level = kwargs.get('level', 'low')
+
+        self.toggle_state(level, 'off')
+        # self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command=level)
+        print(f"Fan level: {level} - off")
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def toggle_state(self, level, state) -> None:
+        """toggle state of fan level input booleans"""
+
+        self._log_function_name(start=True)
+
+        other_state = 'off' if state == 'on' else 'on'
+
+        if level == 'low':
+            self.set_state('input_boolean.actual_fan_low', state=state)
+            self.set_state('input_boolean.actual_fan_medium', state=other_state)
+            self.set_state('input_boolean.actual_fan_high', state=other_state)
+            self.set_state('input_boolean.fan_medium', state=other_state)
+            self.set_state('input_boolean.fan_high', state=other_state)
+        elif level == 'medium':
+            self.set_state('input_boolean.actual_fan_low', state=other_state)
+            self.set_state('input_boolean.actual_fan_medium', state=state)
+            self.set_state('input_boolean.actual_fan_high', state=other_state)
+            self.set_state('input_boolean.fan_low', state=other_state)
+            self.set_state('input_boolean.fan_high', state=other_state)
+        elif level == 'high':
+            self.set_state('input_boolean.actual_fan_low', state=other_state)
+            self.set_state('input_boolean.actual_fan_medium', state=other_state)
+            self.set_state('input_boolean.actual_fan_high', state=state)
+            self.set_state('input_boolean.fan_low', state=other_state)
+            self.set_state('input_boolean.fan_medium', state=other_state)
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+
+        # if level == 'low':
+        #     self.set_state('input_boolean.fan_low', state='on')
+        #     self.set_state('input_boolean.fan_medium', state='off')
+        #     self.set_state('input_boolean.fan_high', state='off')
+        # elif level == 'medium':
+        #     self.set_state('input_boolean.fan_low', state='off')
+        #     self.set_state('input_boolean.fan_medium', state='on')
+        #     self.set_state('input_boolean.fan_high', state='off')
+        # elif level == 'high':
+        #     self.set_state('input_boolean.fan_low', state='off')
+        #     self.set_state('input_boolean.fan_medium', state='off')
+        #     self.set_state('input_boolean.fan_high', state='on')
+
         self.call_service('remote/send_command', entity_id='remote.broadlink', device='fan', command='off')
+
+        self.set_state('input_boolean.fan_low', state='off')
+        self.set_state('input_boolean.fan_medium', state='off')
+        self.set_state('input_boolean.fan_high', state='off')
 
         self._log_function_name(start=False)
 

@@ -20,6 +20,7 @@ class Sonos(AutomationBase):
     """Documentation for Sonos"""
 
     timer = None
+    snoozer = None
     snoozed = False
 
 # -----------------------------------------------------------------------------------
@@ -80,7 +81,8 @@ class Sonos(AutomationBase):
 
     async def snooze_service(self, namespace, domain, service, kwargs) -> None:
 
-        force = {'force': True}
+        force = {}
+        # force = {'force': True}
 
         self._log_function_name(start=True, **force)
 
@@ -117,10 +119,10 @@ class Sonos(AutomationBase):
 
         self.call_service('media_player/media_stop', entity_id=entity_id)
 
-        if self.timer is not None:
-            self.log(f"Cancelling existing playback timer {self.timer}", level="WARNING")
-            self.cancel_timer(self.timer)
-            self.timer = None
+        if self.snoozer is not None:
+            self.log(f"Cancelling existing playback timer {self.snoozer}", level="WARNING")
+            self.cancel_timer(self.snoozer)
+            self.snoozer = None
 
         kwargs = {
             'entity_id': entity_id,
@@ -132,7 +134,11 @@ class Sonos(AutomationBase):
             'set_repeat': repeat
         }
 
-        self.timer = self.run_in(self.play_thing, seconds, **kwargs)
+        self.snoozer = self.run_in(self.play_thing, seconds, **kwargs)
+        if self.timer is not None:
+            self.log(f"Cancelling existing backstop timer {self.timer}", level="WARNING")
+            self.cancel_timer(self.timer)
+            self.timer = None
         self.snoozed = True
 
         self._log_function_name(start=False, **force)
@@ -141,14 +147,15 @@ class Sonos(AutomationBase):
 
     async def cancel_service(self, namespace, domain, service, kwargs) -> None:
 
-        force = {'force': True}
+        force = {}
+        # force = {'force': True}
 
         self._log_function_name(start=True, **force)
 
-        if self.timer is not None:
-            self.log(f"Cancelling existing playback timer {self.timer}", level="WARNING")
-            self.cancel_timer(self.timer)
-            self.timer = None
+        if self.snoozer is not None:
+            self.log(f"Cancelling existing playback timer {self.snoozer}", level="WARNING")
+            self.cancel_timer(self.snoozer)
+            self.snoozer = None
             self.snoozed = False
 
         self._log_function_name(start=False, **force)
@@ -189,6 +196,19 @@ class Sonos(AutomationBase):
             self._log_function_name(start=True, **force)
             return
 
+        # state = await self.get_state(entity_id, attribute="state")
+        attributes = await self.get_state(entity_id=entity_id, attribute="all")
+        print(attributes)
+        state = attributes.get('state', None)
+
+        if state == "playing":
+            _attributes = attributes.get('attributes', {})
+            media_title = _attributes.get('media_title', "Unknown title")
+            media_artist = _attributes.get('media_artist', "Unknown artist")
+
+            self.log(f"playing {media_title} by {media_artist} on {entity_id} already. skipping {media_content_id}", level="WARNING")
+            return
+
         self.log(f"entity_id={entity_id}, media_content_id={media_content_id}, volume_level={volume_level}, ramp_time={ramp_time}", level="DEBUG") # original code
 
         await self.call_service("sonos/unjoin_entity", entity_id=entity_id)
@@ -202,16 +222,16 @@ class Sonos(AutomationBase):
         for attempt in range(const.ATTEMPTS):
             state = await self.get_state(entity_id, attribute="state")
 
-            if state != "playing":
-                self.log(f"attempt {attempt+1}: state={state}", level="DEBUG")
-                await self.call_service("media_player/play_media",
-                                        entity_id=entity_id,
-                                        media_content_type=media_content_type,
-                                        media_content_id=media_content_id)
-                await self.call_service('homeassistant/update_entity', entity_id=entity_id)
-                await self.sleep(1.0)
-            else:
+            if state == "playing":
                 break
+
+            self.log(f"attempt {attempt+1}: state={state}", level="DEBUG")
+            await self.call_service("media_player/play_media",
+                                    entity_id=entity_id,
+                                    media_content_type=media_content_type,
+                                    media_content_id=media_content_id)
+            await self.call_service('homeassistant/update_entity', entity_id=entity_id)
+            await self.sleep(1.0)
 
         # technically playing now
         self.snoozed = False
@@ -318,6 +338,13 @@ class Sonos(AutomationBase):
             entity_id = const.BEDROOM_SPEAKER
 
         self.call_service('sonos/snooze', seconds=seconds, entity_id=entity_id)
+
+        self.call_service('media_player/play_media',
+                    entity_id=entity_id,
+                    media_content_type='music',
+                    media_content_id='http://192.168.1.4:8123/local/bleur.mp3',
+                    announce=True,
+                    extra={'volume': const.ALARM_VOLUME})
 
 # -----------------------------------------------------------------------------------
 

@@ -398,6 +398,8 @@ class Alarms(AutomationBase):
         self._log_function_name(start=True)
 
         self.cancel_alarms()
+        self.set_state('input_boolean.physical_training', state='off')
+        self.set_state('input_boolean.wake_up_boo', state='off')
         self.set_alarm_state({})
 
         self._log_function_name(start=False)
@@ -596,6 +598,7 @@ class Alarms(AutomationBase):
         if alarm_type == 'early' and self.get_state('input_boolean.wake_up_boo') == 'on':
             media_content_id = const.WAKE_UP_BOO_STREAM # override
 
+        self.log(f'\tPlaying {alarm_type} alarm on {entity_id} with media_content_id={media_content_id}', level='INFO')
         self.call_service('sonos/play_thing', entity_id=entity_id, media_content_id=media_content_id, volume_level=const.ALARM_VOLUME, delayed=True)
         self.run_in(self.stop_bedroom_alarm, 60*60)
 
@@ -857,6 +860,6 @@ class Alarms(AutomationBase):
     def stop_bedroom_alarm(self, kwargs) -> None:
         """stop bedroom alarm"""
 
-        self.fire_event('stop_bedroom_event')
+        self.fire_event('stop_bedroom')
 
 # -----------------------------------------------------------------------------------

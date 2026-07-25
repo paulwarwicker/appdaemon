@@ -231,7 +231,8 @@ class Garage(AutomationBase):
 
         state = await self.get_state(const.GARAGE_ENTITY_ID)
         ts = await self.call_service('timestamp/get', name='garage')
-        self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwarg} state={state} ts={ts}', level='INFO')
+        if await self.get_verbose_debug():
+            self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwarg} state={state} ts={ts}', level='INFO')
 
         await self.log_function_name(start=False)
 

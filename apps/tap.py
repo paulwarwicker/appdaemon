@@ -9,7 +9,7 @@
 
 import math
 
-from datetime import datetime,timezone
+from datetime import datetime,timezone,date
 
 import constants as const
 from automationbase import AutomationBase  # type: ignore
@@ -30,13 +30,16 @@ class Tap(AutomationBase):
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.water_garden_event, 'water_garden')
-        self.listen_event(self.water_garden_for_action, "ios.action_fired", actionName='Water15', minutes=15)
+        self.listen_event(self.max_temp_event, 'max_temp')
+        self.listen_event(self.water_garden_for_action, "ios.action_fired", actionName='Water10', minutes=10)
 
         self.listen_state(self.set_tap_timestamp, 'switch.garden_tap', new='on', tap_state='on')
         self.listen_state(self.set_tap_timestamp, 'switch.garden_tap', new='off', tap_state='off')
 
         self.listen_state(self.water_garden_for, 'input_boolean.water_garden_1', new='on', minutes=1)
         self.listen_state(self.water_garden_stop, 'input_boolean.water_garden_1', new='off')
+        self.listen_state(self.water_garden_for, 'input_boolean.water_garden_10', new='on', minutes=10)
+        self.listen_state(self.water_garden_stop, 'input_boolean.water_garden_10', new='off')
         self.listen_state(self.water_garden_for, 'input_boolean.water_garden_15', new='on', minutes=15)
         self.listen_state(self.water_garden_stop, 'input_boolean.water_garden_15', new='off')
         self.listen_state(self.water_garden_for, 'input_boolean.water_garden_20', new='on', minutes=20)
@@ -44,7 +47,8 @@ class Tap(AutomationBase):
         self.listen_state(self.water_garden_for, 'input_boolean.water_garden_30', new='on', minutes=30)
         self.listen_state(self.water_garden_stop, 'input_boolean.water_garden_30', new='off')
 
-        self.run_daily(self.water_garden_daily, 'sunset - 01:00:00')
+        # self.run_daily(self.water_garden_daily, 'sunset - 01:00:00')
+        self.run_daily(self.water_garden_daily, '18:59:59')
 
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.check_garden_tap, runtime)
@@ -66,24 +70,49 @@ class Tap(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
+    def water_garden_service(self, namespace, domain, service, kwargs) -> None:
+        """open the garage"""
+
+        minutes = kwargs.get('minutes', None)
+
+        if minutes:
+            self.water_garden_for('', '', '', '', {'minutes': minutes})
+
+# -----------------------------------------------------------------------------------
+
+    def water_garden_event(self, event, data, kwargs) -> None:
+
+        minutes = data['minutes']
+        self.water_garden_for_n_minutes({'minutes': minutes})
+
+# -----------------------------------------------------------------------------------
+
+    def max_temp_event(self, event, data, kwargs) -> None:
+
+        max_temp = self.get_state("sensor.tomorrow_io_temperature_max_24h", default=None)
+        self.log(f'\tmax_temp_event max_temp={max_temp}', level='INFO')
+
+        # self.log(self.get_state(), level="INFO")
+
+# -----------------------------------------------------------------------------------
+
+    def status_event(self, event, data, kwargs) -> None:
+
+        self.status('', '', '', '', {})
+
+# -----------------------------------------------------------------------------------
+
+    def water_garden_for_action(self, event, data, kwargs) -> None:
+        """water garden for 10 minutes as an iOS action"""
+
+        minutes = kwargs['minutes']
+
+        self.log(f'\twater_garden_for_action for {minutes:d} minutes')
+        self.water_garden_for_n_minutes({minutes: minutes})  # was minutes=minutes
+
+# -----------------------------------------------------------------------------------
+
     def check_garden_tap(self, kwargs) -> None:
-        """check garden tap state"""
-
-        state = self.get_state('switch.garden_tap')
-
-        if state == 'on':
-            self.log(f'\tGarden tap is {state}', level='WARNING')
-            ts = self.call_service('timestamp/get', name='tap')
-            if ts is not None:
-                seconds = (datetime.now() - ts).seconds
-                n = math.ceil(seconds / 60)
-                diff1,diff2 = divmod(seconds, 60)
-                if diff1 > 0 and ((diff1 + 1) % 10) == 0:
-                    self.broadcast(f'The garden tap has been on for {n} minutes')
-            else:
-                self.log('\tFailed to get tap timestamp', level='ERROR')
-
-    def check_garden_tap2(self, kwargs) -> None:
         """Check garden tap state and broadcast every 10 minutes while on."""
 
         state = self.get_state("switch.garden_tap")
@@ -91,7 +120,7 @@ class Tap(AutomationBase):
         if state != "on":
             return
 
-        self.log("\tGarden tap is on", level="WARNING")
+        # self.log("\tGarden tap is on", level="WARNING")
 
         try:
             ts = self.call_service("timestamp/get", name="tap")
@@ -133,25 +162,15 @@ class Tap(AutomationBase):
 
         minutes = seconds // 60
         # Announce every 10 minutes (10, 20, 30, ?), but not at 0
+        # Round up if we're between minutes
         if minutes > 0 and minutes % 10 == 0:
-            n = minutes if seconds % 60 == 0 else (minutes + 1)
-            # Round up if we're between minutes
-            self.broadcast(f"The garden tap has been on for {n} minutes")
-
-# -----------------------------------------------------------------------------------
-
-    def water_garden_service(self, namespace, domain, service, kwargs) -> None:
-        """open the garage"""
-
-        minutes = kwargs.get('minutes', None)
-
-        if minutes:
-            self.water_garden_for('', '', '', '', {'minutes': minutes})
+            # n = minutes if seconds % 60 == 0 else (minutes + 1)
+            self.broadcast(f"The garden tap has been on for {minutes} minutes")
 
 # -----------------------------------------------------------------------------------
 
     def water_garden_for(self, entity, attribute, old, new, kwargs) -> None:
-        """water garden for <minutes> minutes. different switches will set 1, 15, 20, 30 minutes"""
+        """water garden for <minutes> minutes. different switches will set 1, 10, 15, 20, 30 minutes"""
 
         minutes = kwargs['minutes']
 
@@ -159,16 +178,6 @@ class Tap(AutomationBase):
             self.tap_on(minutes=minutes)
         else:
             self.error('no timer set')
-
-# -----------------------------------------------------------------------------------
-
-    def water_garden_for_action(self, event, data, kwargs) -> None:
-        """water garden for 15 minutes as an iOS action"""
-
-        minutes = kwargs['minutes']
-
-        self.log(f'\twater_garden_for_action for {minutes:d} minutes')
-        self.water_garden_for_n_minutes({minutes: minutes})  # was minutes=minutes
 
 # -----------------------------------------------------------------------------------
 
@@ -182,7 +191,7 @@ class Tap(AutomationBase):
     def water_garden_stop(self, entity, attribute, old, new, kwargs) -> None:
         """stop watering garden"""
 
-        self.tap_off({}) # TODO: stop running thread
+        self.tap_off({})
 
 # -----------------------------------------------------------------------------------
 
@@ -199,19 +208,51 @@ class Tap(AutomationBase):
         if self._is_summer() and self._no_rain():
             kwargs = {**kwargs, 'minutes': const.DAILY_WATERING_MINUTES}
             self.water_garden_for_n_minutes(kwargs)
-            self.broadcast(f'Watering garden for {const.DAILY_WATERING_MINUTES} minutes')
+
+# -----------------------------------------------------------------------------------
+
+    def is_watering_allowed_today(self, d: date | None = None) -> bool:
+        """Check if watering is allowed today based on the day of the week."""
+
+        d = d or date.today()
+        return d.isoweekday() in (1, 4)
 
 # -----------------------------------------------------------------------------------
 
     def tap_on(self, **kwargs) -> None:
         """turn garden tap on for <minutes> minutes"""
 
-        minutes = kwargs['minutes']
+        if self.get_state('input_boolean.hosepipe_ban'):
+            max_temp = self.get_state("sensor.tomorrow_io_temperature_max_24h", default=None)
+            if max_temp is not None:
+                try:
+                    max_temp = float(max_temp)
+                except ValueError:
+                    self.log(f"Invalid max temperature value: {max_temp}", level="ERROR")
+                    return
+            else:
+                self.log("Failed to get max temperature: sensor value is None", level="ERROR")
+                return
+            if self.is_watering_allowed_today():
+                pass
+            elif (max_temp >= const.HOSEPIPE_BAN_TEMPERATURE_THRESHOLD):
+                temp = floor(const.HOSEPIPE_BAN_TEMPERATURE_THRESHOLD)
+                message = f'Temperature was above {temp} degrees'
+                self.broadcast(message)
+                self.log(message, level='WARNING')
+            else:
+                message = 'Hosepipe ban is enforced'
+                self.broadcast(message)
+                self.log(message, level='ERROR')
+                return
+
+        minutes = kwargs.get('minutes', None)
 
         if minutes:
-            self.log(f'\ttap_on for {minutes:d} minutes', level='INFO')
             self.call_service('switch/turn_on', entity_id='switch.garden_tap')
             self.call_service('timestamp/set', name='tap')
+            self.log(f'\ttap_on for {minutes:d} minutes', level='INFO')
+            self.broadcast(f'Watering garden for {minutes:d} minutes')
             seconds = self._interval(minutes=minutes)
             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
             self.timer = self.run_in(self.tap_off, seconds)
@@ -221,6 +262,7 @@ class Tap(AutomationBase):
     def tap_off(self, kwargs) -> None:
         """turn garden tap off"""
 
+        # if hasattr(self, 'timer') and self.timer is not None:
         if self.timer is not None:
             self.cancel_timer(self.timer)
             self.timer = None
@@ -232,20 +274,6 @@ class Tap(AutomationBase):
         self.set_state('input_boolean.water_garden_15', state='off')
         self.set_state('input_boolean.water_garden_20', state='off')
         self.set_state('input_boolean.water_garden_30', state='off')
-
-# -----------------------------------------------------------------------------------
-
-    def water_garden_event(self, event, data, kwargs) -> None:
-
-        minutes = data['minutes']
-        self.water_garden_for_n_minutes({'minutes': minutes})
-        self.broadcast(f'Watering garden for {minutes} minutes')
-
-# -----------------------------------------------------------------------------------
-
-    def status_event(self, event, data, kwargs) -> None:
-
-        self.status('', '', '', '', {})
 
 # -----------------------------------------------------------------------------------
 

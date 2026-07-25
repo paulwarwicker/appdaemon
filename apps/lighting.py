@@ -11,6 +11,7 @@
 # import asyncio
 import asyncio
 import traceback
+import json
 import time
 from datetime import datetime
 from enum import Enum
@@ -84,6 +85,8 @@ class Lighting(AutomationBase):
         self.register_service('lighting/kitchen_on', self.kitchen_on_service)
         self.register_service('lighting/kitchen_off', self.kitchen_off_service)
         self.register_service('lighting/study_off', self.study_off_service)
+        self.register_service('lighting/living_room_on', self.living_room_on_service)
+        self.register_service('lighting/living_room_off', self.living_room_off_service)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.status_event, 'timers')
@@ -118,8 +121,11 @@ class Lighting(AutomationBase):
 
         self.run_daily(self.living_room_on, 'sunset - 00:10:00')
         self.run_daily(self.downstairs_all_off, '23:30:00')
-        self.run_daily(self.outside_off, '21:30:00')
+        self.run_daily(self.garden_lights_on, 'sunset - 00:10:00')
+        self.run_daily(self.garden_lights_off, '21:30:00')
         self.run_daily(self.all_off, '02:00:00')
+
+        self.call_service('light/turn_off', entity_id=const.OUTSIDE_LIGHTS)
 
         runtime = datetime(2024, 1, 1)
         self.run_minutely(self.purge_timers, runtime)
@@ -275,6 +281,57 @@ class Lighting(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
+    def living_room_on_service(self, namespace, domain, service, data) -> None:
+        """turn on living room lights"""
+
+        force = data.get('force', False)
+
+        if not force and self.check_override('living_room'):
+            return
+
+        if not self._is_night():
+            return
+
+        self._log_function_name(start=True)
+
+        # main lights
+        brightness = self.get_brightness()
+        self.call_service('light/turn_on', entity_id=const.STANDARD_LAMP, brightness=brightness)
+        self.call_service('light/turn_on', entity_id=const.TABLE_LAMP, brightness=brightness)
+        self.call_service('light/turn_on', entity_id=const.RADIATOR, brightness=brightness)
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def living_room_off_service(self, namespace, domain, service, data) -> None:
+        """turn off living room lights"""
+
+        self._log_function_name(start=True)
+
+        # cb = data.get('cb', 'noop')
+        # callback = self.get_callback(cb)
+        # seconds = data.get('seconds', const.LONG_TIMEOUT)
+
+        # if self.check_override('kitchen'):
+        #     self.kitchen_cb = cb
+        #     self.kitchen_callback = callback
+        #     self.kitchen_seconds = seconds
+        #     self.callback = Callback.KITCHEN
+        #     self.log('\tdeferring kitchen off service', level='INFO')
+        #     self.run_in(self.deferred_kitchen_off, const.ONEHOUR)
+        #     self._log_function_name(start=False)
+        #     return
+
+        # self.show_service(namespace, domain, service, data, cb, callback, seconds)
+
+        # self.set_callback(cb, callback, seconds)
+        # self.set_callback('kitchen_floor_off', self.get_callback('kitchen_floor_off'), const.KITCHEN_FLOOR_TIMEOUT)
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
     def utility_on_service(self, namespace, domain, service, data) -> None:
         """turn on utility lights"""
 
@@ -286,9 +343,23 @@ class Lighting(AutomationBase):
 
         self._log_function_name(start=True)
 
-        brightness = self.get_brightness()
+        # try:
+        #     lux = int(self.get_state(const.UTILITY_SENSOR_ILLUMINANCE))
+        # except (TypeError, ValueError):
+        #     lux = None
 
-        self.call_service('light/turn_on', entity_id=const.UTILITY_ROOM_LIGHTS, brightness=brightness)
+        # if lux is not None and lux < const.UTILITY_LUX_THRESHOLD:
+        #     # brightness = const.HALF_ON if self.now_is_between(sunset, f'{sunset}{plus1}') or self.now_is_between(sunrise, f'{sunrise}{plus1}') else const.QUARTER_ON
+        #     brightness = const.FULL_ON # const.QUARTER_ON if self._is_summer() else const.HALF_ON
+
+        #     self.show_service(namespace, domain, service, data, cb)
+
+        #     if self._get_verbose_debug():
+        #         self.log(f'brightness={brightness}', level='DEBUG')
+
+        if self._is_night():
+            brightness = self.get_brightness()
+            self.call_service('light/turn_on', entity_id=const.UTILITY_ROOM_LIGHTS, brightness=brightness)
 
         self._log_function_name(start=False)
 
@@ -475,7 +546,7 @@ class Lighting(AutomationBase):
 
         self.show_service(namespace, domain, service, data, cb, callback)
 
-        if self.lumie_on_window() or force:
+        if self.lumie_on_window(force):
             self.call_service('light/turn_on', entity_id=const.LUMIE, brightness=brightness)
             self.set_callback(cb, callback)
         else:
@@ -490,7 +561,7 @@ class Lighting(AutomationBase):
 
         self._log_function_name(start=True)
 
-        self.call_service('light/turn_off', entity_id=const.LUMIE)
+        self.call_service('light/turn_off', entity_id=const.LUMIE, transition=10)
 
         self._log_function_name(start=False)
 
@@ -499,12 +570,16 @@ class Lighting(AutomationBase):
     def upstairs_on_service(self, namespace, domain, service, data) -> None:
         """turn on landing and bedroom lights"""
 
+        if self.get_state('input_boolean.disable_bedroom_lights') == 'on':
+            self.log('\tbedroom lights disabled', level='WARNING')
+            return
+
         self._log_function_name(start=True)
 
-        if self.get_state('input_boolean.disable_bedroom_lights') == 'on' or not self.bedroom_on_window():
-            self.call_service('lighting/lumie_on')
-            self._log_function_name(start=False)
-            return
+        # if self.bedroom_on_window():
+        #     self.call_service('lighting/lumie_on', brightness=self._percent_to_brightness(20), force=True) # turn on lumie at 20% if outside time window for bedroom or disabled
+        #     self._log_function_name(start=False)
+        #     return
 
         self.set_state('input_boolean.disable_bedroom_lights', state='off')
 
@@ -516,7 +591,7 @@ class Lighting(AutomationBase):
 
         diff1 = (upstairs_ts - downstairs_ts).seconds
         diff2 = (upstairs_ts - prev_upstairs_ts).seconds
-        self.log(f'\tdiff1={diff1} diff2={diff2} test1={diff1 < 1*60} test2={diff2 < const.LONGER_TIMEOUT}')
+        # self.log(f'\tdiff1={diff1} diff2={diff2} test1={diff1 < 1*60} test2={diff2 < const.LONGER_TIMEOUT}')
 
         if diff1 < 1*60: # light will be on from downstairs motion, we are setting the callback to turn off
             self.call_service('lighting/bannister_on', cb='bannister_off', seconds=const.BANNISTER_TIMEOUT)
@@ -526,12 +601,14 @@ class Lighting(AutomationBase):
 
         if self.now_is_between('sunset + 00:30:00', '23:30:00'): # and nomotion:
             self.call_service('lighting/landing_on', cb='landing_off', seconds=const.LONGER_TIMEOUT)
-            self.call_service('lighting/bedroom_on', cb='bedroom_off', seconds=const.TWOMINUTES)
+            # self.call_service('lighting/bedroom_on', cb='bedroom_off', seconds=const.THIRTY_SECONDS)
+            self.call_service('lighting/lumie_on', brightness=self._percent_to_brightness(20), force=True)
+            self.run_in(self.lumie_off, const.THIRTY_SECONDS)
             self.call_service('lighting/downstairs_off', cb='downstairs_off', seconds=0)
         else:
-            self.call_service('lighting/lumie_on')
+            self.call_service('lighting/lumie_on') # noop callback by default
+            self.call_service('lighting/downstairs_off')
             self.call_service('lighting/study_off')
-            self.call_service('lighting/downstairs_off', cb='downstairs_off', seconds=0)
 
         self._log_function_name(start=False)
 
@@ -614,7 +691,8 @@ class Lighting(AutomationBase):
         self.show_service(namespace, domain, service, data, cb, callback, seconds)
 
         if self.bedroom_on_window():
-            self.call_service('fan/light_on')
+            # self.call_service('fan/light_on')
+            self.call_service('lighting/lumie_on', brightness=self._percent_to_brightness(20), force=True) # turn on lumie at 20% if outside time window for bedroom or disabled
             self.set_callback(cb, callback, seconds)
         else:
             self.log('\toutside time window for bedroom', level='INFO')
@@ -725,7 +803,13 @@ class Lighting(AutomationBase):
 
         self._log_function_name(start=True)
 
-        self.call_service('light/turn_off', entity_id=const.STUDY)
+        cb = data.get('cb', 'study_off')
+        callback = self.get_callback(cb)
+        seconds = data.get('seconds', 0)
+
+        self.show_service(namespace, domain, service, data, cb, callback, seconds)
+
+        self.set_callback(cb, callback, seconds)
 
         self._log_function_name(start=False)
 
@@ -786,7 +870,7 @@ class Lighting(AutomationBase):
 
     def front_door_ding_event(self, event, data, kwargs) -> None:
 
-        self.call_service('lighting/front_door_ding', cb='front_door_hallway_off', seconds=20)
+        self.call_service('lighting/front_door_ding', cb='front_door_hallway_off')
 
 # -----------------------------------------------------------------------------------
 
@@ -901,7 +985,7 @@ class Lighting(AutomationBase):
 
         self._log_function_name(start=True)
 
-        self.call_service('fan/light_off')
+        self.call_service('lighting/lumie_off')
 
         self._log_function_name(start=False)
 
@@ -912,6 +996,16 @@ class Lighting(AutomationBase):
         self._log_function_name(start=True)
 
         self.call_service('light/turn_off', entity_id=const.HALLWAY3, transition=10)
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def study_off(self, kwargs) -> None:
+
+        self._log_function_name(start=True)
+
+        self.call_service('light/turn_off', entity_id=const.STUDY, transition=10)
 
         self._log_function_name(start=False)
 
@@ -993,7 +1087,19 @@ class Lighting(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def outside_off(self, kwargs) -> None:
+    def garden_lights_on(self, kwargs) -> None:
+        """turn on outside lights"""
+
+        key = kwargs.get('key', None)
+
+        if key is not None:
+            self.log(f'\tturn on outside - {key}', level='INFO')
+
+        self.call_service('light/turn_on', entity_id=const.OUTSIDE_LIGHTS)
+
+# -----------------------------------------------------------------------------------
+
+    def garden_lights_off(self, kwargs) -> None:
         """turn off outside lights"""
 
         key = kwargs.get('key', None)
@@ -1069,8 +1175,8 @@ class Lighting(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def set_timer(self, name, timer) -> None:
-        """set a timer"""
+    def set_timer(self, name, timer, callback=None) -> None:
+        """set a timer and record callback name"""
 
         old = self.timers.get(name, None)
 
@@ -1081,17 +1187,29 @@ class Lighting(AutomationBase):
 
         self.log(f'\tadding new timer name={name} timer={timer}', level='DEBUG')
 
-        self.timers[name] = timer
+        cb_name = None
+        try:
+            if callable(callback):
+                cb_name = getattr(callback, '__name__', str(callback))
+            else:
+                cb_name = callback
+        except Exception:
+            cb_name = None
+
+        # store a small dict so we can show which callback will run for this timer
+        self.timers[name] = {'handle': timer, 'callback': cb_name}
 
 # -----------------------------------------------------------------------------------
 
     def get_timer(self, name): # -> str | None:
-        """get a timer"""
+        """get a timer object (may contain handle and callback)"""
 
         timer = self.timers.get(name, None)
 
         if timer is not None and self._get_verbose_debug():
-            self.log(f'\treturning name={name} timer={timer}', level='DEBUG')
+            handle = timer.get('handle') if isinstance(timer, dict) else timer
+            cb = timer.get('callback') if isinstance(timer, dict) else None
+            self.log(f'\treturning name={name} timer={handle} callback={cb}', level='DEBUG')
 
         return timer
 
@@ -1103,15 +1221,51 @@ class Lighting(AutomationBase):
         verbose = self._get_verbose_debug()
 
         timer = self.get_timer(name)
-        self.log(f'\tcancelling running timer name={name} timer={timer}', level='INFO')
-        # self.call_service('announcer/notification', message=f'_cancel_timer name={name}', type='desktop') # keep for debugging
 
-        if timer is not None:
-            if verbose:
-                self.log(f'\tcancelling running timer name={name} timer={timer}', level='DEBUG')
+        handle = None
+        if isinstance(timer, dict):
+            handle = timer.get('handle')
+        else:
+            handle = timer
 
-            self.cancel_timer(timer)
-            self.timers.pop(name)
+        # Validate handle before attempting cancel
+        if handle is None:
+            self.log(f'\t_cancel_timer: no handle for name={name}', level='WARNING')
+            # Ensure stale entry removed
+            self.timers.pop(name, None)
+            return
+
+        # If available, prefer checking timer existence via info_timer or timer_running
+        valid = True
+        try:
+            if hasattr(self, 'info_timer'):
+                info = self.info_timer(handle)
+                if info is None:
+                    # info_timer returns None for non-existent timers
+                    valid = False
+            elif hasattr(self, 'timer_running'):
+                if not self.timer_running(handle):
+                    valid = False
+        except Exception as exc:  # defensive: if checking fails, log and continue to attempt cancel
+            self.log(f'\t_cancel_timer: error checking handle for name={name} handle={handle} exc={exc}', level='ERROR')
+
+        if not valid:
+            self.log(f'\t_cancel_timer: handle not valid or not running for name={name} handle={handle}', level='WARNING')
+            self.timers.pop(name, None)
+            return
+
+        # Attempt cancel
+        self.log(f'\tcancelling running timer name={name} timer={handle}', level='INFO')
+        if verbose:
+            self.log(f'\tcancelling running timer name={name} timer={handle}', level='DEBUG')
+
+        try:
+            self.cancel_timer(handle)
+        except Exception as exc:
+            self.log(f'\t_cancel_timer: exception cancelling name={name} handle={handle} exc={exc}', level='ERROR')
+
+        # Remove stored reference regardless of cancel outcome
+        self.timers.pop(name, None)
 
 # -----------------------------------------------------------------------------------
 
@@ -1121,8 +1275,9 @@ class Lighting(AutomationBase):
         timer = self.timers.get(name, None)
 
         if timer is not None:
-            self.log(f'\tremoving timer name={name} timer={timer}', level='INFO')
-            self.timers.pop(name)
+            handle = timer.get('handle') if isinstance(timer, dict) else timer
+            self.log(f'\tremoving timer name={name} timer={handle}', level='INFO')
+            self.timers.pop(name, None)
         else:
             self.log(f'\tremove_timer no timer name={name}', level='INFO')
 
@@ -1139,14 +1294,16 @@ class Lighting(AutomationBase):
             self.log(f'timer is None name={name}', level='ERROR')
             return False
 
-        extant = self.info_timer(timer)
+        handle = timer.get('handle') if isinstance(timer, dict) else timer
+
+        extant = self.info_timer(handle)
 
         if extant is None:
             self.log(f'{name} timer is no longer extant. removing', level='ERROR')
             self.remove_timer(name)
             return False
 
-        end_time, interval, kwargs = self.info_timer(timer)
+        end_time, interval, timer_kwargs = self.info_timer(handle)
 
         return True
 
@@ -1163,16 +1320,50 @@ class Lighting(AutomationBase):
 
         for key in keys:
             timer = self.timers.get(key, None)
-            if timer is not None and self.timer_running(timer):
-                result = self.info_timer(timer)
+            if timer is None:
+                continue
+
+            handle = timer.get('handle') if isinstance(timer, dict) else timer
+            cb = timer.get('callback') if isinstance(timer, dict) else None
+
+            if handle is not None and self.timer_running(handle):
+                result = self.info_timer(handle)
                 if result is None:
                     continue
 
-                end_time, interval, kwargs = result  # Unpack only if result is not None
+                end_time, interval, timer_kwargs = result  # Unpack only if result is not None
                 remaining = end_time - datetime.now()
                 _, remainder = divmod(remaining.seconds, 3600)
                 minutes, seconds = divmod(remainder, 60)
-                status += f'\tremaining={minutes:02d}:{seconds:02d} end_time={end_time} interval={interval} kwargs={kwargs} isrunning={self.timer_running(timer)}\n'
+
+                # normalize interval to seconds (int) and build human readable
+                try:
+                    if isinstance(interval, (int, float)):
+                        secs = int(interval)
+                    elif hasattr(interval, 'total_seconds'):
+                        secs = int(interval.total_seconds())
+                    else:
+                        secs = int(float(interval))
+                except Exception:
+                    secs = 0
+
+                if secs:
+                    h, rem = divmod(secs, 3600)
+                    m, s = divmod(rem, 60)
+                    interval_hr = f"{h}h{m}m{s}s" if h else f"{m}m{s}s"
+                else:
+                    interval_hr = 'one-shot'
+
+                try:
+                    kw_str = json.dumps(timer_kwargs, default=str)
+                except Exception:
+                    kw_str = repr(timer_kwargs)
+
+                status += (
+                    f'\tremaining={minutes:02d}:{seconds:02d} handle={handle} end_time={end_time} '
+                    f'interval={secs} ({interval_hr}) callback={cb} kwargs={kw_str} '
+                    f'isrunning={self.timer_running(handle)}\n'
+                )
 
         self.log(f'{status}')
 
@@ -1185,10 +1376,16 @@ class Lighting(AutomationBase):
 
         for key in keys:
             timer = self.timers.get(key, None)
-            if timer is not None and self.timer_running(timer):
-                result = self.info_timer(timer)
+            if timer is None:
+                self.timers.pop(key, None)
+                continue
+
+            handle = timer.get('handle') if isinstance(timer, dict) else timer
+
+            if handle is not None and self.timer_running(handle):
+                result = self.info_timer(handle)
                 if result is None:
-                    self.log(f"purging timer {timer}", level="DEBUG")
+                    self.log(f"purging timer {handle}", level="DEBUG")
                     self.timers.pop(key, None) # ignore value
                     continue
             else:
@@ -1206,9 +1403,42 @@ class Lighting(AutomationBase):
 
         for key in keys:
             timer = self.timers.get(key)
-            if self.timer_running(timer):
-                end_time, interval, kwargs = self.info_timer(timer)
-                self.log(f'\tname={key} timer={timer} end_time={end_time} interval={interval} kwargs={kwargs} isrunning={self.timer_running(timer)}')
+            if timer is None:
+                self.timers.pop(key, None)
+                continue
+
+            handle = timer.get('handle') if isinstance(timer, dict) else timer
+
+            if handle is not None and self.timer_running(handle):
+                end_time, interval, timer_kwargs = self.info_timer(handle)
+                cb = timer.get('callback') if isinstance(timer, dict) else None
+
+                try:
+                    if isinstance(interval, (int, float)):
+                        secs = int(interval)
+                    elif hasattr(interval, 'total_seconds'):
+                        secs = int(interval.total_seconds())
+                    else:
+                        secs = int(float(interval))
+                except Exception:
+                    secs = 0
+
+                if secs:
+                    h, rem = divmod(secs, 3600)
+                    m, s = divmod(rem, 60)
+                    interval_hr = f"{h}h{m}m{s}s" if h else f"{m}m{s}s"
+                else:
+                    interval_hr = 'one-shot'
+
+                try:
+                    kw_str = json.dumps(timer_kwargs, default=str)
+                except Exception:
+                    kw_str = repr(timer_kwargs)
+
+                self.log(
+                    f"\tname={key} timer={handle} callback={cb} end_time={end_time} "
+                    f"interval={secs} ({interval_hr}) kwargs={kw_str} isrunning={self.timer_running(handle)}"
+                )
             else:
                 self.log(f'\t{key} timer is no longer extant or key ({key}) is invalid. pruning', level='INFO')
                 self.timers.pop(key, None) # ignore value
@@ -1255,11 +1485,11 @@ class Lighting(AutomationBase):
         if area == 'kitchen':
             entity_ids = self.light_entities(area, const.N_KITCHEN_ENTITIES)
         elif area == 'utility_room':
-            entity_ids = self.light_entities(area, const.N_UTILITY_ROOM_ENTITIES)
+            entity_ids = [ const.UTILITY ] # self.light_entities(area, const.N_UTILITY_ROOM_ENTITIES)
         elif area == 'bathroom':
             entity_ids = self.light_entities(area, const.N_BATHROOM_ENTITIES)
         elif area == 'cloakroom':
-            entity_ids = self.light_entities(area, const.N_CLOAKROOM_ENTITIES)
+            entity_ids = [ const.CLOAKROOM ] # self.light_entities(area, const.N_CLOAKROOM_ENTITIES)
 
         return entity_ids
 
@@ -1318,7 +1548,7 @@ class Lighting(AutomationBase):
         else:
             if cb != 'noop' and cb is not None:
                 timer = self.run_in(callback, seconds, key=cb, seconds=seconds)
-                self.set_timer(cb, timer)
+                self.set_timer(cb, timer, callback)
                 self.fire_event('timers')
 
 # -----------------------------------------------------------------------------------
@@ -1342,9 +1572,12 @@ class Lighting(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def lumie_on_window(self):
+    def lumie_on_window(self, force):
 
-        return self.now_is_between('23:30:00', '04:00:00')
+        if force:
+            self.log(f'lumie_on_window returning True because force={force}', level='DEBUG')
+
+        return self.now_is_between('23:30:00', '04:00:00') or force
 
 # -----------------------------------------------------------------------------------
 

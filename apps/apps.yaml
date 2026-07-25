@@ -47,14 +47,14 @@ lighting:
     - timestamp
     - motion
 
-timers:
-  module: timers
-  class: Timers
-  log_level: INFO
-  dependencies:
-    - automationbase
-    - announcer
-    - timestamp
+#timers:
+#  module: timers
+#  class: Timers
+#  log_level: INFO
+#  dependencies:
+#    - automationbase
+#    - announcer
+#    - timestamp
 
 location:
   module: location

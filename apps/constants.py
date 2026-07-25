@@ -50,7 +50,7 @@ DINING2: Final[str] = 'light.dining_room_2'
 LIVING1: Final[str] = 'light.living_room_1'
 LIVING2: Final[str] = 'light.living_room_2'
 LIVING3: Final[str] = 'light.living_room_3'
-UTILITY: Final[str] = 'light.utility_room_1'
+UTILITY: Final[str] = 'light.utility_room'
 LANDING: Final[str] = 'light.hallway_3'
 RADIATOR: Final[str] = 'light.radiator'
 HALLWAY1: Final[str] = 'light.hallway_1'
@@ -61,7 +61,7 @@ BEDROOM2: Final[str] = 'light.bedroom_2'
 BEDROOM3: Final[str] = 'light.bedroom_3'
 UPSTAIRS: Final[str] = 'light.upstairs'
 BANNISTER: Final[str] = 'light.bannister'
-CLOAKROOM: Final[str] = 'light.cloakroom_1'
+CLOAKROOM: Final[str] = 'light.cloakroom'
 TABLE_LAMP: Final[str] = 'light.table_lamp'
 FRONT_DOOR: Final[str] = 'light.front_door'
 DOWNSTAIRS: Final[str] = 'light.downstairs'
@@ -105,6 +105,7 @@ N_KITCHEN_FLOOR_ENTITIES: Final[int] = 2
 
 # GLOBAL_MODE = Timeouts.FIVE
 
+THIRTY_SECONDS: Final[int] = 30
 ONEMINUTE: Final[int] = 60
 TWOMINUTES: Final[int] = 2*ONEMINUTE
 FIVEMINUTES: Final[int] = 5*ONEMINUTE
@@ -257,32 +258,39 @@ LOCATIONS: Final[dict[str, list[str]]] = {
 }
 
 # tap
-DAILY_WATERING_MINUTES: Final[int] = 30
+DAILY_WATERING_MINUTES: Final[int] = 26
 
 # timestamps initialised in automation
 TIMESTAMPS: Final[list[str]] = [
         'downstairs', 'prev_downstairs', 'upstairs', 'prev_upstairs', 'bedroom', 'prev_bedroom',
         'garage', 'garage_lights', 'garage_announcement', 'snooze', 'tap',  'upstairs_motion',
         'karoq_announce', 'karoq_notification', 'karoq_home', 'vacuum', 'general', 'travel',
+        'living_room', 'prev_living_room', 'bedroom', 'prev_bedroom',
     ]
 
 BEDROOM_BUTTON: Final[str] = 'shellybutton1-C8C9A33CDF09'
 GARAGE_BUTTON: Final[str] = 'shellybutton1-EC64C9C4F038'
 BEDROOM_SWITCH: Final[str] = '757d7dc651c4f600abea6a6de4716655'
 GARAGE_SWITCH: Final[str] = 'f595d782587949a43f91ac5b79af5e2d'
+STUDY_SWITCH: Final[str] = '5369bee69ddcca942a79cbad4515b5af'
 
 SWITCHES: Final[dict[str, str]] = {
     BEDROOM_SWITCH: 'Bedroom switch',
     GARAGE_SWITCH: 'Garage switch',
+    STUDY_SWITCH: 'Study switch',
 }
 
 BATHROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.bathroom_sensor_illuminance'
 CLOAKROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.cloakroom_sensor_illuminance'
 DOWNSTAIRS_SENSOR_ILLUMINANCE: Final[str] = 'sensor.downstairs_sensor_illuminance'
+# UTILITY_SENSOR_ILLUMINANCE: Final[str] = 'sensor.utility_sensor_illuminance'
 
 BATHROOM_LUX_THRESHOLD: Final[int] = 50
 CLOAKROOM_LUX_THRESHOLD: Final[int] = 50
 DOWNSTAIRS_SENSOR_LUX_THRESHOLD: Final[int] = 50
+# UTILITY_LUX_THRESHOLD: Final[int] = 50
 
 HEATING: Final[str] = 'climate.heating'
 BEDROOM_RADIATOR: Final[str] = 'climate.smart_radiator_valve'
+
+HOSEPIPE_BAN_TEMPERATURE_THRESHOLD: Final[float] = 26.0

@@ -166,7 +166,8 @@ class AutomationLib(Hass):
     def rain(self) -> float:
         """get preciptation today"""
 
-        result = 0.0 # FIXME: float(self.get_state(entity_id='sensor.icambr4_precipitation_today'))
+        result = float(self.get_state(entity_id='sensor.icambr4_precipitation_today'))
+        # result = 0.0 # FIXME: float(self.get_state(entity_id='sensor.icambr4_precipitation_today'))
 
         if self.get_verbose_debug():
             self.log(f'\tmmrain={result}', level='DEBUG')

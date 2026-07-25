@@ -10,6 +10,7 @@
 
 # from typing import TYPE_CHECKING, cast
 
+import json
 import constants as const # pylint: disable=unused-import
 from automationbase import AutomationBase  # type: ignore
 
@@ -74,11 +75,41 @@ class Timers(AutomationBase):
 
     def timer_status_service(self, namespace, domain, service, kwargs) -> None:
         """status"""
+        status_lines = []
 
-        status = ""
+        for name, timer in self.timers.items():
+            handle = timer.get('handle') if isinstance(timer, dict) else timer
 
-        self.log(f'\t{status}\n\n')
-        self.log(f'\t{self.timers}')
+            if handle is None:
+                status_lines.append(f"name={name} timer=<none>")
+                continue
+
+            info = self.info_timer(handle)
+            if info is None:
+                status_lines.append(f"name={name} timer={handle} status=missing")
+                continue
+
+            time, interval, timer_kwargs = info
+            # human readable interval
+            if interval:
+                secs = int(interval)
+                h, rem = divmod(secs, 3600)
+                m, s = divmod(rem, 60)
+                interval_hr = f"{h}h{m}m{s}s" if h else f"{m}m{s}s"
+            else:
+                interval_hr = "one-shot"
+
+            try:
+                kw_str = json.dumps(timer_kwargs, default=str)
+            except Exception:
+                kw_str = repr(timer_kwargs)
+
+            status_lines.append(
+                f"name={name} timer={handle} interval={interval} ({interval_hr}) kwargs={kw_str} next={time}"
+            )
+
+        for line in status_lines:
+            self.log(f'\t{line}')
 
 # -----------------------------------------------------------------------------------
 

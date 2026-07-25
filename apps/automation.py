@@ -181,7 +181,7 @@ class Automation(AutomationBase):
     def reset_test1(self, entity, attribute, old, new, kwargs) -> None:
         """reset test_1 flag"""
 
-        self.delay(0.5)
+        self._delay(0.5)
         self.set_state('input_boolean.test_1', state='off')
 
 # -----------------------------------------------------------------------------------
@@ -189,7 +189,7 @@ class Automation(AutomationBase):
     def reset_test2(self, entity, attribute, old, new, kwargs) -> None:
         """reset test_2 flag"""
 
-        self.delay(0.5)
+        self._delay(0.5)
         self.set_state('input_boolean.test_2', state='off')
 
 # -----------------------------------------------------------------------------------
@@ -197,7 +197,7 @@ class Automation(AutomationBase):
     def reset_test3(self, entity, attribute, old, new, kwargs) -> None:
         """reset test_3 flag"""
 
-        self.delay(0.5)
+        self._delay(0.5)
         self.set_state('input_boolean.test_3', state='off')
 
 # -----------------------------------------------------------------------------------
@@ -278,18 +278,20 @@ class Automation(AutomationBase):
 # -----------------------------------------------------------------------------------
 
     def reset(self, kwargs) -> None:
-        """reset dowstairs motion flag and set default sonos configuration"""
+        """daily reset"""
 
         if self._get_alarm_testing():
             self.call_service('alarm/reset')
 
         self.call_service('sonos/unjoin_all')
 
-        self.set_state('input_boolean.override', state='off')
-        self.set_state('input_boolean.sonos', state='off')
-        self.set_state('input_boolean.test_1', state='off')
-        self.set_state('input_boolean.test_2', state='off')
-        self.set_state('input_boolean.test_3', state='off')
+        # self.set_state('input_boolean.override', state='off')
+        # self.set_state('input_boolean.sonos', state='off')
+        # self.set_state('input_boolean.test_1', state='off')
+        # self.set_state('input_boolean.test_2', state='off')
+        # self.set_state('input_boolean.test_3', state='off')
+
+        self.set_state('input_boolean.mute_announcement', state='off')
         self.log('\treset', level='WARNING')
 
 # -----------------------------------------------------------------------------------
@@ -341,60 +343,60 @@ class Automation(AutomationBase):
     def set_bins_test(self, entity, attribute, old, new, kwargs) -> None:
         """set bins test"""
 
-        action = kwargs['action']
+        # action = kwargs['action']
 
-        if action == 'set':
-            self.register_test_3(self.bins_test)
-        elif action == 'cancel':
-            self.deregister_test_3()
+        # if action == 'set':
+        #     self.register_test_3(self.bins_test)
+        # elif action == 'cancel':
+        #     self.deregister_test_3()
 
 # -----------------------------------------------------------------------------------
 
     def set_notification_test(self, entity, attribute, old, new, kwargs) -> None:
         """set notification test"""
 
-        action = kwargs['action']
+        # action = kwargs['action']
 
-        if action == 'set':
-            self.register_test_3(self.notification_test)
-        elif action == 'cancel':
-            self.deregister_test_3()
+        # if action == 'set':
+        #     self.register_test_3(self.notification_test)
+        # elif action == 'cancel':
+        #     self.deregister_test_3()
 
 # -----------------------------------------------------------------------------------
 
     def set_announcement_test(self, entity, attribute, old, new, kwargs) -> None:
         """set announcement test"""
 
-        action = kwargs['action']
+        # action = kwargs['action']
 
-        if action == 'set':
-            self.register_test_3(self.announce_test)
-        elif action == 'cancel':
-            self.deregister_test_3()
+        # if action == 'set':
+        #     self.register_test_3(self.announce_test)
+        # elif action == 'cancel':
+        #     self.deregister_test_3()
 
 # -----------------------------------------------------------------------------------
 
     def set_front_door_ding_test(self, entity, attribute, old, new, kwargs) -> None:
         """set front door ding test"""
 
-        action = kwargs['action']
+        # action = kwargs['action']
 
-        if action == 'set':
-            self.register_test_3(self.front_door_ding_test)
-        elif action == 'cancel':
-            self.deregister_test_3()
+        # if action == 'set':
+        #     self.register_test_3(self.front_door_ding_test)
+        # elif action == 'cancel':
+        #     self.deregister_test_3()
 
 # -----------------------------------------------------------------------------------
 
     def set_front_door_light_on_test(self, entity, attribute, old, new, kwargs) -> None:
         """set front door light on test"""
 
-        action = kwargs['action']
+        # action = kwargs['action']
 
-        if action == 'set':
-            self.register_test_3(self.front_door_light_on_test)
-        elif action == 'cancel':
-            self.deregister_test_3()
+        # if action == 'set':
+        #     self.register_test_3(self.front_door_light_on_test)
+        # elif action == 'cancel':
+        #     self.deregister_test_3()
 
 # -----------------------------------------------------------------------------------
 
@@ -474,5 +476,20 @@ class Automation(AutomationBase):
         """reset tracing flag from input_boolean"""
 
         self.shared.trace = self.shared.verbose = self.shared.debug = self.shared.testing = False
+
+# -----------------------------------------------------------------------------------
+
+    def mute_announcements(self, kwargs) -> None:
+        """mute announcements"""
+
+        self.set_state('input_boolean.mute_announcement', state='off')
+        self.run_in(self.unmute_announcements, 60 * 65) # unmute after 65 minutes
+
+# -----------------------------------------------------------------------------------
+
+    def unmute_announcements(self, kwargs) -> None:
+        """unmute announcements"""
+
+        self.set_state('input_boolean.mute_announcement', state='on')
 
 # -----------------------------------------------------------------------------------

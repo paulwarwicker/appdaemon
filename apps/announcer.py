@@ -197,13 +197,23 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
             entity_id = const.KITCHEN_SPEAKER
 
         if self.announceable(announce) or force:
+            # play a short effect first; choose content type based on file extension
+            sound_url = 'http://192.168.1.4:8123/local/bing.mp3'
+            # sound_url = 'http://192.168.1.4:8123/local/bleur.mp3'
+            # sound_url = 'http://192.168.1.4:8123/local/peyoo.mp3'
+            # sound_url = 'http://192.168.1.4:8123/local/denah.mp3'
+
+            if sound_url.lower().endswith('.mp3'):
+                    sound_type = 'audio/mp3'
+            else:
+                    sound_type = 'music'
 
             self.call_service('media_player/play_media',
-                              entity_id=entity_id,
-                              media_content_type='music',
-                              media_content_id='http://homeassistant.local:8123/local/bing.mp3',
-                              announce=True,
-                              extra={'volume': volume * 2})
+                                                entity_id=entity_id,
+                                                media_content_type=sound_type,
+                                                media_content_id=sound_url,
+                                                announce=True,
+                                                extra={'volume': volume * 2})
 
             self._delay(1.0) # give it time to play
 

@@ -31,9 +31,10 @@ class Location(AutomationBase):
         self.register_service('location/paul_home', self.paul_home_service)
 
         self.listen_state(self.paul_location_detect, const.PAUL_ENTITY_ID)
+        self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID)
 
         # arrive
-        self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, new='Home', location='proximity.home')
+        # self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, new='Home', location='proximity.home')
         self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, new='Village', location='proximity.village')
         self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, new='Pilates', location='proximity.pilates')
         # self.listen_state(self.max_location_detect, const.MAX_ENTITY_ID, new='Pilates2', location='proximity.pilates2')
@@ -101,7 +102,8 @@ class Location(AutomationBase):
 
     def max_location_announce(self, entity_id, state, kwargs):
 
-        announce = True
+        announce = False
+        message = None
         village = entity_id == 'proximity.village'
         home = entity_id == 'proximity.home'
         direction = self.get_state('sensor.home_maxine_direction_of_travel')
@@ -114,11 +116,13 @@ class Location(AutomationBase):
 
         if village:
             message = "Max is in the village"
-            if direction != 'towards':
-                announce = False
-        elif home:
-            message = "Max is home"
+            if direction == 'towards':
+                announce = True
+        # elif home:
+        #     message = "Max is home"
+        #     announce = True
         else:
+            announce = True
             if state == 'arrive':
                 message = f'Max has arrived at {name}'
             else:
@@ -127,17 +131,19 @@ class Location(AutomationBase):
         if announce:
             self.call_service('announcer/announce', entity_id='media_player.study', message=message)
 
-        if village:
-            self.call_service('location/max_home')
-
 # -----------------------------------------------------------------------------------
 
     def max_location_detect(self, entity_id, attribute, old, new, kwargs):
 
         self._log_function_name(start=True)
 
-        location = kwargs['location']
-        location_entity_id = (const.LOCATIONS[location][0]).lower()
+        location_entity_id = None
+        location = kwargs.get('location', None)
+
+        if location is not None:
+            location_entity_id = (const.LOCATIONS[location][0]).lower()
+
+        self.log(f'\tmax location location={location} location_entity_id={location_entity_id} attribute={attribute} old={old} new={new}', level='INFO')
 
         verbose = self._get_verbose_debug()
 
@@ -145,10 +151,13 @@ class Location(AutomationBase):
             # 2024-11-29 17:59:07.465115 INFO location:       entity=device_tracker.maxine_iphone attribute=state old=DS_Smith_Fordham new=not_home location=proximity.ds_smith_fordham
             self.log(f'\tmax location location={location} location_entity_id={location_entity_id} attribute={attribute} old={old} new={new}', level='INFO')
 
-        if new.lower() == location_entity_id:
-            self.max_location_announce(location, 'arrive', kwargs)
-        elif old.lower() == location_entity_id:
-            self.max_location_announce(location, 'leave', kwargs)
+        if (old == 'not_home' and new == 'home') or location_entity_id in ('proximity.village', 'village'):
+            self.call_service('location/max_home')
+        else:
+            if new.lower() == location_entity_id:
+                self.max_location_announce(location, 'arrive', kwargs)
+            elif old.lower() == location_entity_id:
+                self.max_location_announce(location, 'leave', kwargs)
 
         self._log_function_name(start=False)
 

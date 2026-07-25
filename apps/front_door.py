@@ -7,9 +7,12 @@
 # https://nickwhyte.com/appdaemon-testing
 # https://github.com/nickw444/appdaemon-testing
 
+import os
+import requests
 import constants as const # pylint: disable=unused-import
 
 from automationbase import AutomationBase  # type: ignore
+from datetime import datetime, timedelta
 
 class FrontDoor(AutomationBase):
     """Documentation for Front Door"""
@@ -24,10 +27,13 @@ class FrontDoor(AutomationBase):
         self.register_service('front_door/battery', self.front_door_battery_service)
 
         self.listen_event(self.front_door_battery_event, 'front_door_battery')
-        self.listen_event(self.front_door_ding, 'front_door_ding')
-        self.listen_state(self.front_door_ding, 'event.front_door_ding') # , old='off', new='on')
+        self.listen_event(self.front_door_ding_event, 'front_door_ding')
 
-        self.run_daily(self.front_door_battery, 'sunset + 00:05:00')
+        self.listen_state(self.front_door_ding, 'event.front_door_ding')
+
+        self.run_daily(self.front_door_battery, 'sunset')
+
+        self.run_hourly(self.cleanup_clips, '00:00:00')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
@@ -50,8 +56,22 @@ class FrontDoor(AutomationBase):
     def front_door_ding_event(self, event, data, kwargs) -> None:
         """front door ding event"""
 
-        # self.front_door_ding({})
-        print("FIXME: front_door_ding_event")
+        self.log(f'front_door_ding_event: event={event} data={data} kwargs={kwargs}', level='INFO')
+
+        self.front_door_ding(None, None, None, None, {})
+
+# -----------------------------------------------------------------------------------
+
+    def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
+        """front door ding"""
+
+        self.log(f'front_door_ding: entity={entity} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
+
+        self.run_in(self.siren_on, 0)
+        self.run_in(self.front_door_announce, 0)
+
+        if self._is_night():
+            self.call_service('lighting/front_door_ding', seconds=const.DING_TIMEOUT, cb='front_door_hallway_off')
 
 # -----------------------------------------------------------------------------------
 
@@ -87,24 +107,10 @@ class FrontDoor(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def front_door_ding(self, entity, attribute, old, new, kwargs) -> None:
-        """front door ding"""
-
-        # print(f'front_door_ding: {entity} {attribute} {old} -> {new}')
-
-        if new == 'on':
-            self.run_in(self.siren_on, 0)
-            self.run_in(self.front_door_announce, 0)
-
-            if self._is_night():
-                self.call_service('lighting/front_door_ding', seconds=const.DING_TIMEOUT, cb='front_door_hallway_off')
-
-# -----------------------------------------------------------------------------------
-
     def siren_on(self, kwargs) -> None:
         """turn on siren for front door ding"""
 
-        delay = 1 if self._get_testing() else 5
+        delay = 1 if self._get_testing() else 3
 
         self.call_service('siren/turn_on', entity_id=['siren.tapo_hub','siren.kasa_hub'])
 
@@ -127,47 +133,63 @@ class FrontDoor(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-#     def ding_front_door_light(self, kwargs) -> None:
-#         """Turn on front door light when dark when someone calls. see also front_door_light_on/off"""
+    def take_snapshot(self, kwargs):
 
-#         if self.now_is_between('sunset', 'sunrise'):
-#             # TODO: return to previous level if was previously on
-#             brightness = self.get_state(const.FRONT_DOOR, attribute='brightness')
-#             state = self.get_state(const.FRONT_DOOR)
-#             self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=0)
-#             self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=192, transition=10)
-#             # self.turn_on('scene.front_door_ding_2') # FIXME: not working - scenes dont allow transitiona
-#             seconds = 12*60
-#             self.log(f'\tstart timer for {seconds:d}s', level='DEBUG')
-#             # FIXME:, brightness=brightness) # state=state??
-#             self.run_in(self.front_door_light_off, seconds)
+        entity_id=kwargs.get("entity_id", "camera.front_door")
 
-# # -----------------------------------------------------------------------------------
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"/config/www/snapshots/front_door_{timestamp}.jpg"
 
-#     def front_door_light_on(self, kwargs) -> None:
+        self.call_service("camera/snapshot", entity_id=entity_id, filename=filename)
 
-#         self.run_in(self._front_door_light_on, 0)
+# -----------------------------------------------------------------------------------
 
-# # -----------------------------------------------------------------------------------
+    def cleanup_clips(self, kwargs):
+        """cleanup ring clips downloaded by ring stash older than 7 days"""
 
-#     def _front_door_light_on(self, kwargs) -> None:
+        folder = "/media/ring_clips"
 
-#         if self.now_is_between('sunset', 'sunrise + 1:00:00'):
-#             if self._is_below_horizon():
-#                 self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=0)
-#                 self.call_service('light/turn_on', entity_id=const.FRONT_DOOR, brightness=128, transition=10)
-#                 self.call_service('light/turn_on', entity_id='light.garage_1', brightness=128, transition=10)
-#             else:
-#                 self.run_in(self.int_front_door_light_on, 60)  # respawn self in 60s
+        cutoff = datetime.now() - timedelta(days=7)
 
-# # -----------------------------------------------------------------------------------
+        for f in os.listdir(folder):
+            path = os.path.join(folder, f)
 
-#     def front_door_light_off(self, kwargs) -> None:
+            if not os.path.isfile(path):
+                continue
 
-#         # scene = 'scene.front_door_ding_2'
-#         # self.log(f'\tscene={scene}', level='DEBUG')
-#         # self.turn_off(scene) # TODO: not working
-#         self.call_service('light/turn_off', entity_id='light.hallway_1', transition=10)
-#         self.call_service('light/turn_off', entity_id=const.FRONT_DOOR, transition=10)
+            # Delete motion clips immediately
+            if "motion" in f.lower():
+                try:
+                    os.remove(path)
+                    self.log(f"Deleted motion clip: {path}")
+                except Exception as e:
+                    self.log(f"Failed to delete {path}: {e}", level="ERROR")
+                continue
+
+            # Parse date/time for doorbell clips
+            try:
+                parts = f.split("_")
+
+                # parts:
+                # 0 = front
+                # 1 = door
+                # 2 = YYYY-MM-DD
+                # 3 = HH-MM-SS
+                date_str = parts[2]
+                time_str = parts[3]
+
+                dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H-%M-%S")
+
+            except Exception as e:
+                self.log(f"Could not parse date for {f}: {e}", level="WARNING")
+                continue
+
+            # Delete doorbell clips older than 7 days
+            if dt < cutoff:
+                try:
+                    os.remove(path)
+                    self.log(f"Deleted old doorbell clip: {path}")
+                except Exception as e:
+                    self.log(f"Failed to delete {path}: {e}", level="ERROR")
 
 # -----------------------------------------------------------------------------------

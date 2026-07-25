@@ -72,6 +72,7 @@ class Hue(AutomationBase):
         # _subtype = data['subtype']
         device_id = data["device_id"]
         # device_name = const.SWITCHES.get(device_id, device_id)
+        # print(data)
 
         # if self._get_verbose_debug():
         #     print(data)
@@ -86,6 +87,8 @@ class Hue(AutomationBase):
             self.bedroom_button(data, kwargs)
         elif device_id == const.GARAGE_SWITCH:
             self.garage_button(data, kwargs)
+        elif device_id == const.STUDY_SWITCH:
+            self.study_button(data, kwargs)
 
         self._log_function_name(start=False)
 
@@ -134,6 +137,47 @@ class Hue(AutomationBase):
             if event_type == 'all_off':
                 self.fire_event('stop_bedroom')
                 self.call_service('sonos/cancel_snooze')
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def study_button(self, data, kwargs) -> None:
+
+        self._log_function_name(start=True)
+
+        event_type = None
+        _type = data['type']
+        _subtype = data['subtype']
+
+        if _type == 'short_release':
+            if _subtype == 1:
+                self.call_service('hue/activate_scene', entity_id='scene.living_room_lights_std60')
+            elif _subtype == 2:
+                self.call_service('hue/activate_scene', entity_id='scene.living_room_lights_puzzle200')
+            elif _subtype == 3:
+                pass
+            elif _subtype == 4:
+                pass
+
+        if _type == 'long_release':
+            if _subtype == 1:
+                pass
+            elif _subtype == 2:
+                pass
+            elif _subtype == 3:
+                pass
+            elif _subtype == 4:
+                pass
+
+        if _type in ('start') and _subtype == 'counter_clock_wise':
+            pass
+
+        if _type in ('start') and _subtype == 'clock_wise':
+            pass
+
+        if event_type is not None:
+            self.fire_event(event_type)
 
         self._log_function_name(start=False)
 

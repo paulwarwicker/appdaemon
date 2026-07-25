@@ -15,7 +15,7 @@ import inspect
 import sys
 
 from datetime import datetime,timedelta
-from typing import cast, Coroutine, Any
+from typing import Any, Coroutine, cast
 
 import requests # type: ignore pylint: disable=import-error
 
@@ -34,22 +34,16 @@ class SharedState:
 class AutomationBase(Hass):
     """Documentation for AutomationBase"""
 
-    # trace = False
-    # debug = False
-    # verbose = False
-    # testing = False
-    # log_level = None
-
     shared = SharedState()
 
     # pylint: disable=attribute-defined-outside-init
     def initialize(self):
         """base initialization logic"""
 
-        self.shared.debug = self.get_state('input_boolean.debug') == 'on'
-        self.shared.verbose = self.get_state('input_boolean.verbose') == 'on'
-        self.shared.testing = self.get_state('input_boolean.testing') == 'on'
-        self.shared.trace = self.get_state('input_boolean.trace') == 'on'
+        self.shared.debug = self.resolve_state(self.get_state('input_boolean.debug')) == 'on'
+        self.shared.verbose = self.resolve_state(self.get_state('input_boolean.verbose')) == 'on'
+        self.shared.testing = self.resolve_state(self.get_state('input_boolean.testing')) == 'on'
+        self.shared.trace = self.resolve_state(self.get_state('input_boolean.trace')) == 'on'
         self.shared.log_level = None
         # self.log(f"\tautomationbase: debug={self.shared.debug} verbose={self.shared.verbose} testing={self.shared.testing} trace={self.shared.trace}", level='WARNING')
 
@@ -60,10 +54,10 @@ class AutomationBase(Hass):
     # async def initialize_async(self):
     #     """base initialization logic async version"""
 
-    #     self.shared.debug = await self.get_state('input_boolean.debug') == 'on'
-    #     self.shared.verbose = await self.get_state('input_boolean.verbose') == 'on'
-    #     self.shared.testing = await self.get_state('input_boolean.testing') == 'on'
-    #     self.shared.trace = await self.get_state('input_boolean.trace') == 'on'
+    #     self.shared.debug = await self.resolve_state(self.get_state('input_boolean.debug')) == 'on'
+    #     self.shared.verbose = await self.resolve_state(self.get_state('input_boolean.verbose')) == 'on'
+    #     self.shared.testing = await self.resolve_state(self.get_state('input_boolean.testing')) == 'on'
+    #     self.shared.trace = await self.resolve_state(self.get_state('input_boolean.trace')) == 'on'
     #     self.log(f"\tautomationbase: debug={self.shared.debug} verbose={self.shared.verbose} testing={self.shared.testing} trace={self.shared.trace}", level='WARNING')
 
 # -----------------------------------------------------------------------------------
@@ -120,14 +114,14 @@ class AutomationBase(Hass):
     def _is_weekend(self) -> bool: # ??
         """is today a weekend"""
 
-        return self.dow() >= 6
+        return self._dow() >= 6
 
 # -----------------------------------------------------------------------------------
 
     def _is_after(self, hour: int) -> bool: # ??
         """is now after a certain hour"""
 
-        dt = datetime.now()
+        dt = self._now()
 
         return dt.hour >= hour
 
@@ -183,14 +177,15 @@ class AutomationBase(Hass):
     def _no_rain(self) -> bool:
         """was there more than 1mm of rain today"""
 
-        return True if self.rain() < 1.0 else False
+        return True if self._rain() < 1.0 else False
 
 # -----------------------------------------------------------------------------------
 
     def _rain(self) -> float:
         """get preciptation today"""
 
-        result = 0.0 # FIXME: float(self.get_state(entity_id='sensor.icambr4_precipitation_today'))
+        # result = 0.0 # FIXME:
+        result = float(self.get_state(entity_id='sensor.icambr4_precipitation_today'))
 
         if self._get_verbose_debug():
             self.log(f'\tmmrain={result}', level='DEBUG')
@@ -343,144 +338,88 @@ class AutomationBase(Hass):
 
 # -----------------------------------------------------------------------------------
 
-    def _is_twilight(self) -> bool:
-        """is it twilight (civil twilight: sun elevation between -6 and 0 degrees)"""
+    def resolve_state(self, value: Any) -> Any:
+        """
+        Resolve a value returned by get_state(), which may be:
+        - a raw value
+        - a coroutine
+        - an asyncio.Task
+        - an asyncio.Future
+        - a concurrent.futures.Future
 
-        elev = self.get_state('sun.sun', attribute='elevation')
+        Returns the resolved value, or None on failure.
+        """
 
-        # If get_state leaked an awaitable/task, resolve it synchronously (with a short timeout)
-        if asyncio.iscoroutine(elev) or isinstance(elev, asyncio.Task):
-            # prefer a loop captured in initialize: self._loop = asyncio.get_running_loop()
+        # --- Case 1: coroutine ----------------------------------------------------
+        if asyncio.iscoroutine(value):
             loop = getattr(self, "_loop", None)
             if loop is None:
                 try:
                     loop = asyncio.get_running_loop()
                 except RuntimeError:
                     loop = None
-            if loop is not None:
-                fut = asyncio.run_coroutine_threadsafe(cast(Coroutine[Any, Any, Any], elev), loop)
-                try:
-                    elev = fut.result(timeout=1)
-                except Exception:
-                    elev = None
-            else:
-                elev = None
-        elif isinstance(elev, (concurrent.futures.Future, asyncio.Future)):
-            try:
-                elev = elev.result() # (timeout=1)
-            except Exception:
-                elev = None
 
-        if elev in (None, 'unknown'):
-            return False
+            if loop is None:
+                return None
+
+            try:
+                fut = asyncio.run_coroutine_threadsafe(
+                    cast(Coroutine[Any, Any, Any], value), loop
+                )
+                return fut.result(timeout=1)
+            except Exception:
+                return None
+
+        # --- Case 2: asyncio.Task -------------------------------------------------
+        if isinstance(value, asyncio.Task):
+            try:
+                return value.result()  # Task.result() has no timeout
+            except Exception:
+                return None
+
+        # --- Case 3: Future -------------------------------------------------------
+        if isinstance(value, (asyncio.Future, concurrent.futures.Future)):
+            try:
+                fut = cast(concurrent.futures.Future, value)
+                return fut.result(timeout=1)
+            except Exception:
+                return None
+
+        # --- Case 4: raw value ----------------------------------------------------
+        return value
+
+# -----------------------------------------------------------------------------------
+
+    def _get_sun_elevation(self) -> float | None:
+        elev = self.resolve_state(
+            self.get_state("sun.sun", attribute="elevation")
+        )
+
+        if elev in (None, "unknown") or isinstance(elev, dict):
+            return None
 
         try:
-            elev_val = float(elev)
+            return float(elev)
         except (TypeError, ValueError):
-            return False
+            return None
 
-        twilight = -6 < elev_val < 0
+# -----------------------------------------------------------------------------------
 
-        if self._get_verbose_debug():
-            t = 'is' if twilight else 'is not'
-            self.log(f'{t} twilight (elev={elev_val})', level='DEBUG')
-
-        return twilight
+    def _is_twilight(self) -> bool:
+        elev = self._get_sun_elevation()
+        return elev is not None and -6 < elev < 0
 
 # -----------------------------------------------------------------------------------
 
     def _is_night(self) -> bool:
-        """is it night (sun elevation <= -6 degrees)"""
-
-        elev = self.get_state('sun.sun', attribute='elevation')
-
-        # If get_state leaked an awaitable/task, resolve it synchronously (with a short timeout)
-        if asyncio.iscoroutine(elev) or isinstance(elev, asyncio.Task):
-            # prefer a loop captured in initialize: self._loop = asyncio.get_running_loop()
-            loop = getattr(self, "_loop", None)
-            if loop is None:
-                try:
-                    loop = asyncio.get_running_loop()
-                except RuntimeError:
-                    loop = None
-            if loop is not None:
-                fut = asyncio.run_coroutine_threadsafe(cast(Coroutine[Any, Any, Any], elev), loop)
-                try:
-                    elev = fut.result(timeout=1)
-                except Exception:
-                    elev = None
-            else:
-                elev = None
-        elif isinstance(elev, (concurrent.futures.Future, asyncio.Future)):
-            try:
-                elev = elev.result() # (timeout=1)
-            except Exception:
-                elev = None
-
-        if elev in (None, 'unknown'):
-            return False
-
-        try:
-            elev_val = float(elev)
-        except (TypeError, ValueError):
-            return False
-
-        night = elev_val <= -6
-
-        if self._get_verbose_debug():
-            t = 'is' if night else 'is not'
-            self.log(f'{t} night (elev={elev_val})', level='DEBUG')
-
-        return night
+        elev = self._get_sun_elevation()
+        return elev is not None and elev <= -6
 
 # -----------------------------------------------------------------------------------
 
     def _is_below_horizon(self) -> bool:
-        """is sun below the horizon (defensive: resolve awaitables, coerce to float)"""
-
-        self.log(f'is_below_horizon: app={type(self)} log_attr={type(getattr(self, "log", None))}', level='DEBUG')
-
-        elev = self.get_state('sun.sun', attribute='elevation')
-        self.log(f'raw elev type={type(elev)} value={elev!r}', level='DEBUG')
-
-        # resolve if get_state returned a coroutine/Task or a Future
-        if asyncio.iscoroutine(elev) or isinstance(elev, asyncio.Task):
-            # prefer a loop captured in initialize: self._loop = asyncio.get_running_loop()
-            loop = getattr(self, "_loop", None)
-            if loop is None:
-                try:
-                    loop = asyncio.get_running_loop()
-                except RuntimeError:
-                    loop = None
-            if loop is not None:
-                try:
-                    fut = asyncio.run_coroutine_threadsafe(cast(Coroutine[Any, Any, Any], elev), loop)
-                    elev = fut.result(timeout=1)
-                except Exception:
-                    elev = None
-            else:
-                elev = None
-        elif isinstance(elev, (concurrent.futures.Future, asyncio.Future)):
-            try:
-                elev = elev.result() # (timeout=1)
-            except Exception:
-                elev = None
-
-        if elev in (None, 'unknown'):
-            return False
-
-        try:
-            elev_val = float(elev)
-        except (TypeError, ValueError):
-            return False
-
-        below = elev_val <= 0
-
-        if self._get_verbose_debug():
-            t = 'is' if below else 'is not'
-            self.log(f'{t} below horizon (elev={elev_val})', level='DEBUG')
-
-        return below
+        elev = self._get_sun_elevation()
+        return elev is not None and elev <= 0
 
 # -----------------------------------------------------------------------------------
 
