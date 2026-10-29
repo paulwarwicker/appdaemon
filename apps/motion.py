@@ -57,15 +57,15 @@ class Motion(AutomationBase):
         self.listen_state(self.bathroom_motion,         'binary_sensor.bathroom_sensor_motion',     new='off', cb='bathroom_off')
         self.listen_state(self.cloakroom_motion,        'binary_sensor.cloakroom_sensor_motion',    new='on')
         self.listen_state(self.cloakroom_motion,        'binary_sensor.cloakroom_sensor_motion',    new='off', cb='cloakroom_off')
+        self.listen_state(self.living_room_motion,      'binary_sensor.living_room_sensor_motion',  new='on')
+        # self.listen_state(self.living_room_motion,      'binary_sensor.living_room_sensor_motion',  new='off', cb='living_room_off')
         self.listen_state(self.garage_motion,           'binary_sensor.garage_sensor_motion',       new='on')
         self.listen_state(self.garage_motion,           'binary_sensor.garage_sensor_motion',       new='off', cb='garage_off')
 
         self.listen_state(self.downstairs_motion,       'binary_sensor.downstairs_sensor_motion',   new='on')
         self.listen_state(self.upstairs_motion,         'binary_sensor.upstairs_sensor_motion',     new='on')
         self.listen_state(self.bedroom_motion,          'binary_sensor.bedroom_sensor_motion',      new='on')
-        self.listen_state(self.living_room_motion,      'binary_sensor.living_room_sensor_motion',  new='on')
 
-        self.listen_state(self.ignore_sensors,          'input_boolean.ignore_sensors',             old='off', new='on')
         self.listen_state(self.ignore_sensors,          'input_boolean.ignore_sensors',             old='off', new='on')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
@@ -75,7 +75,7 @@ class Motion(AutomationBase):
     def garage_motion_service(self, namespace, domain, service, kwargs) -> None:
         """garage motion detected"""
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         ts = self.call_service('timestamp/get', name='garage')
@@ -114,7 +114,7 @@ class Motion(AutomationBase):
     def front_door_live_event(self, event, data, kwargs) -> None:
         """front door live event"""
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         self._log_function_name(start=True)
@@ -128,8 +128,7 @@ class Motion(AutomationBase):
     def downstairs_motion_event(self, event, data, kwargs) -> None:
         """downstairs motion event"""
 
-        if self._get_verbose_debug():
-            self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
+        self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
         self.downstairs_motion('', '', '', '', {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
 
@@ -138,8 +137,7 @@ class Motion(AutomationBase):
     def upstairs_motion_event(self, event, data, kwargs) -> None:
         """upstairs motion event"""
 
-        if self._get_verbose_debug():
-            self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
+        self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
         self.upstairs_motion('', '', '', '', {'seconds': 5, 'key': 'upstairs', 'cb': 'bannister_off'})
 
@@ -148,8 +146,7 @@ class Motion(AutomationBase):
     def stairs_motion_event(self, event, data, kwargs) -> None:
         """stairs motion event"""
 
-        if self._get_verbose_debug():
-            self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
+        self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
         self.downstairs_motion('', '', '', '', {'seconds': 5, 'key': 'downstairs', 'cb': 'bannister_off'})
         self._delay(15)
@@ -160,8 +157,7 @@ class Motion(AutomationBase):
     def kitchen_motion_event(self, event, data, kwargs) -> None:
         """kitchen motion event"""
 
-        if self._get_verbose_debug():
-            self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
+        self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
         self.kitchen_motion('', '', '', '', {'seconds': 5})
 
@@ -170,8 +166,7 @@ class Motion(AutomationBase):
     async def utility_motion_event(self, event, data, kwargs) -> None:
         """utility motion event"""
 
-        if self._get_verbose_debug():
-            self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
+        self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
         self.utility_motion('', '', '', 'on', {'seconds': 5, 'cb': 'utility_off'})
 
@@ -186,8 +181,7 @@ class Motion(AutomationBase):
     def garage_motion_event(self, event, data, kwargs) -> None:
         """garage motion event"""
 
-        if self._get_verbose_debug():
-            self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
+        self.log(f'\tevent={event} data={data} kwargs={kwargs}', level='DEBUG')
 
         self.garage_motion('', '', 'off', 'on', {})
         self._delay(15)
@@ -204,13 +198,11 @@ class Motion(AutomationBase):
     def front_door_motion(self, entity, attribute, old, new, kwargs) -> None:
         """front door motion"""
 
-        if self.check_ignore_sensors() or new not in ('on', 'off'):
+        if self.check_sensors() or new not in ('on', 'off'):
             return
 
         self._log_function_name(start=True)
 
-        # if self._get_verbose_debug():
-        #     self.log(f'\tfront_door_motion: entity={entity} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='DEBUG')
         self.log(f'\tfront_door_motion: entity={entity} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='DEBUG')
 
         cb = kwargs.get('cb', None)
@@ -226,7 +218,7 @@ class Motion(AutomationBase):
     def upstairs_motion(self, entity, attribute, old, new, kwargs) -> None:
         """upstairs motion"""
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         self._log_function_name(start=True) #, force=True)
@@ -255,7 +247,7 @@ class Motion(AutomationBase):
 
     def downstairs_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         force = {'force': False} if True else {} # pylint: disable=using-constant-test
@@ -268,13 +260,16 @@ class Motion(AutomationBase):
             self.call_service('lighting/downstairs_on', cb='downstairs_off', seconds=const.LONGER_TIMEOUT)
             self.call_service('lighting/bannister_on', cb='bannister_off', seconds=const.BANNISTER_TIMEOUT)
 
+        if self._get_cleaning():
+            self.call_service('lighting/bannister_on', cb='bannister_off', seconds=const.BANNISTER_TIMEOUT, brightness=255)
+
         self._log_function_name(start=False, **force)
 
 # -----------------------------------------------------------------------------------
 
     def check_downstairs_motion(self) -> None:
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         downstairs_ts = self.call_service('timestamp/get', name='downstairs')
@@ -288,7 +283,7 @@ class Motion(AutomationBase):
 
     def check_upstairs_motion(self) -> None:
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         upstairs_ts = self.call_service('timestamp/get', name='upstairs')
@@ -301,7 +296,7 @@ class Motion(AutomationBase):
 
     def kitchen_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         self._log_function_name(start=True)
@@ -317,7 +312,7 @@ class Motion(AutomationBase):
 
     def utility_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         self._log_function_name(start=True)
@@ -334,7 +329,7 @@ class Motion(AutomationBase):
 
     def bathroom_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         self._log_function_name(start=True)
@@ -350,7 +345,7 @@ class Motion(AutomationBase):
 
     def cloakroom_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         force = {}
@@ -369,7 +364,7 @@ class Motion(AutomationBase):
 
     def bedroom_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         force = {}
@@ -391,12 +386,12 @@ class Motion(AutomationBase):
 
     def living_room_motion(self, entity, attribute, old, new, kwargs) -> None:
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
-        if self.get_state('light.standard_lamp', attribute="state") == 'on':
-            self.log('living_room_motion: standard_lamp on, skipping', level='DEBUG')
-            return
+        # if self.get_state('light.standard_lamp', attribute="state") == 'on':
+        #     self.log('living_room_motion: standard_lamp on, skipping', level='DEBUG')
+        #     return
 
         force = {}
         # force = {'force': True}
@@ -404,12 +399,12 @@ class Motion(AutomationBase):
         self._log_function_name(**force)
 
         cb = kwargs.get('cb', None)
-        seconds = kwargs.get('seconds', 30 * 60 * 60)
+        seconds = kwargs.get('seconds', const.HALFHOUR)
 
-        # just set timestamp
-        ts = self.call_service('timestamp/get', name='living_room')
-        self.call_service('timestamp/set', name='living_room')
-        self.call_service('timestamp/set', name='prev_living_room', value=ts)
+        # # just set timestamp
+        # ts = self.call_service('timestamp/get', name='living_room')
+        # self.call_service('timestamp/set', name='living_room')
+        # self.call_service('timestamp/set', name='prev_living_room', value=ts)
 
         self.call_service(f'lighting/living_room_{new}', entity_id=const.LIVING_ROOM, seconds=seconds, cb=cb)
 
@@ -432,18 +427,20 @@ class Motion(AutomationBase):
 
     def garage_motion(self, entity_id, attribute, old, new, kwargs) -> None:
 
-        if self.check_ignore_sensors():
+        if self.check_sensors():
             return
 
         self._log_function_name(start=True)
 
-        if self._get_verbose_debug():
-            self.log(f'\tentity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
+        self.log(f'\tentity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='DEBUG')
 
         if old == 'off' and new == 'on':
             self.call_service('lighting/garage_on')
+            self.call_service('garage/open_if_closed')
         elif old == 'on' and new == 'off' and kwargs.get('test', False):
             self.call_service('lighting/garage_off')
+
+        self.call_service('timestamp/set', name='garage_motion')
 
         self._log_function_name(start=False)
 
@@ -480,14 +477,21 @@ class Motion(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    def check_ignore_sensors(self) -> bool:
+    def check_sensors(self) -> bool:
 
         ignore = self.get_state('input_boolean.ignore_sensors') == 'on'
 
         if ignore:
             self.log('Ignoring motion due to ignore_sensors', level='WARNING')
+            return ignore
 
-        return ignore
+        # cleaning = self._get_cleaning()
+
+        # if cleaning:
+        #     self.log('Detecting motion due to cleaning', level='WARNING')
+        #     return False
+
+        return False
 
 # -----------------------------------------------------------------------------------
 

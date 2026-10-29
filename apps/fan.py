@@ -32,8 +32,16 @@ class Fan(AutomationBase):
         self.register_service('fan/fan_off', self.fan_off_service)
         self.register_service('fan/light_on', self.light_on_service)
         self.register_service('fan/light_off', self.light_off_service)
+        self.register_service('fan/study_purifier_on', self.study_purifier_on_service)
+        self.register_service('fan/study_purifier_off', self.study_purifier_off_service)
+        self.register_service('fan/bedroom_purifier_on', self.bedroom_purifier_on_service)
+        self.register_service('fan/bedroom_purifier_off', self.bedroom_purifier_off_service)
 
         self.listen_event(self.status_event, 'status')
+        self.listen_event(self.study_purifier_on_event, 'study_purifier_on')
+        self.listen_event(self.study_purifier_off_event, 'study_purifier_off')
+        self.listen_event(self.bedroom_purifier_on_event, 'bedroom_purifier_on')
+        self.listen_event(self.bedroom_purifier_off_event, 'bedroom_purifier_off')
 
         self.set_state('input_boolean.actual_fan_low', state='off')
         self.set_state('input_boolean.actual_fan_medium', state='off')
@@ -92,10 +100,96 @@ class Fan(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
+    def study_purifier_on_service(self, namespace, domain, service, data) -> None:
+        """turn on study purifier"""
+
+        self._log_function_name(start=True)
+
+        self.turn_on('fan.study_purifier_fan')
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def study_purifier_off_service(self, namespace, domain, service, data) -> None:
+        """turn off study purifier"""
+
+        self._log_function_name(start=True)
+
+        self.turn_off('fan.study_purifier_fan')
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def bedroom_purifier_on_service(self, namespace, domain, service, data) -> None:
+        """turn on bedroom purifier"""
+
+        self._log_function_name(start=True)
+
+        self.turn_on('fan.bedroom_purifier_fan')
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def bedroom_purifier_off_service(self, namespace, domain, service, data) -> None:
+        """turn off bedroom purifier"""
+
+        self._log_function_name(start=True)
+
+        self.turn_off('fan.bedroom_purifier_fan')
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
     def status_event(self, event_name, data, kwargs) -> None:
         """status event"""
 
         self._log_function_name(start=True)
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def study_purifier_on_event(self, event_name, data, kwargs) -> None:
+        """study purifier on event"""
+
+        self._log_function_name(start=True)
+
+        self.call_service('fan/study_purifier_on')
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def study_purifier_off_event(self, event_name, data, kwargs) -> None:
+        """study purifier off event"""
+
+        self._log_function_name(start=True)
+        self.call_service('fan/study_purifier_off')
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def bedroom_purifier_on_event(self, event_name, data, kwargs) -> None:
+        """bedroom purifier on event"""
+
+        self._log_function_name(start=True)
+
+        self.call_service('fan/bedroom_purifier_on')
+
+        self._log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
+    def bedroom_purifier_off_event(self, event_name, data, kwargs) -> None:
+        """bedroom purifier off event"""
+
+        self._log_function_name(start=True)
+
+        self.call_service('fan/bedroom_purifier_off')
 
         self._log_function_name(start=False)
 

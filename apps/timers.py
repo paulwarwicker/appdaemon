@@ -126,10 +126,7 @@ class Timers(AutomationBase):
             self.log(f'set_timer missing paramater name={name} timer={timer}', level='ERROR')
             return
 
-        verbose = self._get_verbose_debug()
-
-        if verbose:
-            self.log(f'name={name} timer={timer}', level='DEBUG')
+        self.log(f'name={name} timer={timer}', level='DEBUG')
 
         old = self.timers.get(name, None)
 
@@ -152,10 +149,7 @@ class Timers(AutomationBase):
 
         self._log_function_name(start=True)
 
-        verbose = self._get_verbose_debug()
-
-        if verbose:
-            self.log(f'name={name}', level='DEBUG')
+        self.log(f'name={name}', level='DEBUG')
 
         timer = self.timers.get(name, None)
 

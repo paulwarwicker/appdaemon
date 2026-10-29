@@ -48,22 +48,28 @@ class Timestamp(AutomationBase):
         value = kwargs.get('value', None)
         force = kwargs.get('force', False)
 
-        if name is not None:
-            if value is not None:
-                ts = value
-            else:
-                if force:
-                    ts = value
-                else:
-                    ts = datetime.now()
+        if name is None:
+            self.log(f'\tsetting timestamp for {name} with offset={offset} value={value} force={force}', level='WARNING')
+            return
+            # if value is not None:
+            #     ts = value
 
-                if offset is not None:
-                    ts += offset
+        # Honor an explicit `value` parameter even when `force` is not set.
+        # Preserve backward-compatibility: if `force` is True and no `value`
+        # was provided, behave as before (allow clearing by setting to None).
+        if 'value' in kwargs:
+            ts = value
+        elif force:
+            ts = value
+        else:
+            ts = datetime.now()
 
-            self.ts[name] = ts
+        if offset is not None:
+            ts += offset
 
-            if self._get_verbose_debug():
-                self.log(f'\t{name} timestamp set to {ts}', level='DEBUG')
+        self.ts[name] = ts
+
+        self.log(f'\t{name} timestamp set to {ts}', level='DEBUG')
 
 # -----------------------------------------------------------------------------------
 
@@ -105,7 +111,7 @@ class Timestamp(AutomationBase):
 
         for name in const.TIMESTAMPS:
             ts = self.ts[name]
-            status += f'\t{name}_ts={ts}\n'
+            status += f'\t{name}={ts}\n'
 
         diff1 = (self.ts['upstairs'] - self.ts['downstairs']).seconds
         diff2 = (self.ts['upstairs'] - self.ts['prev_upstairs']).seconds

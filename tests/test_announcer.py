@@ -18,11 +18,6 @@ from apps.announcer import Announcer
 def announcer() -> Announcer: # pylint: disable=W0212 disable=W0621
     pass
 
-# if await self.get_state('input_boolean.force_announcement') == 'on':
-#             return True
-
-#         if hint is False or await self.get_state('input_boolean.mute_announcement') == 'on':
-
 # -----------------------------------------------------------------------------------
 
 @freeze_time('2024-01-01 21:29:59')
@@ -31,13 +26,13 @@ def test_announceable_1(hass_driver, announcer: Announcer): # pylint: disable=W0
     assert datetime.datetime.now() == datetime.datetime(2024, 1, 1, 21, 29, 59)
 
     with hass_driver.setup():
-        hass_driver.set_state('input_boolean.mute_announcement', 'off')
+        hass_driver.set_state('input_boolean.mute_announcements', 'off')
 
     # assert announcer._announceable(True)  # pylint: disable=W0212 disable=W0621
     assert not announcer._announceable(False) # pylint: disable=W0212 disable=W0621 # FIXME
 
     with hass_driver.setup():
-        hass_driver.set_state('input_boolean.mute_announcement', 'on')
+        hass_driver.set_state('input_boolean.mute_announcements', 'on')
 
     assert not announcer._announceable(False)  # pylint: disable=W0212 disable=W0621
     assert not announcer._announceable(True)  # pylint: disable=W0212 disable=W0621 # FIXME
@@ -64,7 +59,7 @@ def test_announceable_3(hass_driver, announcer: Announcer): # pylint: disable=W0
     assert datetime.datetime.now() == datetime.datetime(2024, 1, 1, 21, 29, 59)
 
     with hass_driver.setup():
-        hass_driver.set_state('input_boolean.force_announcement', 'off')
+        hass_driver.set_state('input_boolean.force_announcements', 'off')
 
     # assert announcer._announceable(True)  # pylint: disable=W0212 disable=W0621
     assert not announcer._announceable(False) # pylint: disable=W0212 disable=W0621 # FIXME

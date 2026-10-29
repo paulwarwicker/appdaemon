@@ -28,6 +28,8 @@ class Garage(AutomationBase):
         self.register_service('garage/open', self.garage_open_service)
         self.register_service('garage/close', self.garage_close_service)
         self.register_service('garage/is_open', self.garage_is_open_service)
+        self.register_service('garage/autoclose', self.garage_autoclose_service)
+        self.register_service('garage/open_if_closed', self.garage_open_if_closed_service)
 
         garage = const.GARAGE_ENTITY_ID
 
@@ -42,12 +44,15 @@ class Garage(AutomationBase):
         self.listen_event(self.garage_open_close_event, 'garage_open_close')
         self.listen_event(self.garage_debug_event, 'garage_debug')
         self.listen_event(self.garage_test_event, 'garage_test')
+        self.listen_event(self.garage_autoclose_event, 'garage_autoclose')
+        self.listen_event(self.garage_open_if_closed_event, 'garage_open_if_closed')
 
-        self.run_daily(self.close_garage, "21:00")
+        self.run_daily(self._close_garage, "21:00")
 
         runtime = datetime(2024, 1, 1)
-        self.run_minutely(self.check_garage, runtime)
+        self.run_minutely(self._check_garage, runtime)
 
+        self.call_service('timestamp/set', name='garage', value=None)
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
 # -----------------------------------------------------------------------------------
@@ -58,7 +63,7 @@ class Garage(AutomationBase):
         await self.log_function_name(start=True)
 
         self.call_service('timestamp/set', name='garage')
-        await self.garage_open('', '', '', '', {})
+        await self._garage_open('', '', '', '', {})
 
         await self.log_function_name(start=False)
 
@@ -76,12 +81,37 @@ class Garage(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
+    async def garage_autoclose_service(self, namespace, domain, service, kwargs) -> None:
+        """autoclose the garage"""
+
+        await self.log_function_name(start=True)
+
+        self.call_service('timestamp/status')
+        await self.sleep(2)
+
+        ts = await self.call_service('timestamp/get', name='garage_motion')
+        self.log(f'garage_autoclose_service: before set garage_motion={ts}', level='DEBUG')
+
+        await self.sleep(2)
+
+        ts = datetime.now()
+        # The timestamp service only uses the provided `value` when `force` is True
+        self.call_service('timestamp/set', name='garage_motion', value=ts, force=True)
+        ts = await self.call_service('timestamp/get', name='garage_motion')
+        self.log(f'garage_autoclose_service: after set garage_motion={ts}', level='DEBUG')
+        # self.call_service('timestamp/set', name='garage')
+        # await self.garage_close('', '', '', '', {})
+
+        await self.log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
     async def garage_is_open_service(self, namespace, domain, service, kwargs) -> bool:
         """is garage open"""
 
         await self.log_function_name(start=True)
 
-        is_open = await self.is_garage_open()
+        is_open = await self._is_garage_open()
 
         await self.log_function_name(start=False)
 
@@ -89,15 +119,41 @@ class Garage(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
+    async def garage_open_if_closed_service(self, namespace, domain, service, kwargs) -> None:
+        """open the garage if it is closed"""
+
+        await self.log_function_name(start=True)
+
+        is_open = await self._is_garage_open()
+
+        if not is_open:
+            await self._garage_open('', '', '', '', {})
+
+        await self.log_function_name(start=False)
+
+# -----------------------------------------------------------------------------------
+
     async def garage_open_event(self, event, data, kwargs) -> None:
 
-        self.call_service('garage/open')
+        await self.call_service('garage/open')
 
 # -----------------------------------------------------------------------------------
 
     async def garage_close_event(self, event, data, kwargs) -> None:
 
-        self.call_service('garage/close')
+        await self.call_service('garage/close')
+
+# -----------------------------------------------------------------------------------
+
+    async def garage_autoclose_event(self, event, data, kwargs) -> None:
+
+        await self.call_service('garage/autoclose')
+
+# -----------------------------------------------------------------------------------
+
+    async def garage_open_if_closed_event(self, event, data, kwargs) -> None:
+
+        await self.call_service('garage/open_if_closed')
 
 # -----------------------------------------------------------------------------------
 
@@ -111,7 +167,7 @@ class Garage(AutomationBase):
 
     async def garage_debug_event(self, event, data, kwargs) -> None:
 
-        await self.garage_debug('', '', '', '', {})
+        await self.call_service('garage/debug', entity=data.get('entity', ''), attribute=data.get('attribute', ''), old=data.get('old', ''), new=data.get('new', ''), kwargs=data.get('kwargs', None))
 
 # -----------------------------------------------------------------------------------
 
@@ -119,22 +175,22 @@ class Garage(AutomationBase):
 
         await self.log_function_name(start=True)
 
-        self.call_service('garage/open')
+        await self.call_service('garage/open')
         await self.sleep(30)
-        self.call_service('garage/close')
+        await self.call_service('garage/close')
 
         await self.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
-    async def garage_open(self, entity, attribute, old, new, kwargs) -> None:
+    async def _garage_open(self, entity, attribute, old, new, kwargs) -> None:
         """open garage door"""
 
         await self.log_function_name(start=True)
 
-        self.call_service('cover/open_cover', entity_id=const.GARAGE_ENTITY_ID)
-        self.call_service('timestamp/set', name='garage')
-        self.call_service('lighting/garage_on')
+        await self.call_service('cover/open_cover', entity_id=const.GARAGE_ENTITY_ID)
+        await self.call_service('timestamp/set', name='garage')
+        await self.call_service('lighting/garage_on')
 
         await self.log_function_name(start=False)
 
@@ -145,9 +201,9 @@ class Garage(AutomationBase):
 
         await self.log_function_name(start=True)
 
-        self.call_service('cover/close_cover', entity_id=const.GARAGE_ENTITY_ID)
-        self.call_service('timestamp/set', name='garage', value=None)
-        self.call_service('lighting/garage_off')
+        await self.call_service('cover/close_cover', entity_id=const.GARAGE_ENTITY_ID)
+        await self.call_service('timestamp/set', name='garage', value=None)
+        await self.call_service('lighting/garage_off')
 
         await self.log_function_name(start=False)
 
@@ -161,9 +217,9 @@ class Garage(AutomationBase):
         below = await self.is_below_horizon()
 
         if new == 'opening' and below:
-            self.call_service('lighting/garage_on', seconds=self.interval(minutes=30), cb='garage_off')
+            await self.call_service('lighting/garage_on', seconds=self.interval(minutes=30), cb='garage_off')
         elif new == 'closed' and below:
-            self.call_service('lighting/garage_off', seconds=self.interval(minutes=1), cb='garage_off')
+            await self.call_service('lighting/garage_off', seconds=self.interval(minutes=1), cb='garage_off')
 
         await self.garage_announcement(state=new)
 
@@ -183,25 +239,25 @@ class Garage(AutomationBase):
 
         message = f'The garage door is {state}'
 
-        self.call_service('announcer/broadcast', message=message, timestamp='garage_announcement')
+        await self.call_service('announcer/broadcast', message=message, timestamp='garage_announcement')
 
         await self.log_function_name(start=False)
 
 # -----------------------------------------------------------------------------------
 
-    async def is_garage_open(self) -> bool:
+    async def _is_garage_open(self) -> bool:
         """is garage door open"""
 
         return (await self.get_state(const.GARAGE_ENTITY_ID)) == 'open'
 
 # -----------------------------------------------------------------------------------
 
-    async def check_garage(self, kwargs) -> None:
+    async def _check_garage(self, kwargs) -> None:
         """check garage door state"""
 
         await self.log_function_name(start=True)
 
-        if await self.is_garage_open():
+        if await self._is_garage_open():
             (state, _) = await self.garage_state()
             ts = await self.call_service('timestamp/get', name='garage_announcement')
             if ts is not None:
@@ -213,7 +269,7 @@ class Garage(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    async def close_garage(self, kwargs) -> None:
+    async def _close_garage(self, kwargs) -> None:
         """close garage door automatically"""
 
         await self.log_function_name(start=True)
@@ -231,8 +287,9 @@ class Garage(AutomationBase):
 
         state = await self.get_state(const.GARAGE_ENTITY_ID)
         ts = await self.call_service('timestamp/get', name='garage')
-        if await self.get_verbose_debug():
-            self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwarg} state={state} ts={ts}', level='INFO')
+
+
+        self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwarg} state={state} ts={ts}', level='DEBUG')
 
         await self.log_function_name(start=False)
 
@@ -243,7 +300,8 @@ class Garage(AutomationBase):
     async def garage_debug(self, entity='', attribute='', old='', new='', kwarg=None):
 
         (state, ts) = await self.garage_state()
-        self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwarg} state={state} ts={ts}', level='INFO')
+
+        self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} kwargs={kwarg} state={state} ts={ts}', level='DEBUG')
 
 # -----------------------------------------------------------------------------------
 
@@ -263,9 +321,8 @@ class Garage(AutomationBase):
 
         below = elev_val <= 0
 
-        if await self.get_verbose_debug():
-            t = 'is' if below else 'is not'
-            self.log(f'{t} below horizon (elev={elev_val})', level='DEBUG')
+        t = 'is' if below else 'is not'
+        self.log(f'{t} below horizon (elev={elev_val})', level='DEBUG')
 
         return below
 
@@ -278,10 +335,10 @@ class Garage(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    async def get_verbose_debug(self):
-        """get verbose debug setting"""
+    # async def get_verbose_debug(self):
+    #     """get verbose debug setting"""
 
-        return await self.get_state('input_boolean.debug')  == 'on'and await self.get_state('input_boolean.verbose') == 'on'
+    #     return await self.get_state('input_boolean.debug')  == 'on'and await self.get_state('input_boolean.verbose') == 'on'
 
 # -----------------------------------------------------------------------------------
 
@@ -303,8 +360,6 @@ class Garage(AutomationBase):
 
         if force:
             trace = separator = notification = True
-        else:
-            trace = await self.get_trace()
 
         frame = inspect.currentframe()
 
@@ -324,11 +379,12 @@ class Garage(AutomationBase):
             if frame is not None and frame.f_back is not None:
                 print(frame.f_back)
 
-        if trace:
+        if any((self.shared.debug, self.shared.verbose, self.shared.trace)): # any(<tuple>)
             if separator:
-                dashes = '-' * (80 - len(name))
-                self.log(f'{prefix} {name} {dashes}',level='INFO')
+                dashes = '-' * max(0, 80 - len(name))
+                msg = f'{prefix} {name} {dashes}'
             else:
-                self.log(f'\t{prefix} {name}', level='DEBUG')
+                msg = f'\t{prefix} {name}'
+            self.log(msg, level='INFO')
 
 # -----------------------------------------------------------------------------------

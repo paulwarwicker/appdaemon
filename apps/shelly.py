@@ -53,7 +53,7 @@ class Shelly(AutomationBase):
         event_type  = None
         click_type = data['click_type']
 
-        self.log(f'\t{click_type} press on {const.BEDROOM_BUTTON}')
+        self.log(f'\t{click_type} press on {const.BEDROOM_BUTTON}', level='DEBUG')
 
         pt = self.get_state('input_boolean.physical_training') == 'on'
 
@@ -104,7 +104,7 @@ class Shelly(AutomationBase):
         event_type  = None
         click_type = data['click_type']
 
-        self.log(f'\t{click_type} press on {const.GARAGE_BUTTON}')
+        self.log(f'\t{click_type} press on {const.GARAGE_BUTTON}', level='DEBUG')
 
         if click_type in ('single', 'long', 'double', 'triple'):
             event_type = self._garage_event_from_state()

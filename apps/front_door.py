@@ -12,7 +12,7 @@ import requests
 import constants as const # pylint: disable=unused-import
 
 from automationbase import AutomationBase  # type: ignore
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 class FrontDoor(AutomationBase):
     """Documentation for Front Door"""
@@ -33,7 +33,8 @@ class FrontDoor(AutomationBase):
 
         self.run_daily(self.front_door_battery, 'sunset')
 
-        self.run_hourly(self.cleanup_clips, '00:00:00')
+        runtime = time(0, 0, 0) # run hourly on the hour
+        self.run_hourly(self.cleanup_clips, runtime, random_start=60, random_end=300)
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
 
@@ -161,7 +162,7 @@ class FrontDoor(AutomationBase):
             if "motion" in f.lower():
                 try:
                     os.remove(path)
-                    self.log(f"Deleted motion clip: {path}")
+                    self.log(f"Deleted motion clip: {path}", level='INFO')
                 except Exception as e:
                     self.log(f"Failed to delete {path}: {e}", level="ERROR")
                 continue
@@ -188,7 +189,7 @@ class FrontDoor(AutomationBase):
             if dt < cutoff:
                 try:
                     os.remove(path)
-                    self.log(f"Deleted old doorbell clip: {path}")
+                    self.log(f"Deleted old doorbell clip: {path}", level='INFO')
                 except Exception as e:
                     self.log(f"Failed to delete {path}: {e}", level="ERROR")
 

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=unused-argument disable=broad-exception-caught
 
+# TODO: test
+
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_in
 # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.get_state
@@ -11,9 +13,13 @@
 import pprint
 import textwrap
 import traceback # pylint: disable=unused-import
+import asyncio
 from io import StringIO
 
-# from typing import TYPE_CHECKING, cast
+import datetime as dt
+from appdaemon.utils import sync_decorator
+from datetime import datetime,timedelta
+from typing import Any, Callable, Coroutine, cast
 
 import constants as const # pylint: disable=unused-import
 
@@ -21,14 +27,6 @@ from automationbase import AutomationBase  # type: ignore
 
 class Automation(AutomationBase):
     """Documentation for Automation"""
-
-    # debug = False
-    # testing = False
-    # verbose = False
-    # trace = False
-    # override = False
-
-    # log_level = None
 
     handlers = {}
 
@@ -42,13 +40,10 @@ class Automation(AutomationBase):
         self.call_service('scene/reload')
 
         self.listen_event(self.set_all_state_event, 'set_all_state')
-        self.listen_event(self.reset_trace, 'reset')
-
+        self.listen_event(self.reset_event, 'reset')
         self.listen_event(self.status_event, 'status')
+        self.listen_event(self.teet_event, 'test')
 
-        # self.listen_state(self.set_console_log_level, 'input_boolean.debug')
-        # self.listen_state(self.set_console_log_level, 'input_boolean.verbose')
-        # self.listen_state(self.set_console_log_level, 'input_boolean.trace')
         self.listen_state(self.set_debug_flag, 'input_boolean.debug')
         self.listen_state(self.set_verbose_flag, 'input_boolean.verbose')
         self.listen_state(self.set_testing_flag, 'input_boolean.testing')
@@ -66,7 +61,10 @@ class Automation(AutomationBase):
 
         self.run_daily(self.backup, '23:30:00')
 
+        self.run_hourly(self.check_for_updates, '00:00:00')
+
         self.set_all_state({})
+        self.check_for_updates({})
         self._set_console_log_level()
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
@@ -78,12 +76,26 @@ class Automation(AutomationBase):
     def test(self, kwargs) -> None:
         """test method"""
 
-        self._log_function_name(start=True)
+        self._log_function_name(start=True, Force=True)
 
         # print(self._dow())
         # traceback.print_stack() # leave
 
-        self._log_function_name(start=False)
+        self._log_function_name(start=False, Force=True)
+
+# -----------------------------------------------------------------------------------
+
+    def reset_event(self, event, data, kwargs) -> None:
+        """reset event"""
+
+        self.reset({})
+
+# -----------------------------------------------------------------------------------
+
+    def teet_event(self, event, data, kwargs) -> None:
+        """test event"""
+
+        self.test({})
 
 # -----------------------------------------------------------------------------------
 
@@ -95,7 +107,7 @@ class Automation(AutomationBase):
         booleans = {
             'override', 'sonos', 'lumie', 'test_1', 'test_2', 'test_3',
             'water_garden_1', 'water_garden_15', 'water_garden_20', 'water_garden_30', 'bedtime',
-            'reset_alarms', 'mock_run', 'alarm_debug',
+            'reset_alarms', 'mock_run', # 'alarm_debug',
             'ignore_sensors', 'power_off_media', 'wake_up_boo', 'physical_training',
             # 'test_utility_motion', 'test_kitchen_motion', 'test_bins_announce',
             # 'test_frost_warning', 'test_notification', 'test_announcement', 'test_maxine_home',
@@ -130,7 +142,7 @@ class Automation(AutomationBase):
         self.shared.debug = new == 'on'
         self._set_console_log_level()
         self._set_flag_value('debug', self.shared.debug)
-        self.log(f'\tverbose={self.shared.verbose} debug={self.shared.debug} trace={self.shared.trace} testing={self.shared.testing}', level='INFO')
+        self.log(f'\t{self.shared.verbose=} {self.shared.debug=} {self.shared.trace=} {self.shared.testing=}', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -140,7 +152,7 @@ class Automation(AutomationBase):
         self.shared.verbose = new == 'on'
         self._set_console_log_level()
         self._set_flag_value('verbose', self.shared.verbose)
-        self.log(f'\tverbose={self.shared.verbose} debug={self.shared.debug} trace={self.shared.trace} testing={self.shared.testing}', level='INFO')
+        self.log(f'\t{self.shared.verbose=} {self.shared.debug=} {self.shared.trace=} {self.shared.testing=}', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -150,7 +162,7 @@ class Automation(AutomationBase):
         self.shared.testing = new == 'on'
         self._set_console_log_level()
         self._set_flag_value('testing', self.shared.testing)
-        self.log(f'\tverbose={self.shared.verbose} debug={self.shared.debug} trace={self.shared.trace} testing={self.shared.testing}', level='INFO')
+        self.log(f'\t{self.shared.verbose=} {self.shared.debug=} {self.shared.trace=} {self.shared.testing=}', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -162,7 +174,7 @@ class Automation(AutomationBase):
         self.set_state('input_boolean.verbose', state='on' if self.shared.trace else 'off')
         self._set_console_log_level()
         self._set_flag_value('trace', self.shared.trace)
-        self.log(f'\tverbose={self.shared.verbose} debug={self.shared.debug} trace={self.shared.trace} testing={self.shared.testing}', level='INFO')
+        self.log(f'\t{self.shared.verbose=} {self.shared.debug=} {self.shared.trace=} {self.shared.testing=}', level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -280,19 +292,33 @@ class Automation(AutomationBase):
     def reset(self, kwargs) -> None:
         """daily reset"""
 
+        self.log('\tdaily reset', level='WARNING')
+
         if self._get_alarm_testing():
             self.call_service('alarm/reset')
 
         self.call_service('sonos/unjoin_all')
+        self.call_service('announcer/unmute_announcements')
 
-        # self.set_state('input_boolean.override', state='off')
-        # self.set_state('input_boolean.sonos', state='off')
-        # self.set_state('input_boolean.test_1', state='off')
-        # self.set_state('input_boolean.test_2', state='off')
-        # self.set_state('input_boolean.test_3', state='off')
+# -----------------------------------------------------------------------------------
 
-        self.set_state('input_boolean.mute_announcement', state='off')
-        self.log('\treset', level='WARNING')
+    def check_for_updates(self, kwargs) -> None:
+        """check for updates"""
+
+        self.log('\tchecking for updates', level='INFO')
+
+        state = self.get_state('update.home_assistant_core_update', attribute='all')
+
+        if state is not None and 'attributes' in state and 'latest_version' in state['attributes']:
+            # print(state)
+            version = state['attributes']['latest_version']
+            major, minor, patch = version.split('.')
+            self.log(f'\tAvailable Home Assistant version: {version} ({major=}, {minor=}, {patch=})', level='INFO')
+
+            if patch == '4':
+                self.set_state('input_boolean.update_available', state='on')
+            else:
+                self.set_state('input_boolean.update_available', state='off')
 
 # -----------------------------------------------------------------------------------
 
@@ -476,20 +502,5 @@ class Automation(AutomationBase):
         """reset tracing flag from input_boolean"""
 
         self.shared.trace = self.shared.verbose = self.shared.debug = self.shared.testing = False
-
-# -----------------------------------------------------------------------------------
-
-    def mute_announcements(self, kwargs) -> None:
-        """mute announcements"""
-
-        self.set_state('input_boolean.mute_announcement', state='off')
-        self.run_in(self.unmute_announcements, 60 * 65) # unmute after 65 minutes
-
-# -----------------------------------------------------------------------------------
-
-    def unmute_announcements(self, kwargs) -> None:
-        """unmute announcements"""
-
-        self.set_state('input_boolean.mute_announcement', state='on')
 
 # -----------------------------------------------------------------------------------

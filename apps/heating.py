@@ -77,11 +77,17 @@ class Heating(AutomationBase):
             return
 
         entity_id = const.HEATING
-        temperature = self.get_state(entity_id, attribute="temperature")
+        temperature = self.get_state(entity_id, attribute="current_temperature")
+        temperature = float(temperature) if temperature is not None else None
+        # entity_id = 'sensor.heating_temperature'
+        # temperature = self.get_state(entity_id)
 
         if temperature is None:
             self.log('Heating temperature is None', level='ERROR')
             return
+        else:
+            if self._get_verbose():
+                self.log(f'Heating temperature is {temperature}', level='INFO')
 
         current = float(current)
         forecast = float(forecast)
@@ -117,7 +123,7 @@ class Heating(AutomationBase):
         current = self.get_state(entity_id, attribute="temperature")
 
         if current is None:
-            self.log('Radiator temperature is None', level='ERROR')
+            # self.log('Radiator temperature is None', level='ERROR') # FIXME: handle this case properly
             return
 
         current = float(current)

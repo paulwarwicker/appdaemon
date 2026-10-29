@@ -39,6 +39,7 @@ class Sonos(AutomationBase):
         self.register_service('sonos/cancel_snooze', self.cancel_service)
 
         self.listen_event(self.status_event, 'status')
+        # self.listen_event(self.snooze_event, 'snooze1', seconds=1*60) # any snooze event when alarm testing will snooze for 10s
         self.listen_event(self.snooze_event, 'snooze10', seconds=10*60) # any snooze event when alarm testing will snooze for 10s
         self.listen_event(self.snooze_event, 'snooze15', seconds=15*60) # any snooze event when alarm testing will snooze for 10s
         self.listen_event(self.snooze_event, 'snooze30', seconds=30*60)
@@ -52,7 +53,7 @@ class Sonos(AutomationBase):
         self.listen_event(self.test_event, 'test')
         self.listen_event(self.unjoin_all_event, 'unjoin_all')
 
-        self.run_daily(self.play_hallway, '08:00:00') # play_hallway event for manual start
+        # self.run_daily(self.play_hallway, '08:00:00') # play_hallway event for manual start
         self.run_daily(self.stop_hallway, '21:00:00')
 
         self.call_service('announcer/initialised', name=self.name.lower(), announce=False)
@@ -101,8 +102,7 @@ class Sonos(AutomationBase):
         self.call_service('timestamp/set', name='snooze')
 
         all_attributes = await self.get_state(entity_id=entity_id, attribute="all")
-
-        self.log(f'{entity_id} {all_attributes}')
+        self.log(f'{entity_id=} {all_attributes=}', level='DEBUG')
 
         attributes = all_attributes.get('attributes', None)
         volume_level = attributes.get('volume_level', None)
@@ -113,16 +113,14 @@ class Sonos(AutomationBase):
 
         volume_level = const.ALARM_VOLUME
 
-        self.log(f'entity_id={entity_id} volume_level={volume_level}', level='DEBUG')
-        self.log(f'media_content_id={media_content_id} media_content_type={media_content_type}', level='DEBUG')
-        self.log(f'shuffle={shuffle} repeat={repeat}', level='DEBUG')
+        self.log(f'{entity_id=} {volume_level=}', level='DEBUG')
+        self.log(f'{media_content_id=} {media_content_type=}', level='DEBUG')
+        self.log(f'{shuffle=} {repeat=}', level='DEBUG')
 
         self.call_service('media_player/media_stop', entity_id=entity_id)
 
         if self.snoozer is not None:
-            self.log(f"Cancelling existing playback timer {self.snoozer}", level="WARNING")
-            self.cancel_timer(self.snoozer)
-            self.snoozer = None
+            self.call_service('sonos/cancel_snooze')
 
         kwargs = {
             'entity_id': entity_id,
@@ -134,12 +132,14 @@ class Sonos(AutomationBase):
             'set_repeat': repeat
         }
 
+        if self._get_testing():
+            seconds = 20
+
         self.snoozer = self.run_in(self.play_thing, seconds, **kwargs)
-        if self.timer is not None:
-            self.log(f"Cancelling existing backstop timer {self.timer}", level="WARNING")
-            self.cancel_timer(self.timer)
-            self.timer = None
         self.snoozed = True
+
+        await self.sleep(1.0)
+        self.call_service('announcer/broadcast', entity_id=entity_id, message=f'Snoozed for {seconds/60:.0f} minutes', force=True, volume=const.ANNOUNCE_VOLUME_LOW)
 
         self._log_function_name(start=False, **force)
 
@@ -152,11 +152,14 @@ class Sonos(AutomationBase):
 
         self._log_function_name(start=True, **force)
 
-        if self.snoozer is not None:
-            self.log(f"Cancelling existing playback timer {self.snoozer}", level="WARNING")
-            self.cancel_timer(self.snoozer)
-            self.snoozer = None
-            self.snoozed = False
+        try:
+            if self.snoozer is not None:
+                self.log(f"Cancelling existing playback timer {self.snoozer}", level="WARNING")
+                self.cancel_timer(self.snoozer)
+                self.snoozer = None
+                self.snoozed = False
+        except Exception as e:
+            self.log(f"Error cancelling existing playback timer: {e}", level="ERROR")
 
         self._log_function_name(start=False, **force)
 
@@ -193,12 +196,11 @@ class Sonos(AutomationBase):
 
         if not entity_id or not media_content_id:
             self.log("entity_id or media_content_id missing", level="ERROR")
-            self._log_function_name(start=True, **force)
+            self._log_function_name(start=False, **force)
             return
 
-        # state = await self.get_state(entity_id, attribute="state")
         attributes = await self.get_state(entity_id=entity_id, attribute="all")
-        print(attributes)
+        self.log(f"{entity_id=} {attributes=}", level="DEBUG")
         state = attributes.get('state', None)
 
         if state == "playing":
@@ -209,13 +211,16 @@ class Sonos(AutomationBase):
             self.log(f"playing {media_title} by {media_artist} on {entity_id} already. skipping {media_content_id}", level="WARNING")
             return
 
-        self.log(f"entity_id={entity_id}, media_content_id={media_content_id}, volume_level={volume_level}, ramp_time={ramp_time}", level="DEBUG") # original code
+        self.log(f"{entity_id=} {media_content_id=} {volume_level=} {ramp_time=}", level="DEBUG") # original code
 
         await self.call_service("sonos/unjoin_entity", entity_id=entity_id)
         await self.call_service("media_player/media_stop", entity_id=entity_id)
         await self.sleep(1.0)
-        await self.call_service("media_player/volume_mute", entity_id=entity_id, is_volume_muted=False)
-        await self.call_service("media_player/volume_set", entity_id=entity_id, volume_level=0)
+
+        # make sure the volume is muted before starting playback
+        # for attempt in range(3):
+        #     await self.call_service("media_player/volume_mute", entity_id=entity_id, is_volume_muted=True)
+
         await self.call_service("media_player/repeat_set", entity_id=entity_id, repeat=repeat)
         await self.call_service("media_player/shuffle_set", entity_id=entity_id, shuffle=shuffle)
 
@@ -247,7 +252,11 @@ class Sonos(AutomationBase):
             steps = max(1, int(target_volume / smoothness))
             step_volume = target_volume / steps
             step_delay = ramp_time / steps
-            self.log(f"steps={steps} step_volume={step_volume} step_delay={step_delay:.3f}", level="DEBUG")
+            self.log(f"{steps=} {step_volume=} {step_delay=:.3f}", level="DEBUG")
+
+            await self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=0)
+            await self.sleep(1.0)
+            await self.call_service('media_player/volume_set', entity_id=entity_id, volume_level=0)
 
             for i in range(steps):
                 volume += step_volume
@@ -339,12 +348,12 @@ class Sonos(AutomationBase):
 
         self.call_service('sonos/snooze', seconds=seconds, entity_id=entity_id)
 
-        self.call_service('media_player/play_media',
-                    entity_id=entity_id,
-                    media_content_type='music',
-                    media_content_id='http://192.168.1.4:8123/local/bleur.mp3',
-                    announce=True,
-                    extra={'volume': const.ALARM_VOLUME})
+        # self.call_service('media_player/play_media',
+        #             entity_id=entity_id,
+        #             media_content_type='music',
+        #             media_content_id='http://192.168.1.4:8123/local/bleur.mp3',
+        #             announce=True,
+        #             extra={'volume': const.ALARM_VOLUME})
 
 # -----------------------------------------------------------------------------------
 
@@ -423,8 +432,7 @@ class Sonos(AutomationBase):
         xmute = not True
         is_bank_holiday = self._is_bank_holiday()
 
-        if self._get_verbose_debug():
-            self.log(f"\tis_bank_holiday={is_bank_holiday}", level='DEBUG')
+        self.log(f"\t{is_bank_holiday=}", level='DEBUG')
 
         if unjoin:
             self.log(f"\tunjoin {speakers}", level='DEBUG')
@@ -446,7 +454,7 @@ class Sonos(AutomationBase):
         for speaker in speakers:
             volume =  volumes.get(speaker, None if xmute else default_volume)
             if volume is not None:
-                self.log(f'\tsetting speaker volume to {volume} for {speaker}', level='DEBUG')
+                self.log(f'\t{volume=} {speaker=}', level='DEBUG')
                 self.call_service('media_player/volume_set', entity_id=speaker, volume_level=volume)
 
 # -----------------------------------------------------------------------------------

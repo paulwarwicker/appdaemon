@@ -38,6 +38,7 @@ APP_THREADS: Final[int] = 20
 
 # lighting
 COOKER_LIGHTS: Final[str] = 'switch.cooker_lights'
+GARDEN_LIGHTS: Final[str] = 'switch.garden_lights'
 
 LOFT: Final[str] = 'light.loft'
 LUMIE: Final[str] = 'light.lumie'
@@ -151,9 +152,8 @@ PLAY_DELAY: Final[float] = 0.75
 DEFAULT_VOLUME: Final[float] = 0.15
 ALARM_VOLUME: Final[float] = 0.2
 ANNOUNCE_VOLUME: Final[int] = 35
-ANNOUNCE_VOLUME_LOW: Final[int] = 20
+ANNOUNCE_VOLUME_LOW: Final[int] = 10
 STUDY_ANNOUNCE_VOLUME: Final[int] = 20
-STUDY_ANNOUNCE_VOLUME_LOW: Final[int] = 10
 EARLY_ALARM_TIME: Final[str] = '07:00:00'
 # NORMAL_ALARM_TIME: Final[str] = '07:45:00'
 NORMAL_ALARM_TIME: Final[str] = '08:00:00'
@@ -210,8 +210,8 @@ HALLWAY_STREAMS: Final[list[str]] = [
     # SUMMER_VIBES_ALBUM := 'spotify:album:37ZeJt50FWCaLkw3HNJB2c',
     # SUMMER_VIBES_PLAYLIST := 'spotify:playlist:2hmLDliFT9mW84XHxRUzwx',
     # SUMMER_HITS_PLAYLIST := 'spotify:playlist:37i9dQZF1DX4uU3TGzIPXL',
-    # BOSSANOVA_STREAM := 'aac://http://prem2.radiotunes.com:80/smoothbossanova?5fba91be81f6da5b573f89c1',
-    CHRISTMAS_STREAM := 'aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1',
+    BOSSANOVA_STREAM := 'aac://http://prem2.radiotunes.com:80/smoothbossanova?5fba91be81f6da5b573f89c1',
+    # CHRISTMAS_STREAM := 'aac://http://prem2.radiotunes.com:80/popchristmas?5fba91be81f6da5b573f89c1',
 ]
 
 # 'x-sonos-spotify:spotify%3atrack%3a1r4QKeqpv1ov8FkrgKDxQ7?sid=9&flags=8224&sn=1', # a gentle thunderstorm
@@ -263,8 +263,8 @@ DAILY_WATERING_MINUTES: Final[int] = 26
 # timestamps initialised in automation
 TIMESTAMPS: Final[list[str]] = [
         'downstairs', 'prev_downstairs', 'upstairs', 'prev_upstairs', 'bedroom', 'prev_bedroom',
-        'garage', 'garage_lights', 'garage_announcement', 'snooze', 'tap',  'upstairs_motion',
-        'karoq_announce', 'karoq_notification', 'karoq_home', 'vacuum', 'general', 'travel',
+        'garage', 'garage_lights', 'garage_announcement', 'garage_motion', 'snooze', 'upstairs_motion',
+        'karoq_announce', 'karoq_notification', 'karoq_home', 'vacuum', 'general', 'travel', 'tap',
         'living_room', 'prev_living_room', 'bedroom', 'prev_bedroom',
     ]
 
@@ -283,14 +283,18 @@ SWITCHES: Final[dict[str, str]] = {
 BATHROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.bathroom_sensor_illuminance'
 CLOAKROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.cloakroom_sensor_illuminance'
 DOWNSTAIRS_SENSOR_ILLUMINANCE: Final[str] = 'sensor.downstairs_sensor_illuminance'
-# UTILITY_SENSOR_ILLUMINANCE: Final[str] = 'sensor.utility_sensor_illuminance'
+UTILITY_SENSOR_ILLUMINANCE: Final[str] = 'sensor.utility_sensor_illuminance'
+BEDROOM_SENSOR_ILLUMINANCE: Final[str] = 'sensor.bedroom_sensor_illuminance'
 
 BATHROOM_LUX_THRESHOLD: Final[int] = 50
 CLOAKROOM_LUX_THRESHOLD: Final[int] = 50
-DOWNSTAIRS_SENSOR_LUX_THRESHOLD: Final[int] = 50
-# UTILITY_LUX_THRESHOLD: Final[int] = 50
+BEDROOM_LUX_THRESHOLD: Final[int] = 50
+DOWNSTAIRS_LUX_THRESHOLD: Final[int] = 50
+UTILITY_LUX_THRESHOLD: Final[int] = 50
 
 HEATING: Final[str] = 'climate.heating'
+# HEATING: Final[str] = 'sensor.heating_temperature'
+
 BEDROOM_RADIATOR: Final[str] = 'climate.smart_radiator_valve'
 
 HOSEPIPE_BAN_TEMPERATURE_THRESHOLD: Final[float] = 26.0

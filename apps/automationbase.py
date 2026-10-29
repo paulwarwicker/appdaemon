@@ -13,9 +13,13 @@ import asyncio
 import time
 import inspect
 import sys
+import datetime as dt
+
+from appdaemon.utils import sync_decorator
 
 from datetime import datetime,timedelta
-from typing import Any, Coroutine, cast
+
+from typing import Any, Callable, Coroutine, cast
 
 import requests # type: ignore pylint: disable=import-error
 
@@ -44,21 +48,10 @@ class AutomationBase(Hass):
         self.shared.verbose = self.resolve_state(self.get_state('input_boolean.verbose')) == 'on'
         self.shared.testing = self.resolve_state(self.get_state('input_boolean.testing')) == 'on'
         self.shared.trace = self.resolve_state(self.get_state('input_boolean.trace')) == 'on'
-        self.shared.log_level = None
-        # self.log(f"\tautomationbase: debug={self.shared.debug} verbose={self.shared.verbose} testing={self.shared.testing} trace={self.shared.trace}", level='WARNING')
+        self.shared.log_level = "INFO"
+        # self.log(f"\tautomationbase: debug={self.shared.debug} verbose={self.shared.verbose} testing={self.shared.testing} trace={self.shared.trace}", level='WARNING')``
 
         self._set_console_log_level()
-
-# -----------------------------------------------------------------------------------
-
-    # async def initialize_async(self):
-    #     """base initialization logic async version"""
-
-    #     self.shared.debug = await self.resolve_state(self.get_state('input_boolean.debug')) == 'on'
-    #     self.shared.verbose = await self.resolve_state(self.get_state('input_boolean.verbose')) == 'on'
-    #     self.shared.testing = await self.resolve_state(self.get_state('input_boolean.testing')) == 'on'
-    #     self.shared.trace = await self.resolve_state(self.get_state('input_boolean.trace')) == 'on'
-    #     self.log(f"\tautomationbase: debug={self.shared.debug} verbose={self.shared.verbose} testing={self.shared.testing} trace={self.shared.trace}", level='WARNING')
 
 # -----------------------------------------------------------------------------------
 
@@ -103,9 +96,8 @@ class AutomationBase(Hass):
             if f'{dt.date():%Y-%m-%d}' == today:
                 _is_bank_holiday = True
 
-        if self._get_verbose_debug():
-            t = 'is not' if not _is_bank_holiday else 'is'
-            self.log(f'\t{t} bank holiday', level='DEBUG')
+        t = 'is not' if not _is_bank_holiday else 'is'
+        self.log(f'\t{t} bank holiday', level='DEBUG')
 
         return _is_bank_holiday
 
@@ -155,7 +147,7 @@ class AutomationBase(Hass):
                 if self.now_is_between('08:00:00', '22:29:59'):
                     volume = const.STUDY_ANNOUNCE_VOLUME
                 elif self.now_is_between('22:30:00', '07:59:59'):
-                    volume = const.STUDY_ANNOUNCE_VOLUME_LOW
+                    volume = const.ANNOUNCE_VOLUME_LOW
             else:
                 entity_id = 'media_player.kitchen'
 
@@ -184,10 +176,12 @@ class AutomationBase(Hass):
     def _rain(self) -> float:
         """get preciptation today"""
 
+        verbose, debug, trace, testing = self._get_tracing()
+
         # result = 0.0 # FIXME:
         result = float(self.get_state(entity_id='sensor.icambr4_precipitation_today'))
 
-        if self._get_verbose_debug():
+        if trace or debug or verbose:
             self.log(f'\tmmrain={result}', level='DEBUG')
 
         return result
@@ -206,6 +200,13 @@ class AutomationBase(Hass):
         """is this a mock run"""
 
         return self.get_state('input_boolean.mock_run') == 'on'
+
+# -----------------------------------------------------------------------------------
+
+    def _get_tracing(self):
+        """get tracing setting"""
+
+        return self.shared.verbose, self.shared.debug, self.shared.trace, self.shared.testing
 
 # -----------------------------------------------------------------------------------
 
@@ -251,6 +252,13 @@ class AutomationBase(Hass):
 
 # -----------------------------------------------------------------------------------
 
+    def _get_cleaning(self) -> bool:
+        """get cleaning setting"""
+
+        return self.get_state("input_boolean.cleaning") == "on"
+
+# -----------------------------------------------------------------------------------
+
     def _set_flag_value(self, _type, value: bool) -> bool:
         """set cached flag setting"""
 
@@ -279,8 +287,6 @@ class AutomationBase(Hass):
 
         if force:
             trace = separator = notification = True
-        else:
-            trace = self.shared.trace
 
         frame = inspect.currentframe()
 
@@ -300,12 +306,13 @@ class AutomationBase(Hass):
             if frame is not None and frame.f_back is not None:
                 print(frame.f_back)
 
-        if trace:
+        if any((force, self.shared.debug, self.shared.verbose, self.shared.trace)): # any(<tuple>)
             if separator:
-                dashes = '-' * (80 - len(name))
-                self.log(f'{prefix} {name} {dashes}',level='INFO')
+                dashes = '-' * max(0, 80 - len(name))
+                msg = f'{prefix} {name} {dashes}'
             else:
-                self.log(f'\t{prefix} {name}', level='DEBUG')
+                msg = f'\t{prefix} {name}'
+            self.log(msg, level='INFO')
 
 # -----------------------------------------------------------------------------------
 
@@ -325,7 +332,7 @@ class AutomationBase(Hass):
         _ = self.call_service('homeassistant/update_entity', entity_id=entity_id) # TODO: why needed to shutup pylint
         attributes = self.get_state(entity_id=entity_id, attribute="attributes")
         state = self.get_state(entity_id=entity_id)
-        self.log(f'entity_id={entity_id} state={state} attributes={attributes}', level='DEBUG')
+        self.log(f'{entity_id=} state={state} attributes={attributes}', level='DEBUG')
 
         return state == 'playing'
 
@@ -433,7 +440,7 @@ class AutomationBase(Hass):
     def _call(self, name: str, *args, background: bool = True, wait: bool = False, timeout: float | None = None, **kwargs):
         """Dispatch a helper by name synchronously.
 
-        - Calls a bound method on this AutomationLib instance if present, otherwise looks for a module-level
+        - Calls a bound method on this instance if present, otherwise looks for a module-level
           function in this module.
         - If the target returns a coroutine/Task:
             - if background=True: schedule it with create_task and return the Task (fire-and-forget).
@@ -463,7 +470,7 @@ class AutomationBase(Hass):
                     fn = getattr(mod, name, None)
 
         if fn is None:
-            self.log(f'automationlib.call: no function named {name}', level='WARNING')
+            self.log(f'automationbase.call: no function named {name}', level='WARNING')
             return None
 
         try:
@@ -473,7 +480,7 @@ class AutomationBase(Hass):
             try:
                 res = fn(self, *args, **kwargs)
             except Exception as exc:
-                self.log(f'automationlib.call: failed to call {name}: {exc}', level='ERROR')
+                self.log(f'automationbase.call: failed to call {name}: {exc}', level='ERROR')
                 return None
 
         # If it's a coroutine or Task, handle according to flags
@@ -486,13 +493,13 @@ class AutomationBase(Hass):
                     # no running loop in this thread; try scheduling on main loop if available
                     loop = getattr(self, "_loop", None)
                 if loop is None:
-                    self.log(f'automationlib.call: no event loop available to wait for {name}', level='ERROR')
+                    self.log(f'automationbase.call: no event loop available to wait for {name}', level='ERROR')
                     return None
                 fut = asyncio.run_coroutine_threadsafe(cast(Coroutine[Any, Any, Any], res), loop)
                 try:
                     return fut.result(timeout)
                 except Exception as exc:
-                    self.log(f'automationlib.call: waiting for {name} failed: {exc}', level='ERROR')
+                    self.log(f'automationbase.call: waiting for {name} failed: {exc}', level='ERROR')
                     return None
 
             # background scheduling (non-blocking)
@@ -511,9 +518,9 @@ class AutomationBase(Hass):
                 try:
                     exc = t.exception()
                     if exc:
-                        self.log(f'automationlib.call background {name} exception: {exc}', level='ERROR')
+                        self.log(f'automationbase.call background {name} exception: {exc}', level='ERROR')
                 except Exception as e:
-                    self.log(f'automationlib.call background {name} done-callback failed: {e}', level='ERROR')
+                    self.log(f'automationbase.call background {name} done-callback failed: {e}', level='ERROR')
 
             task.add_done_callback(_on_done)
             return task if background else res
@@ -543,115 +550,101 @@ class AutomationBase(Hass):
             for module in const.MODULES:
                 app = self.get_app(module)
                 if app is not None:
-                    self.log(f'setting log level {prefix}{level} on app {module} (app={app})', level='DEBUG')
+                    self.log(f'setting log level {prefix}{level} on app {module} (app={app})', level='INFO')
                     app.set_log_level(level)
 
 # -----------------------------------------------------------------------------------
 
-    # async def _log_function_name_async(self, **kwargs) -> None:
-    #     """log function name as log message"""
+    # @sync_decorator
+    # async def run_weekly(
+    #     self,
+    #     callback: Callable,
+    #     start: str | dt.time | dt.datetime | None = None,
+    #     *args,
+    #     random_start: int | dt.timedelta | None = None,
+    #     random_end: int | dt.timedelta | None = None,
+    #     pin: bool | None = None,
+    #     pin_thread: int | None = None,
+    #     **kwargs,
+    # ) -> str:
+    #     """Run a function at the same time every week depending on the specified days.
 
-    #     self._log_function_name(**kwargs)
+    #     Args:
+    #         callback: Function that will be called every day at the specified time. It must conform to the standard
+    #             scheduler callback format documented `here <APPGUIDE.html#scheduler-callbacks>`__.
+    #         start (str, datetime.time, datetime.datetime, optional): Start time for the interval calculation. If this is
+    #             in the future, this will be the first time the callback is triggered. If this is in the past, the
+    #             intervals will be calculated forward from the start time, and the first trigger will be the first
+    #             interval in the future.
 
-    #     # start = kwargs.get('start', True)
-    #     # separator = kwargs.get('separator', True)
-    #     # notification = kwargs.get('notification', False)
-    #     # stacktrace = kwargs.get('stacktrace', False)
-    #     # force = kwargs.get('force', False)
+    #             - If this is a ``str`` it will be parsed with :meth:`~appdaemon.adapi.ADAPI.parse_time()`.
+    #             - If this is a ``datetime.time`` object, the current date will be assumed.
+    #             - If this is a ``datetime.datetime`` object, it will be used as is.
 
-    #     # if force:
-    #     #     trace = separator = notification = True
-    #     # else:
-    #     #     trace = await self.get_state('input_boolean.trace') == 'on'
+    #         *args: Arbitrary positional arguments to be provided to the callback function when it is triggered.
+    #         random_start (int, optional): Start of range of the random time.
+    #         random_end (int, optional): End of range of the random time.
+    #         pin (bool, optional): Optional setting to override the default thread pinning behavior. By default, this is
+    #             effectively ``True``, and ``pin_thread`` gets set when the app starts.
+    #         pin_thread (int, optional): Specify which thread from the worker pool will run the callback. The threads
+    #             each have an ID number, which start at 0 and go through (number of threads - 1).
+    #         **kwargs: Arbitrary keyword parameters to be provided to the callback function when it is triggered.
 
-    #     # frame = inspect.currentframe()
+    #             Keyword Args:
+    #                 days (int or list[int]): Days of the week on which the callback should run.
+    #                         Monday = 0 ... Sunday = 6
 
-    #     # if frame is not None and frame.f_back is not None:
-    #     #     name = frame.f_back.f_code.co_name
-    #     # else:
-    #     #     name = "<unknown>"
+    #     Raises:
+    #         ValueError: If the 'days' argument is not specified.
 
-    #     # prefix = '>>' if start else '<<'
+    #     Returns:
+    #         A handle that can be used to cancel the timer later before it's been executed.
 
-    #     # if notification:
-    #     #     _ = self.call_service('announcer/notification', message=f'{prefix} {name}', type='desktop') # TODO: why needed to shutup pylint
+    #     Note:
+    #         The ``random_start`` value must always be numerically lower than ``random_end`` value, they can be negative
+    #         to denote a random offset before and event, or positive to denote a random offset after an event.
 
-    #     # if stacktrace:
-    #     #     frame = inspect.currentframe()
-    #     #     print(frame)
-    #     #     if frame is not None and frame.f_back is not None:
-    #     #         print(frame.f_back)
+    #     Examples:
+    #         Run every weekly at 10:30am on a Monday.
 
-    #     # if trace:
-    #     #     if separator:
-    #     #         dashes = '-' * (80 - len(name))
-    #     #         self.log(f'{prefix} {name} {dashes}',level='INFO')
-    #     #     else:
-    #     #         self.log(f'\t{prefix} {name}', level='DEBUG')
+    #         >>> self.run_weekly(self.weekly_callback, datetime.time(10, 30), days=0)
 
-# -----------------------------------------------------------------------------------
+    #         Run at 7:30pm weekly on a Tuesday using the ``parse_time()`` function.
 
-    # def get_state(self, caller, *args, **kwargs):
-    #     """Call a helper by name.
+    #         >>> handle = self.run_weekly(self.weekly_callback, "07:30:00 PM", days=1)
 
-    #     - If a bound method exists on this AutomationLib instance, call it.
-    #     - Otherwise try to call a module-level function from automationlib module and pass `caller` as the first arg.
-    #     - Await and return coroutine results when needed.
     #     """
 
-    #     fn = getattr(caller, 'get_state', None)
+    #     self._log_function_name(start=True, force=True)
 
-    #     if fn is not None:
-    #         res = asyncio.run_coroutine_threadsafe(fn(*args, **kwargs), asyncio.get_running_loop())
-    #     else:
-    #         res = None # fn(*args, **kwargs)
+    #     if 'days' not in kwargs:
+    #         raise ValueError("You must specify the 'days' argument")
 
-    #     return res  # caller can ignore or keep future result
+    #     days = kwargs.pop('days')
 
-# -----------------------------------------------------------------------------------
+    #     if isinstance(days, int):
+    #         days = [days]
 
-    # def _get_state(self, *args, **kwargs):
-    #     """Call a helper by name (module-level get_state)."""
+    #     async def wrapped_weekly_cb(cb_kwargs):
+    #         # Only run on the specified weekdays. days is inherited from the outer scope.
+    #         dt = await self.datetime()
+    #         if dt.weekday() in days:
+    #             await callback(cb_kwargs)
 
-    #     # look for a module-level function named 'get_state' (works regardless of import name)
-    #     fn = globals().get('get_state')
-    #     if fn is None:
-    #         mod = sys.modules.get(__name__)
-    #         if mod is not None:
-    #             fn = getattr(mod, 'get_state', None)
+    #     handle = await self.run_daily(
+    #         wrapped_weekly_cb,
+    #         start,
+    #         *args,
+    #         random_start=random_start,
+    #         random_end=random_end,
+    #         pin=pin,
+    #         pin_thread=pin_thread,
+    #         **kwargs,
+    #     )
 
-    #     if fn is not None:
-    #         # fn may be a coroutine function; schedule it on the running loop
-    #         try:
-    #             coro = fn(*args, **kwargs)
-    #             fut = asyncio.run_coroutine_threadsafe(cast(Coroutine[Any, Any, Any], coro), asyncio.get_running_loop())
-    #             res = fut
-    #         except Exception:
-    #             res = None
-    #     else:
-    #         res = None
+    #     self.log(f'{handle=} {args=} {kwargs=}', level='INFO')
+    #     self._log_function_name(start=False, force=True)
 
-    #     return res  # caller can ignore or keep future result
-
-# -----------------------------------------------------------------------------------
-
-    # def get_elevation(self, elev):
-    #     """get sun elevation value from get_state result"""
-
-    #     if isinstance(elev, (concurrent.futures.Future, asyncio.Future)):
-    #         try:
-    #             elev = elev.result(timeout=1)
-    #         except Exception:
-    #             elev = None
-
-    #     if elev in (None, 'unknown'):
-    #         elev_val = None
-
-    #     try:
-    #         elev_val = float(elev)
-    #     except (TypeError, ValueError):
-    #         elev_val = None
-
-    #     return elev_val
+    #     return handle
 
 # -----------------------------------------------------------------------------------

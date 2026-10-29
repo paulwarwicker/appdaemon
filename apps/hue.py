@@ -68,20 +68,19 @@ class Hue(AutomationBase):
 
         self._log_function_name(start=True)
 
-        # _type = data['type']
-        # _subtype = data['subtype']
         device_id = data["device_id"]
-        # device_name = const.SWITCHES.get(device_id, device_id)
-        # print(data)
+        device_name = const.SWITCHES.get(device_id, device_id)
+        _type = data['type']
+        _subtype = data['subtype']
 
-        # if self._get_verbose_debug():
-        #     print(data)
-        #     if _type in ('short_release', 'long_release'):
-        #         self.log(f'\t{_type} {_subtype} on {device_name} ({device_id})')
-        #     if _type == 'start':
-        #         self.log(f'\t{_type} on {device_name} ({device_id}) with subtype {_subtype}')
-        #         if _subtype in ('clock_wise', 'counter_clock_wise'):
-        #             self.log(f'\t\t{_subtype} for {data["duration"]}ms with {data["steps"]} steps')
+        self.log(f'{data}', level='DEBUG')
+
+        if _type in ('short_release', 'long_release'):
+            self.log(f'\t{_type} {_subtype} on {device_name} ({device_id})', level='DEBUG')
+        if _type == 'start':
+            self.log(f'\t{_type} on {device_name} ({device_id}) with subtype {_subtype}', level='DEBUG')
+            if _subtype in ('clock_wise', 'counter_clock_wise'):
+                self.log(f'\t\t{_subtype} for {data["duration"]}ms with {data["steps"]} steps', level='DEBUG')
 
         if device_id == const.BEDROOM_SWITCH:
             self.bedroom_button(data, kwargs)
@@ -102,20 +101,13 @@ class Hue(AutomationBase):
         _type = data['type']
         _subtype = data['subtype']
 
-        if _type == 'short_release':
+        if _type == 'long_release':
             if _subtype in (1,2):
                 event_type = 'stop_bedroom'
-                # if self.get_state('input_boolean.physical_training') == 'on':
-                #     event_type  = 'stop_bedroom'
-                # else:
-                #     if self.now_is_between(self.BUTTON_WINDOW_START, self.BUTTON_WINDOW_END): # midnight - 07:30
-                #         event_type  = 'stop_bedroom'
-                #     else:
-                #         event_type  = 'snooze10'
             elif _subtype in (3,4):
                 event_type = 'all_off'
 
-        if _type == 'long_release':
+        if _type == 'short_release':
             if _subtype == 1:
                 event_type = 'snooze10'
             elif _subtype == 2:
@@ -126,10 +118,10 @@ class Hue(AutomationBase):
                 event_type = 'snooze60'
 
         if _type in ('start') and _subtype == 'counter_clock_wise':
-            event_type = 'all_off'
+            event_type = 'snooze30' if self._is_playing(const.BEDROOM_SPEAKER) else None
 
         if _type in ('start') and _subtype == 'clock_wise':
-            event_type = 'lumie_on'
+            event_type = 'snooze15' if self._is_playing(const.BEDROOM_SPEAKER) else None
 
         if event_type is not None:
             self.fire_event(event_type)
@@ -154,11 +146,11 @@ class Hue(AutomationBase):
             if _subtype == 1:
                 self.call_service('hue/activate_scene', entity_id='scene.living_room_lights_std60')
             elif _subtype == 2:
-                self.call_service('hue/activate_scene', entity_id='scene.living_room_lights_puzzle200')
+                self.call_service('hue/activate_scene', entity_id='scene.living_room_lights_living_room_lights_puzzle200')
             elif _subtype == 3:
                 pass
             elif _subtype == 4:
-                pass
+                self.call_service('garage/close')
 
         if _type == 'long_release':
             if _subtype == 1:
@@ -168,13 +160,16 @@ class Hue(AutomationBase):
             elif _subtype == 3:
                 pass
             elif _subtype == 4:
-                pass
+                event_type = 'snooze10'
 
+        # self.log(f"{_type=}, {_subtype=}")
         if _type in ('start') and _subtype == 'counter_clock_wise':
-            pass
+            # self.call_service('sonos/stop', entity_id=const.BEDROOM_SPEAKER)
+            self.call_service('lighting/puzzle_off')
 
         if _type in ('start') and _subtype == 'clock_wise':
-            pass
+            # self.call_service('sonos/stop', entity_id=const.BEDROOM_SPEAKER)
+            self.call_service('lighting/puzzle_on')
 
         if event_type is not None:
             self.fire_event(event_type)

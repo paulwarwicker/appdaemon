@@ -12,6 +12,8 @@ import threading
 import json
 import re
 import uuid
+import asyncio
+
 # from datetime import datetime, time, timedelta # pylint: disable=unused-import
 
 from typing import Optional
@@ -19,6 +21,11 @@ from typing import Optional
 
 from datetime import datetime, date
 from icalendar import Calendar  # type: ignore
+
+import datetime as dt
+from appdaemon.utils import sync_decorator
+from datetime import datetime,timedelta
+from typing import Any, Callable, Coroutine, cast
 
 import yaml
 import requests  # type: ignore # pylint: disable=E0401
@@ -48,6 +55,8 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
         self.register_service('announcer/broadcast', self.broadcast_service)
         self.register_service('announcer/notification', self.notification_service)
         self.register_service('announcer/initialised', self.initialised_service)
+        self.register_service('announcer/mute_announcements', self.mute_announcements_service)
+        self.register_service('announcer/unmute_announcements', self.unmute_announcements_service)
 
         self.listen_event(self.status_event, 'status')
         self.listen_event(self.vouchers_event, 'vouchers')
@@ -57,11 +66,19 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
         self.listen_event(self.announce_event, 'announce')
         self.listen_event(self.announce_event, 'announcement')
         self.listen_event(self.broadcast_event, 'broadcast')
+        self.listen_event(self.mute_announcements_event, 'mute_announcements')
+        self.listen_event(self.unmute_announcements_event, 'unmute_announcements')
+        self.listen_event(self.test_mute_announcements_event, 'test_mute_announcements')
 
         self.run_daily(self.bins, '19:30:00', event='preannounce')
         self.run_daily(self.bins, '17:30:00', event='announce')
         self.run_daily(self.bins, '19:30:00', event='followup')
         self.run_daily(self.vouchers_announce, '19:30:30')
+
+        self.sync_run_weekly(self.mute_announcements, "09:28:00", days=1) #, random_start=10, random_end=60)
+        self.sync_run_weekly(self.unmute_announcements, "10:35:00", days=1) #, random_start=10, random_end=60)
+        self.sync_run_weekly(self.mute_announcements, "12:58:00", days=2) #, random_start=10, random_end=60)
+        self.sync_run_weekly(self.unmute_announcements, "14:05:00", days=2) #, random_start=10, random_end=60)
 
         self.announce_lock = threading.Lock()
 
@@ -78,7 +95,7 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
         announce = kwargs.get('announce', True)
         timestamp = kwargs.get('timestamp', None)
         force = kwargs.get('force', False)
-        volume = kwargs.get('volume', const.STUDY_ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME)
+        volume = kwargs.get('volume', const.ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME)
 
         entry = self.prepare(entity_id, message, timestamp, announce, force, volume)
 
@@ -96,8 +113,9 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
         timestamp = kwargs.get('timestamp', None)
         force = kwargs.get('force', False)
         volume = kwargs.get('volume', const.ANNOUNCE_VOLUME_LOW if self._is_night() else const.ANNOUNCE_VOLUME)
+        entity_id = kwargs.get('entity_id', const.KITCHEN_SPEAKER)
 
-        entry = self.prepare(None, message, timestamp, announce, force, volume)
+        entry = self.prepare(entity_id, message, timestamp, announce, force, volume)
 
         with self._ensure_announce_lock():
             self.announce(entry)
@@ -129,6 +147,28 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
 
 # -----------------------------------------------------------------------------------
 
+    def mute_announcements_service(self, namespace, domain, service, data) -> None:
+        """mute announcement service"""
+
+        self._log_function_name(start=True) #, force=True)
+
+        self.set_state('input_boolean.mute_announcements', state='on')
+
+        self._log_function_name(start=False) #, force=True)
+
+# -----------------------------------------------------------------------------------
+
+    def unmute_announcements_service(self, namespace, domain, service, data) -> None:
+        """unmute announcement service"""
+
+        self._log_function_name(start=True) #, force=True)
+
+        self.set_state('input_boolean.mute_announcements', state='off')
+
+        self._log_function_name(start=False) #, force=True)
+
+# -----------------------------------------------------------------------------------
+
     def announce_event(self, event, data, kwargs) -> None:
 
         messages = ['first announce message', 'second announce message', 'third announce message']
@@ -147,6 +187,20 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
 
 # -----------------------------------------------------------------------------------
 
+    def mute_announcements_event(self, event, data, kwargs) -> None:
+        """mute announcement event"""
+
+        self.call_service('announcer/mute_announcements')
+
+# -----------------------------------------------------------------------------------
+
+    def unmute_announcements_event(self, event, data, kwargs) -> None:
+        """unmute announcement event"""
+
+        self.call_service('announcer/unmute_announcements')
+
+# -----------------------------------------------------------------------------------
+
     def _announce(self, kwargs) -> None:
         """Helper scheduled via run_in to perform a single announce call."""
 
@@ -156,7 +210,7 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
 
         if volume is None:
             if entity_id == const.STUDY_SPEAKER:
-                volume = const.STUDY_ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME
+                volume = const.ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME
             else:
                 volume = const.ANNOUNCE_VOLUME_LOW if self._is_night() else const.ANNOUNCE_VOLUME
 
@@ -182,6 +236,20 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
     def bins_event(self, event, data, kwargs) -> None:
 
         self.bins({'event': event})
+
+# -----------------------------------------------------------------------------------
+
+    def test_mute_announcements_event(self, event, data, kwargs) -> None:
+
+        d = (datetime.now() + timedelta(minutes=2)).replace(second=0, microsecond=0)
+        alarm_time1 = f"{d.hour:02d}:{d.minute:02d}:{d.second:02d}"
+        days = d.weekday()
+        d = (datetime.now() + timedelta(minutes=2)).replace(second=10, microsecond=0)
+        alarm_time2 = f"{d.hour:02d}:{d.minute:02d}:{d.second:02d}"
+        days = d.weekday()
+
+        self.sync_run_weekly(self.mute_announcements, alarm_time1, days=days) #, random_start=10, random_end=60)
+        self.sync_run_weekly(self.unmute_announcements, alarm_time2, days=days) #, random_start=10, random_end=60)
 
 # -----------------------------------------------------------------------------------
 
@@ -460,7 +528,7 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
 
         if self._get_testing():
             entity_id = const.STUDY_SPEAKER
-            volume = const.STUDY_ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME
+            volume = const.ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME
 
         return [uu_id, entity_id, message, timestamp, announce, force, volume]
 
@@ -468,12 +536,12 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
 
     def announceable(self, hint) -> bool:
 
-        # force_announcement has precendence over both mute_announcement and hint
-        if self.get_state('input_boolean.force_announcement') == 'on' and hint is True:
+        # force_announcement has precendence over both mute_announcements and hint
+        if self.get_state('input_boolean.force_announcements') == 'on' and hint is True:
             return True # only return true if forced and hint is true
 
-        # mute_announcement has precendence over hint
-        if self.get_state('input_boolean.mute_announcement') == 'on' or hint is False:
+        # mute_announcements has precendence over hint
+        if self.get_state('input_boolean.mute_announcements') == 'on' or hint is False:
             return False # is muted or hint is false
 
         dow = self._dow()
@@ -481,8 +549,7 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
         announceable1 = self.now_is_between(f'{const.START_HOUR:02d}:30:00', f'{const.END_HOUR:02d}:30:00')
         announceable2 = (dow in (2,4) and self.now_is_between('09:27:00', '09:58:00')) or (dow in (1,5) and self.now_is_between('16:27:00', '16:58:00'))
 
-        if self._get_verbose_debug():
-            self.log(f'\tannounceable1={announceable1} announceable2={announceable2}, announceable1 and not announceable2={announceable1 and not announceable2}', level='DEBUG')
+        self.log(f'\tannounceable1={announceable1} announceable2={announceable2}, announceable1 and not announceable2={announceable1 and not announceable2}', level='DEBUG')
 
         return announceable1 and not announceable2
 
@@ -502,5 +569,151 @@ class Announcer(AutomationBase): # pylint: disable=W0212 disable=W0621
         if self.announce_lock is None:
             self.announce_lock = threading.Lock()
         return self.announce_lock
+
+# -----------------------------------------------------------------------------------
+
+    def sync_run_weekly(
+            self,
+            aCallback: Callable,
+            start: str | dt.time | dt.datetime | None = None,
+            *args,
+            random_start: int | dt.timedelta | None = None,
+            random_end: int | dt.timedelta | None = None,
+            pin: bool | None = None,
+            pin_thread: int | None = None,
+            **kwargs,
+        ) -> str:
+
+        # If callback is async, wrap it so run_daily receives a sync function
+        if asyncio.iscoroutinefunction(aCallback):
+            original_callback = aCallback
+
+            def sync_wrapper(cb_kwargs):
+                # Run the original async callback, not the wrapper
+                self.create_task(original_callback(cb_kwargs))
+
+            aCallback = sync_wrapper
+
+        # Call the async scheduler (returns a string handle)
+        return self.run_weekly(
+            aCallback,
+            start,
+            *args,
+            random_start=random_start,
+            random_end=random_end,
+            pin=pin,
+            pin_thread=pin_thread,
+            **kwargs,
+        )
+
+# -----------------------------------------------------------------------------------
+
+    @sync_decorator
+    async def run_weekly(
+        self,
+        aCallback: Callable,
+        start: str | dt.time | dt.datetime | None = None,
+        *args,
+        random_start: int | dt.timedelta | None = None,
+        random_end: int | dt.timedelta | None = None,
+        pin: bool | None = None,
+        pin_thread: int | None = None,
+        **kwargs,
+    ) -> str:
+        """Run a function at the same time every week depending on the specified days.
+
+        Args:
+            aCallback: Function that will be called every day at the specified time. It must conform to the standard
+                scheduler callback format documented `here <APPGUIDE.html#scheduler-callbacks>`__.
+            start (str, datetime.time, datetime.datetime, optional): Start time for the interval calculation. If this is
+                in the future, this will be the first time the callback is triggered. If this is in the past, the
+                intervals will be calculated forward from the start time, and the first trigger will be the first
+                interval in the future.
+
+                - If this is a ``str`` it will be parsed with :meth:`~appdaemon.adapi.ADAPI.parse_time()`.
+                - If this is a ``datetime.time`` object, the current date will be assumed.
+                - If this is a ``datetime.datetime`` object, it will be used as is.
+
+            *args: Arbitrary positional arguments to be provided to the callback function when it is triggered.
+            random_start (int, optional): Start of range of the random time.
+            random_end (int, optional): End of range of the random time.
+            pin (bool, optional): Optional setting to override the default thread pinning behavior. By default, this is
+                effectively ``True``, and ``pin_thread`` gets set when the app starts.
+            pin_thread (int, optional): Specify which thread from the worker pool will run the callback. The threads
+                each have an ID number, which start at 0 and go through (number of threads - 1).
+            **kwargs: Arbitrary keyword parameters to be provided to the callback function when it is triggered.
+
+                Keyword Args:
+                    days (int or list[int]): Days of the week on which the callback should run.
+                            Monday = 0 ... Sunday = 6
+
+        Raises:
+            ValueError: If the 'days' argument is not specified.
+
+        Returns:
+            A handle that can be used to cancel the timer later before it's been executed.
+
+        Note:
+            The ``random_start`` value must always be numerically lower than ``random_end`` value, they can be negative
+            to denote a random offset before and event, or positive to denote a random offset after an event.
+
+        Examples:
+            Run every weekly at 10:30am on a Monday.
+
+            >>> self.run_weekly(self.weekly_callback, datetime.time(10, 30), days=0)
+
+            Run at 7:30pm weekly on a Tuesday using the ``parse_time()`` function.
+
+            >>> handle = self.run_weekly(self.weekly_callback, "07:30:00 PM", days=1)
+
+        """
+
+        if 'days' not in kwargs:
+            raise ValueError("You must specify the 'days' argument")
+
+        days = kwargs.pop('days')
+
+        if isinstance(days, int):
+            days = [days]
+            kwargs.update({'days': days})
+
+        async def wrapped_weekly_cb(cb_kwargs):
+            # Only run on the specified weekdays. days is inherited from the outer scope.
+            dt_now = await self.datetime()
+            if dt_now.weekday() in days:
+                await aCallback(cb_kwargs)
+
+        return self.run_daily(
+            wrapped_weekly_cb,
+            start,
+            *args,
+            random_start=random_start,
+            random_end=random_end,
+            pin=pin,
+            pin_thread=pin_thread,
+            **kwargs,
+        )
+
+# -----------------------------------------------------------------------------------
+
+    async def mute_announcements(self, kwargs) -> None:
+        """mute announcements"""
+
+        self._log_function_name(start=True) #, force=True)
+
+        await self.call_service('announcer/mute_announcements')
+
+        self._log_function_name(start=False) #, force=True)
+
+# -----------------------------------------------------------------------------------
+
+    async def unmute_announcements(self, kwargs) -> None:
+        """unmute announcements"""
+
+        self._log_function_name(start=True) #, force=True)
+
+        await self.call_service('announcer/unmute_announcements')
+
+        self._log_function_name(start=False) #, force=True)
 
 # -----------------------------------------------------------------------------------

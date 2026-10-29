@@ -236,7 +236,7 @@ class Tap(AutomationBase):
             if self.is_watering_allowed_today():
                 pass
             elif (max_temp >= const.HOSEPIPE_BAN_TEMPERATURE_THRESHOLD):
-                temp = floor(const.HOSEPIPE_BAN_TEMPERATURE_THRESHOLD)
+                temp = math.floor(const.HOSEPIPE_BAN_TEMPERATURE_THRESHOLD)
                 message = f'Temperature was above {temp} degrees'
                 self.broadcast(message)
                 self.log(message, level='WARNING')
@@ -264,7 +264,7 @@ class Tap(AutomationBase):
 
         # if hasattr(self, 'timer') and self.timer is not None:
         if self.timer is not None:
-            self.cancel_timer(self.timer)
+            self._cancel_timer(self.timer)
             self.timer = None
 
         self.call_service('switch/turn_off', entity_id='switch.garden_tap')
@@ -301,5 +301,36 @@ class Tap(AutomationBase):
         else:
             self.call_service('timestamp/set', name='tap', value=None)
             self.log('Cleared tap timestamp', level='INFO')
+
+# -----------------------------------------------------------------------------------
+
+    def _cancel_timer(self, name) -> None:
+        """cancel a timer callback"""
+
+        # If available, prefer checking timer existence via info_timer or timer_running
+        valid = True
+        try:
+            if hasattr(self, 'info_timer'):
+                info = self.info_timer(name)
+                if info is None:
+                    # info_timer returns None for non-existent timers
+                    valid = False
+            elif hasattr(self, 'timer_running'):
+                if not self.timer_running(name):
+                    valid = False
+        except Exception as exc:  # defensive: if checking fails, log and continue to attempt cancel
+            self.log(f'\t_cancel_timer: error checking handle for name={name} exc={exc}', level='ERROR')
+
+        if not valid:
+            self.log(f'\t_cancel_timer: handle not valid or not running for name={name}', level='WARNING')
+            return
+
+        # Attempt cancel
+        self.log(f'\tcancelling running tap timer name={name}', level='INFO')
+
+        try:
+            self.cancel_timer(name)
+        except Exception as exc:
+            self.log(f'\t_cancel_timer: exception cancelling name={name} exc={exc}', level='ERROR')
 
 # -----------------------------------------------------------------------------------

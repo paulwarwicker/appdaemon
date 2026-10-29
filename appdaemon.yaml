@@ -3,10 +3,10 @@
 appdaemon:
   latitude: 52.252600320480596
   longitude: 0.02619477478856411
-  elevation: 20
+  elevation: 25
   time_zone: Europe/London
   # total_threads: 16 # was 20
-  threadpool_workers: 15
+  threadpool_workers: 20
   # log_thread_actions: 1
   thread_duration_warning_threshold: 180 # 00
   plugins:

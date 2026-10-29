@@ -1,0 +1,31 @@
+
+2026-07-28 06:37:22.689302 INFO lighting:
+
+        timers:
+
+
+2026-07-28 08:00:00.487892 INFO front_door: Deleted motion clip: /media/ring_clips/front_door_2026-07-21_06-47-08_Motion.mp4
+{'entity_id': 'media_player.hallway', 'state': 'paused', 'attributes': {'source_list': ['[di.fm] Progressive', '[rt] Bossa Nova', 'ABBA to ZZ Top and everything in between', 'All Time Festive 500', 'and the colour red', 'Bedrock Radio', 'Cowgirl - Remastered', 'daylist ? 90s rave old school dance saturday morning', 'Dirty Epic - Remastered', 'Essential Mix [The Goa Mix]', 'For What You Dream Of - Full On Renaissance Mix Edit', 'Full Moon Goa Mix (Part 1)', "Jo's so Mean to Josephine", 'My Electronic Favourites', 'Nice', 'Pearl?s Girl - Remastered', 'Push It', 'Rez', 'Rise', 'Storming/Dark Progressive House', "Stubbzie's Progressive House Classics Mix 23 (Hard Hands Records Special)", 'Tinlicker Vs Hosh & the 1979 - Sleepwalking At Midnight (DJ Sarah Hall Mash Up)', 'Uber-choon!', 'Your Silent Face - 2015 Remaster', 'Leftfield Radio', 'Max Mix', 'Rave Classics', 'SoundCloud', 'Teddy Swims'], 'group_members': ['media_player.dining_room', 'media_player.hallway', 'media_player.bedroom'], 'volume_level': 0.02, 'is_volume_muted': False, 'media_content_id': 'x-sonos-spotify:spotify%3atrack%3a72ahyckBJfTigJCFCviVN7?sid=9&flags=8232&sn=2', 'media_content_type': 'music', 'media_duration': 243, 'media_position': 0, 'media_position_updated_at': '2026-07-27T20:47:05.022010+00:00', 'media_title': "Don't Bring Me Down", 'media_artist': 'Electric Light Orchestra', 'media_album_name': 'Discovery', 'media_playlist': 'Not Played Recently (2026-07-27 09:00)', 'shuffle': True, 'repeat': 'off', 'queue_position': 1, 'queue_size': 3178, 'device_class': 'speaker', 'entity_picture': '/api/media_player_proxy/media_player.hallway?token=3084a2bca70801893808e50efd4390e1d074a0166a98ffabe50d890384d838bd&cache=a0f4f78064caeacc', 'friendly_name': 'Hallway', 'supported_features': 8321599}, 'last_changed': '2026-07-27T11:14:29.364393+00:00', 'last_reported': '2026-07-28T07:00:00.487030+00:00', 'last_updated': '2026-07-28T07:00:00.487030+00:00', 'context': {'id': '01KYKRBVT9GWDQF64YA9W20GTV', 'parent_id': None, 'user_id': 'd968faff69af4b07a86fb93da5b6a397'}}
+
+2026-07-28 08:13:56.981639 WARNING lighting:    _cancel_timer: no handle for name=bathroom_off
+2026-07-28 08:13:57.014455 INFO lighting:
+
+        timers:
+
+        remaining=09:59 handle=92add754acf0404490d700b469598b15 end_time=2026-07-28 08:23:56.984107 interval=0 (one-shot) callback=bathroom_off kwargs={} isrunning=True
+
+2026-07-28 08:15:15.406041 WARNING motion: upstairs_motion_active is active
+2026-07-28 08:15:24.935680 INFO lighting:       cancelling running timer name=bathroom_off timer=92add754acf0404490d700b469598b15
+2026-07-28 08:15:24.972173 INFO lighting:
+
+
+
+2026-07-28 08:35:07.314811 INFO lighting:
+
+        timers:
+
+        remaining=09:59 handle=578cdeb436554997b0e71a308a1fab7a end_time=2026-07-28 08:45:07.224643 interval=0 (one-shot) callback=kitchen_off kwargs={} isrunning=True
+        remaining=09:59 handle=cfd3ec9874fc478d831e5902f8420670 end_time=2026-07-28 08:45:07.263573 interval=0 (one-shot) callback=kitchen_floor_off kwargs={} isrunning=True
+
+2026-07-28 08:36:00.070391 INFO alarms:         Playing normal alarm on media_player.study with media_content_id=aac://http://prem1.di.fm:80/80saltnnewwave?5fba91be81f6da5b573f89c1
+{'entity_id': 'media_player.study', 'state': 'paused', 'attributes': {'source_list': ['[di.fm] Progressive', '[rt] Bossa Nova', 'ABBA to ZZ Top and everything in between', 'All Time Festive 500', 'and the colour red', 'Bedrock Radio', 'Cowgirl - Remastered', 'daylist ? 90s rave old school dance saturday morning', 'Dirty Epic - Remastered', 'Essential Mix [The Goa Mix]', 'For What You Dream Of - Full On Renaissance Mix Edit', 'Full Moon Goa Mix (Part 1)', "Jo's so Mean to Josephine", 'My Electronic Favourites', 'Nice', 'Pearl?s Girl - Remastered', 'Push It', 'Rez', 'Rise', 'Storming/Dark Progressive House', "Stubbzie's Progressive House Classics Mix 23 (Hard Hands Records Special)", 'Tinlicker Vs Hosh & the 1979 - Sleepwalking At Midnight (DJ Sarah Hall Mash Up)', 'Uber-choon!', 'Your Silent Face - 2015 Remaster', 'Leftfield Radio', 'Max Mix', 'Rave Classics', 'SoundCloud', 'Teddy Swims'], 'group_members': ['media_player.study'], 'volume_level': 0.29, 'is_volume_muted': False, 'media_content_id': 'x-sonos-spotify:spotify%3atrack%3a7LzePPG7eWPV5TBefnwwvP?sid=9&flags=8232&sn=2', 'media_content_type': 'music', 'media_duration': 309, 'media_position': 297, 'media_position_updated_at': '2026-07-26T08:41:42.149140+00:00', 'media_title': 'On A Ragga Tip ?97 (original Mix)', 'media_artist': 'SL2', 'media_album_name': 'On A Ragga Tip ?97', 'media_playlist': '90?s Rave Classics', 'shuffle': False, 'repeat': 'off', 'queue_position': 5, 'queue_size': 113, 'device_class': 'speaker', 'entity_picture': '/api/media_player_proxy/media_player.study?token=f84835c457a8d9db6ea184bb8393e2a146cb817e3c9c6094185fce520097055c&cache=55940f123ad0f76b', 'friendly_name': 'Study', 'supported_features': 8321599}, 'last_changed': '2026-07-26T08:41:42.152402+00:00', 'last_reported': '2026-07-26T16:47:08.481834+00:00', 'last_updated': '2026-07-26T16:47:08.481834+00:00', 'context': {'id': '01KYFN5G610060SNY6QPWMAE6J', 'parent_id': None, 'user_id': None}}

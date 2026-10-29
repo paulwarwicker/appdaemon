@@ -42,7 +42,7 @@ class Vacuum(AutomationBase):
         """vacuum debug function"""
 
         state = self.get_state('vacuum.s7_max_ultra')
-        self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} state={state}', level='INFO')  # kwargs={kwargs}
+        self.log(f'\tentity={entity} attribute={attribute} old={old} new={new} state={state}', level='DEBUG')  # kwargs={kwargs}
 
 # -----------------------------------------------------------------------------------
 

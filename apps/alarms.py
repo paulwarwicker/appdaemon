@@ -9,12 +9,8 @@
 
 # Lemon & Einar K - Tenacity (Solarsoul Chill Breaks Remix)
 
-# import traceback
 import random
-# import re
 from datetime import datetime, timedelta
-
-# from typing import TYPE_CHECKING, cast
 
 from dateutil import parser # pylint: disable=import-error
 
@@ -126,92 +122,6 @@ class Alarms(AutomationBase):
 
         self._log_function_name(start=True)
 
-        # day = datetime.now().date()
-
-        # a_day = timedelta(days=1)
-
-        # if self.now_is_between('03:00:00', '23:59:59'):
-        #     day1 = day + a_day # tomorrow
-        # else:
-        #     day1 = day
-
-        # day0 = day1 - a_day # yesterday
-
-        # shift0 = self.check_shift(day0)
-        # shift1 = self.check_shift(day1)
-
-        # if self._get_verbose_debug():
-        #     self.log(f'\t{day0} is {shift0} shift (day/shift0)')
-        #     self.log(f'\t{day1} is {shift1} shift (day/shift1)')
-
-        # override = self.get_state('input_boolean.override') == 'on'
-
-        # if override:
-        #     # must be set specifically, don't change
-        #     hour = self.get_state('input_datetime.early_alarm', attribute='hour')
-        #     minute = self.get_state('input_datetime.early_alarm', attribute='minute')
-        #     alarm_time = f'{hour:02d}:{minute:02d}'
-        # else:
-        #     hour = const.NIGHT_DELIVER[0]
-        #     minute = const.NIGHT_DELIVER[1]
-        #     if shift1 == 'Night' and shift0 == 'Night':
-        #         hour = const.NIGHT_COLLECT[0]
-        #         minute = const.NIGHT_COLLECT[1]
-        #     if backup:
-        #         minute += 1
-        #     alarm_time = f'{hour:02d}:{minute:02d}'
-
-        # if override:
-        #     self.log('\toverride is set', level='WARNING')
-        #     state = 'on'
-        # else:
-        #     if shift0 == 'Off' and shift1 == 'Night':
-        #         # transition shift
-        #         state = 'off'
-        #         hour = const.DEFAULT[0]
-        #         minute = const.DEFAULT[1]
-        #         self.log('\tdisabling due to transition shift off->night', level='WARNING')
-        #     elif shift0 == 'Night' and shift1 == 'Off':
-        #         # transition shift
-        #         state = 'on'
-        #         hour = const.NIGHT_COLLECT[0]
-        #         minute = const.NIGHT_COLLECT[1]
-        #         self.log('\tenabling due to transition shift night->off', level='WARNING')
-        #     elif shift0 == 'Off' and shift1 == 'Off':
-        #         # transition shift
-        #         state = 'off'
-        #         hour = const.DEFAULT[0]
-        #         minute = constULT[1]
-        #     elif shift1 == shift0 == 'Night':
-        #         state = 'on'
-        #         hour = const.NIGHT_COLLECT[0]
-        #         minute = const.NIGHT_COLLECT[1]
-        #     elif shift1 == shift0 == 'Day': # elif shift0 == 'Day' and shift1 == 'Day':
-        #         state = 'on'
-        #         hour = const.NIGHT_DELIVER[0]
-        #         minute = const.NIGHT_DELIVER[1]
-        #     elif shift0 == 'Off' and shift1 == 'Day':
-        #         state = 'on'
-        #         hour = const.NIGHT_DELIVER[0]
-        #         minute = const.NIGHT_DELIVER[1]
-        #     elif shift0 == 'Day' and shift1 == 'Off':
-        #         state = 'off'
-        #         hour = const.NIGHT_DELIVER[0]
-        #         minute = const.NIGHT_DELIVER[1]
-        #     else:
-        #         # just use tomorrows shift
-        #         state = 'off' if shift1 == 'Off' else 'on'
-        #         self.log(f'defaukt time would be wrong if shift was \'on\'. shift={state}')
-        #         hour = const.DEFAULT[0]
-        #         minute = const.DEFAULT[1]
-
-        #     if backup:
-        #         minute += 1
-
-        #     alarm_time = f'{hour:02d}:{minute:02d}'
-
-        # return state, alarm_time, hour, minute
-
         hour = minute = second = 12
         parts = const.EARLY_ALARM_TIME.split(':')
 
@@ -296,8 +206,7 @@ class Alarms(AutomationBase):
         if ids is None:
             ids = const.EARLY_ALARM
 
-        if self._get_verbose_debug():
-            self.log(f'set_early_alarm_time state={state} alarm_time={alarm_time} timestamp={timestamp} hour={hour} minute={minute} seconds={seconds} ids={ids}', level="WARNING")
+        self.log(f'set_early_alarm_time {state=} {alarm_time=} {timestamp=} {hour=} {minute=} {seconds=} {ids=}', level="DEBUG")
 
         self.set_state(time_entity_id, state=f"{alarm_time}", attributes={"timestamp": timestamp, "hour": hour, "minute": minute, "seconds": seconds})
         self.set_state(bool_entity_id, state=state)
@@ -327,8 +236,7 @@ class Alarms(AutomationBase):
         if ids is None:
             ids = const.NORMAL_ALARM
 
-        if self._get_verbose_debug():
-            self.log(f'set_normal_alarm_time state={state} alarm_time={alarm_time} timestamp={timestamp} hour={hour} minute={minute} seconds={seconds} ids={ids}', level="WARNING")
+        self.log(f'set_normal_alarm_time {state=} {alarm_time=} {timestamp=} {hour=} {minute=} {seconds=} {ids=}', level="DEBUG")
 
         self.set_state(time_entity_id, state=f"{alarm_time}", attributes={"timestamp": timestamp, "hour": hour, "minute": minute, "seconds": seconds})
         self.set_state(bool_entity_id, state=state)
@@ -372,7 +280,7 @@ class Alarms(AutomationBase):
         alarm_words = self.time_to_words(alarm_time) if alarm_time is not None else 'unknown time'
 
         message = f'The {_alarm_type} morning alarm is set to {alarm_words}' if state == 'on' else f'The {_alarm_type} morning alarm is cancelled'
-        volume = const.STUDY_ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME
+        volume = const.ANNOUNCE_VOLUME_LOW if self._is_night() else const.STUDY_ANNOUNCE_VOLUME
         self.call_service("announcer/announce", entity_id=const.STUDY_SPEAKER, message=message, volume=volume, announce=True) #, force=True)
 
         self._log_function_name(start=False)
@@ -517,11 +425,10 @@ class Alarms(AutomationBase):
                 ids = kwargs['ids'] = const.EARLY_ALARM
             else:  # normal
                 ids = kwargs['ids'] = const.NORMAL_ALARM
-            self.log(f'No ids provided for {alarm_type} alarm; using ids={ids}', level='WARNING')
+            self.log(f'No ids provided for {alarm_type} alarm; using {ids=}', level='WARNING')
 
-        if self._get_verbose_debug():
-            self.log(f"\t{alarm_type} alarm enabled", level='DEBUG')
-            self.log(f"\taction={action}", level='DEBUG')
+        self.log(f"\t{alarm_type} alarm enabled", level='DEBUG')
+        self.log(f"\taction={action}", level='DEBUG')
 
         bool_entity_id = f'input_boolean.{alarm_type}_alarm'
         time_entity_id = f'input_datetime.{alarm_type}_alarm'
@@ -533,7 +440,7 @@ class Alarms(AutomationBase):
             hm = self._read_time_attrs(time_entity_id)
             if hm is None:
                 # cannot determine time; abort setting alarm
-                self.log(f'Aborting set_alarm: cannot read time from {time_entity_id}', level='ERROR')
+                self.log(f'Aborting set_alarm: cannot read time from {time_entity_id=}', level='ERROR')
                 self._log_function_name(start=False)
                 return None
 
@@ -547,8 +454,7 @@ class Alarms(AutomationBase):
                 timestamp = hour * 3600 + minute * 60 + second
                 alarm_time = f"{hour:02d}:{minute:02d}:{second:02d}"
 
-                if self._get_verbose_debug():
-                    self.log(f"\t\tdebug_time={d}", level='DEBUG')
+                self.log(f"\t\tdebug_time={d}", level='DEBUG')
 
                 self.set_state(time_entity_id, state=f"{alarm_time}", attributes={"timestamp": timestamp, "hour": hour, "minute": minute, "seconds": second})
                 alarm = self.run_once(self.alarm, alarm_time, **kwargs)
@@ -563,7 +469,7 @@ class Alarms(AutomationBase):
             # https://appdaemon.readthedocs.io/en/latest/AD_API_REFERENCE.html#appdaemon.adapi.ADAPI.run_daily
             alarm = self.run_daily(self.alarm, alarm_time, **kwargs)
             # alarm = self.run_daily(self.alarm, alarm_time, ids=ids, alarm_type=_alarm_type)
-            self.log(f'\t{_alarm_type} alarm set for {alarm_time} using {time_entity_id}. kwargs={kwargs}', level="INFO")
+            self.log(f'\t{_alarm_type} alarm set for {alarm_time=} using {time_entity_id=}. {kwargs=}', level="INFO")
         elif action == 'cancel':
             self.set_state(bool_entity_id, state='off')
             alarm_time = 'unset' # can trace in message below
@@ -598,9 +504,12 @@ class Alarms(AutomationBase):
         if alarm_type == 'early' and self.get_state('input_boolean.wake_up_boo') == 'on':
             media_content_id = const.WAKE_UP_BOO_STREAM # override
 
-        self.log(f'\tPlaying {alarm_type} alarm on {entity_id} with media_content_id={media_content_id}', level='INFO')
+        self.log(f'\tPlaying {alarm_type} alarm on {entity_id} with {media_content_id=}', level='INFO')
         self.call_service('sonos/play_thing', entity_id=entity_id, media_content_id=media_content_id, volume_level=const.ALARM_VOLUME, delayed=True)
         self.run_in(self.stop_bedroom_alarm, 60*60)
+
+        if alarm_type == 'early' and self.get_state('input_boolean.physical_training') == 'on':
+            self.call_service('lighting/wardrobe_on')
 
         self._log_function_name(start=False)
 
@@ -659,9 +568,9 @@ class Alarms(AutomationBase):
             self.callback[0] = self.run_in_thread(self.lumie_phase, 0, brightness=100,transition=seconds, rgb_color=[255, 180, 10])  # now
             if self.now_is_between('04:00:00', '08:00:00'):
                 self.callback[1] = self.run_in_thread(self.lumie_phase, seconds, brightness=250, transition=seconds, rgb_color=[250, 250, 250]) # +5m
-            self.callback[2] = self.run_in_thread(self.lumie_phase3, 4*seconds)  # +20m
+            self.callback[2] = self.run_in_thread(self.lumie_off, 4*seconds)  # +20m
         else:
-            self.log(f'\tskipping lumie alarm holiday={holiday} enabled={enabled} dow={dow}', level='INFO')
+            self.log(f'\tskipping lumie alarm {holiday=}, {enabled=}, {dow=}', level='INFO')
 
         self._log_function_name(start=False)
 
@@ -677,25 +586,6 @@ class Alarms(AutomationBase):
         rgb_color = kwargs['rgb_color']
 
         self.call_service('lighting/lumie_on', brightness=brightness)
-
-# # -----------------------------------------------------------------------------------
-
-#     def lumie_phase2(self, kwargs):
-
-#         if self.get_state('input_boolean.lumie') == 'off':
-#             return
-
-#         brightness = kwargs['brightness']
-#         transition = kwargs['transition']
-#         rgb_color = kwargs['rgb_color']
-
-#         self.call_service('light/turn_on', entity_id='light.lumie', brightness=brightness, transition=transition, rgb_color=rgb_color)
-
-# -----------------------------------------------------------------------------------
-
-    def lumie_phase3(self, kwargs):
-
-        self.call_service('light/turn_off', entity_id='light.lumie')
 
 # -----------------------------------------------------------------------------------
 
@@ -782,23 +672,13 @@ class Alarms(AutomationBase):
 
 # -----------------------------------------------------------------------------------
 
-    # def check_shift(self, date_to_check):
-
-    #     for date, status in self.rota:
-    #         if date == date_to_check:
-    #             return status
-
-    #     return "Date out of range"
-
-# -----------------------------------------------------------------------------------
-
     def _cancel_timer(self, timer, message=None):
 
         if timer is not None:
             self.cancel_timer(timer, True)
             timer = None
             if message is not None:
-                self.log(f'\t{message} cancelled', level='DEBUG')
+                self.log(f'\t{message} cancelled', level='INFO')
 
 # -----------------------------------------------------------------------------------
 

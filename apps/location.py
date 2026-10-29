@@ -109,10 +109,7 @@ class Location(AutomationBase):
         direction = self.get_state('sensor.home_maxine_direction_of_travel')
         name = const.LOCATIONS[entity_id][1]
 
-        verbose = self._get_verbose_debug()
-
-        if verbose:
-            self.log(f'\tentity_id={entity_id} state={state} name={name} direction={direction} village={village} home={home}', level='DEBUG')
+        self.log(f'\tentity_id={entity_id} state={state} name={name} direction={direction} village={village} home={home}', level='DEBUG')
 
         if village:
             message = "Max is in the village"
@@ -143,13 +140,7 @@ class Location(AutomationBase):
         if location is not None:
             location_entity_id = (const.LOCATIONS[location][0]).lower()
 
-        self.log(f'\tmax location location={location} location_entity_id={location_entity_id} attribute={attribute} old={old} new={new}', level='INFO')
-
-        verbose = self._get_verbose_debug()
-
-        if verbose:
-            # 2024-11-29 17:59:07.465115 INFO location:       entity=device_tracker.maxine_iphone attribute=state old=DS_Smith_Fordham new=not_home location=proximity.ds_smith_fordham
-            self.log(f'\tmax location location={location} location_entity_id={location_entity_id} attribute={attribute} old={old} new={new}', level='INFO')
+        self.log(f'\tmax location location={location} location_entity_id={location_entity_id} attribute={attribute} old={old} new={new}', level='DEBUG')
 
         if (old == 'not_home' and new == 'home') or location_entity_id in ('proximity.village', 'village'):
             self.call_service('location/max_home')
@@ -167,8 +158,7 @@ class Location(AutomationBase):
 
         self._log_function_name(start=True)
 
-        if self._get_verbose_debug():
-            self.log(f'\tpaul location entity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='INFO')
+        self.log(f'\tpaul location entity_id={entity_id} attribute={attribute} old={old} new={new} kwargs={kwargs}', level='DEBUG')
 
         if old == 'not_home' and new == 'home':
             self.call_service('garage/open')
@@ -219,11 +209,6 @@ class Location(AutomationBase):
                     direction = val
                 else:
                     state = val
-
-            # # debug types
-            # if self._get_debug():
-            #     self.log(f'\tmaxine_travel_time_to_home: result={type(result)} direction={type(direction)} state={type(state)}', level='DEBUG')
-            #     self.log(f'\tmaxine_travel_time_to_home: result={result} direction={direction} state={state}', level='DEBUG')
 
             if result == 'unknown' or result is None:
                 self.log('\tmaxine travel time is unknown', level='ERROR')
